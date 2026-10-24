@@ -295,7 +295,7 @@ function renderModelo() {
     h = `<div class="card"><h2>Parâmetros de controle</h2><p class="muted small">Valores de <span class="mono">cenarios/sala.json</span> → <span class="mono">controle</span>; um roteiro pode sobrescrevê-los.</p>
       <table><tr><th>Parâmetro</th><th>Plano</th><th>Chave</th><th>Valor na sala</th></tr>
       ${M.parametros.map(p => `<tr><td>${esc(p.id)}</td><td>${esc(p.valor)}</td><td class="mono">${p.chave}</td><td class="mono">${fmtN(D.sala.controle[p.chave])} ms</td></tr>`).join("")}</table>
-      <p class="small muted">PS05 da V1 (duas leituras com 3 s de intervalo) foi substituído por T_apagamento = 60 s neste incremento (proposta RV-02).</p></div>`;
+      <p class="small muted">PS05 = T_apagamento de 60 s sem detecção, alinhado à V1 v02 (decisão A13, que substituiu "duas leituras com 3 s de intervalo").</p></div>`;
   } else if (S.modelSec === "ambiente") {
     const ds = D.sala.dispositivos;
     const chaves = [...new Set(Object.values(ds).flatMap(d => [...Object.keys(d.ideal), ...Object.keys(d.realista)]))];

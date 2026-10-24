@@ -2,7 +2,7 @@
 
 **Disciplina:** PCS5039 — Engenharia de Software Orientada a IoT
 **Ambiente:** sala com uma porta, um morador e o Rex (cachorro de grande porte); SA, SP (PIR), atuador, lâmpada e interruptor.
-**Referência:** o plano está em `docs/ambiente-simulacao-v01.md`. Siga as seções indicadas em cada exercício.
+**Referência:** o plano está em `docs/ambiente-simulacao-v02.md`. Siga as seções indicadas em cada exercício.
 
 ## Antes de começar
 

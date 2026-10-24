@@ -3,7 +3,7 @@
     {
       "id": "RN-I0-01",
       "texto": "Ocupante é pessoa ou animal de grande porte. A automação atende a qualquer ocupante.",
-      "origem": "DI-10"
+      "origem": "DI-10; RN34 (V1 v02)"
     },
     {
       "id": "RN-I0-02",
@@ -13,7 +13,7 @@
     {
       "id": "RN-I0-03",
       "texto": "A luz apaga após T_apagamento (60 s) sem nenhuma detecção, se não houver precedência manual e a ocupação não estiver desconhecida.",
-      "origem": "DI-12; PS05-I0"
+      "origem": "DI-12; PS05 (A13, V1 v02)"
     },
     {
       "id": "RN-I0-04",
@@ -94,7 +94,7 @@
     "RN02": "V1 — intenção, execução relatada e efeito observado são distintos",
     "RN09": "V1 — SA e SP não identificam pessoa, idade, direção ou contagem",
     "RN12": "V1 — dados tardios não apagam conclusões históricas",
-    "RN-I0-01": "Incremento 0 — ocupante inclui animal de grande porte"
+    "RN-I0-01": "Incremento 0 — ocupante inclui animal de grande porte (RN34 na V1 v02, decisão A12)"
   },
   "metricas": [
     {

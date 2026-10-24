@@ -1,12 +1,21 @@
 # Plano do ambiente de simulação — Incremento 0
 
-**Documento:** ambiente-simulacao-v01.md
-**Versão:** 01 | **Data:** 23/10/2026
+**Documento:** ambiente-simulacao-v02.md
+**Versão:** 02 | **Data:** 24/10/2026 (v01 de 23/10/2026)
 **Disciplina:** PCS5039 — Engenharia de Software Orientada a IoT (EPUSP)
 **Projeto de referência:** automação de iluminação residencial Reg10k, em ambiente simulado
 **Repositório:** https://github.com/ReginaldoArakaki/PCS5039_ambiente_reg10k_vCl0
-**Base:** V1 Business Drivers v01 [R13] e V2/V3 Requisitos v01 [R14]. As respostas às dúvidas do incremento 0 foram recebidas em 23/10/2026.
-**Situação:** plano para aprovação.
+**Base:** V1 Business Drivers v02 [R13] e V2/V3 Requisitos v02 [R14]. As respostas às dúvidas do incremento 0 foram recebidas em 23/10/2026.
+**Situação:** plano aprovado e implementado na versão 0 do repositório. As revisões RV-01 a RV-03 foram aprovadas em 24/10/2026 e incorporadas à V1 e à V2/V3 v02.
+
+---
+
+## Histórico de versões
+
+| Versão | Data | Alterações |
+|---|---|---|
+| 01 | 23/10/2026 | Plano do incremento 0 |
+| 02 | 24/10/2026 | Revisões RV-01 a RV-03 aprovadas e incorporadas à V1 e à V2/V3 v02; PI-02 resolvida; referências atualizadas para as versões 02 e para o repositório ReginaldoArakaki/PCS5039_ambiente_reg10k_vCl0. O comportamento do incremento 0 não muda |
 
 ---
 
@@ -62,7 +71,7 @@ As respostas 10 e 15 se cruzam. A resposta 15 aprovou "cachorro sozinho" como fa
 
 - **"Cachorro sozinho na sala com a luz acesa" passa a ser comportamento correto.** O cenário migra de falso positivo para normal (N05).
 - **"Cachorro deitado dormindo e a luz apaga" vira falso negativo** (FN05), pelo mesmo motivo que vale para uma pessoa parada.
-- **Entra uma nova regra:** RN-I0-01, "ocupante é pessoa ou animal de grande porte". Ela é proposta para a V1 como RN34 (§15.2).
+- **Entra uma nova regra:** RN-I0-01, "ocupante é pessoa ou animal de grande porte". Ela foi incorporada à V1 v02 como RN34 (decisão A12, §15.2).
 - **O falso positivo que sai é reposto** por "disparo espúrio do SA" (FP03), mantendo os 20 cenários.
 
 ### 1.3 Ajuste de parâmetro em relação à V1
@@ -724,7 +733,7 @@ Repositório: **ReginaldoArakaki/PCS5039_ambiente_reg10k_vCl0**
 PCS5039_ambiente_reg10k_v0/
 ├── README.md                    # como instalar, rodar e navegar
 ├── docs/
-│   ├── ambiente-simulacao-v01.md
+│   ├── ambiente-simulacao-v02.md
 │   ├── uml/                     # fontes Mermaid e PlantUML da §6
 │   └── roteiro-alunos.md        # exercícios da §13.2
 ├── sim/                         # simulador: roteiro, mundo, dispositivos, falhas
@@ -807,20 +816,20 @@ PCS5039_ambiente_reg10k_v0/
 | Página pesada com execuções de 30 sementes | Abertura lenta | Embutir apenas a semente de referência; as demais ficam como métricas resumidas |
 | Divergência entre diagramas e código | Perda de valor didático | CP-06; nomes de classes iguais nos dois |
 
-### 15.2 Propostas de revisão da V1–V3
+### 15.2 Revisões da V1–V3
 
-| ID | Proposta | Documento |
-|---|---|---|
-| RV-01 | Nova regra **RN34**: ocupante inclui animal de grande porte; a automação o atende | V1 §7.2 |
-| RV-02 | **PS05**: substituir "duas leituras com 3 s de intervalo" por "T_apagamento configurável, padrão de 60 s sem detecção" | V1 §9 e INV-09 da V2 |
-| RV-03 | Classe **Passagem**, para o SA vinculado à porta (já identificada na conversa sobre as duas casas; necessária a partir do incremento 1) | V2 §2.2 |
+| ID | Revisão | Documento | Situação |
+|---|---|---|---|
+| RV-01 | Nova regra **RN34**: ocupante inclui animal de grande porte; a automação o atende | V1 §7.2 | Aprovada em 24/10/2026 (A12, V1 v02) |
+| RV-02 | **PS05**: substituir "duas leituras com 3 s de intervalo" por "T_apagamento configurável, padrão de 60 s sem detecção" | V1 §9 e INV-09 da V2 | Aprovada em 24/10/2026 (A13, V1 e V2/V3 v02) |
+| RV-03 | Classe **Passagem**, para o SA vinculado à porta (já identificada na conversa sobre as duas casas; necessária a partir do incremento 1) | V2 §2.2 | Aprovada em 24/10/2026 (A14, V2/V3 v02: classe Passagem, INV-15) |
 
 ### 15.3 Pendências
 
 | ID | Pendência | Quando |
 |---|---|---|
 | PI-01 | Comportamento desejado com o ocupante **dormindo**: manter acesa ou aceitar apagar? Hoje FN05 trata o apagamento como indevido | Antes do incremento 2 |
-| PI-02 | Aprovar as propostas RV-01 a RV-03 | Fim do incremento 0 |
+| PI-02 | Aprovar as propostas RV-01 a RV-03 | **Resolvida em 24/10/2026** |
 | PI-03 | Definir se os controladores dos alunos serão avaliados por métrica (ranking) ou por análise escrita | Dia 1 |
 
 ### 15.4 O que o incremento 1 herda
@@ -833,7 +842,7 @@ O incremento 1 reutiliza o simulador, o registro, o oráculo, a página e a inte
 
 | ID | Documento |
 |---|---|
-| R13 | V1 — Business Drivers da Plataforma Reg10k, v01, 18/10/2026 |
-| R14 | V2 e V3 — Requisitos funcionais e não funcionais da plataforma Reg10k, v01, 22/10/2026 |
+| R13 | V1 — Business Drivers da Plataforma Reg10k, v02, 24/10/2026 |
+| R14 | V2 e V3 — Requisitos funcionais e não funcionais da plataforma Reg10k, v02, 24/10/2026 |
 | — | Respostas às dúvidas do incremento 0, 23/10/2026 |
 | — | Respostas às dúvidas do ambiente de duas residências, 22/10/2026 (plano dos incrementos 4 e 5) |

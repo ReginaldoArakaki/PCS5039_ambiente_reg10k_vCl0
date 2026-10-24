@@ -4,7 +4,9 @@ Projeto de referência da disciplina **PCS5039 — Engenharia de Software Orient
 
 O incremento 0 tem uma sala de 5 × 4 m com uma porta, dois moradores (uma pessoa e o Rex, um cachorro de grande porte, que também é ocupante), um sensor de passagem (SA) no batente, um sensor de presença PIR (SP) com zona cega, um atuador, uma lâmpada com sensor de efeito e um interruptor. O hub roda um **controlador plugável**: a referência ou o de um grupo.
 
-O plano completo está em [`docs/ambiente-simulacao-v01.md`](docs/ambiente-simulacao-v01.md) e o roteiro dos alunos em [`docs/roteiro-alunos.md`](docs/roteiro-alunos.md).
+O plano completo está em [`docs/ambiente-simulacao-v02.md`](docs/ambiente-simulacao-v02.md) e o roteiro dos alunos em [`docs/roteiro-alunos.md`](docs/roteiro-alunos.md).
+
+Os documentos da plataforma que este ambiente realiza estão em [`docs/plataforma/`](docs/plataforma/): a V1 Business Drivers (v02) e os requisitos das visões V2 e V3 (v02), no referencial RM-ODP adaptado.
 
 ## Começo rápido
 
