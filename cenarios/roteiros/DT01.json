@@ -1,0 +1,39 @@
+{
+  "id": "DT01",
+  "versao": "v0dt",
+  "titulo": "Comando remoto acende a sala vazia",
+  "tipo": "GEMEO_DIGITAL",
+  "modo": "IDEAL",
+  "duracao_ms": 180000,
+  "descricao": "Sala vazia e apagada. O titular, fora de casa, toca em Acender no app em t=70 s e consulta o app em t=75 s.",
+  "comportamento_ideal": "A luz acende e o app mostra o resultado classificado em até 3 s; o gêmeo remoto mostra o estado atual.",
+  "comportamento_referencia": "O hub aceita o comando dentro da validade; a referência acende com precedência REMOTA por 15 min (RN-DT-09).",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 70000,
+      "ocupante": "app",
+      "acao": "APP_COMANDO",
+      "comando": "ACENDER"
+    },
+    {
+      "t_ms": 75000,
+      "ocupante": "app",
+      "acao": "APP_CONSULTA"
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-03",
+    "RF-OPR-04",
+    "RNF-DES-02",
+    "CF04"
+  ],
+  "regras": [
+    "RN-DT-05",
+    "RN-DT-09"
+  ]
+}

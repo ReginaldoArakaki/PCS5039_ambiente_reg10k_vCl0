@@ -2,7 +2,7 @@
 
 **Disciplina:** PCS5039 — Engenharia de Software Orientada a IoT
 **Ambiente:** sala com uma porta, um morador e o Rex (cachorro de grande porte); SA, SP (PIR), atuador, lâmpada e interruptor.
-**Referência:** o plano está em `docs/ambiente-simulacao-v02.md`. Siga as seções indicadas em cada exercício.
+**Referência:** o plano do incremento 0 está em `docs/ambiente-simulacao-v02.md`; o da v0dt, no fim deste roteiro. Siga as seções indicadas em cada exercício.
 
 ## Antes de começar
 
@@ -83,3 +83,68 @@ O `alunos/grupo_exemplo` já mostra uma solução simples: o SA sozinho não ace
 | E6: análise comparativa e apresentação | 20% |
 
 O critério de ranking por métrica ou de análise escrita é a pendência PI-03 do plano.
+
+---
+
+# Roteiro dos alunos — v0dt: gêmeo digital (2 dias)
+
+**Ambiente:** a mesma sala, o mesmo morador e o mesmo Rex. Entram o DTReg10k-L (hub), o DTReg10k-R (plataforma), o canal simulado e o app do titular.
+**Referência:** `docs/ambiente-simulacao-v0dt.md`. Os 20 cenários da v0 continuam no catálogo como regressão.
+
+## Antes de começar
+
+```bash
+python -m catalogo          # agora com 32 cenários
+python -m sim --cenario DT05
+```
+
+Na aba **Animação**, abra DT05 e observe lado a lado o que **acontece**, o que o **hub acha** e o que a **plataforma acha**. Na aba **Painel**, veja as faixas "plataforma (R)", "Canal" e "App".
+
+O contrato do controlador não mudou. Duas evidências novas chegam pelo `ao_evento`, com origem `PLATAFORMA`:
+
+| Evidência | Dados | O que fazer |
+|---|---|---|
+| `COMANDO_REMOTO` | `acao`, `chave_remota`, `solicitante` | Já chega dentro da validade e sem duplicata. Toda intenção devolvida responde ao comando; lista vazia é recusa. Siga a RN-DT-09: abaixo da manual, acima da automática |
+| `CONFIGURACAO` | `versao`, `t_apagamento_ms` | O `ConfigSala` recebido em `iniciar` já vem atualizado; use o novo valor |
+
+Quem herda de `ControladorReferencia` já trata as duas.
+
+## Dia 1 — Modelos e componentes
+
+### E7. Três pontos de vista (plano v0dt §4, §5 e §7)
+
+1. Para DT05, descreva o que a verdade, o DTReg10k-L e o DTReg10k-R mostram **antes**, **durante** e **depois** da queda do enlace. Em que instante o R deixa de ser "atual"? Por que ele registra uma divergência na volta, e quem tem a autoridade para resolvê-la (RN27)?
+2. Desenhe em Mermaid a sequência de DT06 (preferência alterada com o hub offline), do toque no app até a luz apagar em 120 s.
+3. Compare `docs/uml/componentes-v0dt.mmd` com o código (`hub/sincronizacao.py`, `plataforma/`). Liste as divergências.
+
+### E8. Honestidade da informação no app (DT02, DT05, DT07, DT10)
+
+1. O app mostra o último estado com idade e o selo "desatualizado". Proponha uma política alternativa de exibição (por exemplo, esconder a ocupação após 5 min sem sessão, ou mostrar a "última evidência conhecida" com destaque) e escreva-a como regra.
+2. Num ramo git do grupo, implemente a política em `plataforma/plataforma.py` (métodos `_atualizar` e `app_consulta`) e rode DT02, DT05, DT07 e DT10 com `python -m sim --cenario <ID>`. A invariante **OR-08** continua respeitada? Os testes (`python -m pytest -q`) continuam passando?
+
+**Entrega do dia 1:** análise de DT05, sequência de DT06 e a regra de exibição proposta.
+
+## Dia 2 — Integração e testes
+
+### E9. Cenários de rede
+
+1. No editor de roteiro, crie 2 cenários com o ator `app` e falhas de rede. Sugestões: quedas curtas e repetidas do enlace (a espera de reconexão dobra a cada tentativa); duas preferências seguidas com o hub offline (a primeira fica SUBSTITUIDA); comando remoto com a plataforma fora do ar.
+2. Escreva as asserções com os tipos novos: `gemeo`, `comando`, `config` e `app_consulta`.
+3. Rode `python -m catalogo.validar` e `python -m catalogo`. Em que cenários a execução pareada (OR-12) se aplica, e por quê?
+
+### E10 (opcional, bônus). Aprendizado mínimo
+
+1. Gere 3 semanas simuladas de rotina do morador (roteiros longos ou uma sequência de roteiros).
+2. A partir do registro, calcule o perfil horário de ocupação e sugira um T_apagamento por faixa de horário.
+3. A sugestão só vale depois de aceita (simule com `APP_PREFERENCIA`, RN-DT-07). Meça o efeito em FN01 e FN02: o escuro com ocupante cai? O desperdício sobe quanto?
+
+**Entrega do dia 2:** política do app aprovada nas invariantes, cenários novos no catálogo e a discussão da OR-12.
+
+## Avaliação da v0dt
+
+| Item | Peso sugerido |
+|---|---|
+| E7: modelos e análise dos três pontos de vista | 35% |
+| E8: política do app (OR-08 respeitada, requisitos aprovados) | 35% |
+| E9: cenários de rede com asserções válidas | 30% |
+| E10: aprendizado mínimo | bônus de até 15% |

@@ -73,7 +73,11 @@
                   "resultado",
                   "evento",
                   "relogio_nao_confiavel",
-                  "invariantes"
+                  "invariantes",
+                  "gemeo",
+                  "comando",
+                  "config",
+                  "app_consulta"
                 ]
               }
             }

@@ -1,0 +1,107 @@
+{
+  "cenario": "DT05",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-SYN-03",
+    "RF-SYN-04",
+    "RF-SYN-05",
+    "RNF-CON-01",
+    "RNF-CON-06",
+    "CF06"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "enlace fora",
+      "quando": "o morador volta em t=400 s",
+      "entao": {
+        "tipo": "luz",
+        "valor": "ACESA",
+        "desde_ms": 400000,
+        "ate_ms": 401500
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "enlace fora",
+      "quando": "o morador sai",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "desperdicio_por_saida_s_max",
+        "max": 90
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "enlace cai em t=60 s",
+      "quando": "logo depois",
+      "entao": {
+        "tipo": "gemeo",
+        "em_ms": 61000,
+        "atualidade": "DESATUALIZADO",
+        "conexao": "DESCONECTADO"
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "sessão restabelecida",
+      "quando": "o R recebe o estado atual",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "reconciliacao_ms_max",
+        "max": 5000
+      }
+    },
+    {
+      "id": "A5",
+      "nivel": "REQUISITO",
+      "dado": "sessão restabelecida",
+      "quando": "t = 680 s",
+      "entao": {
+        "tipo": "gemeo",
+        "em_ms": 680000,
+        "atualidade": "ATUAL",
+        "ocupacao": "VAZIA"
+      }
+    },
+    {
+      "id": "A6",
+      "nivel": "REQUISITO",
+      "dado": "R mostrava a sala ocupada",
+      "quando": "chega o estado do hub",
+      "entao": {
+        "tipo": "evento",
+        "camada": "PLATAFORMA",
+        "evento": "DIVERGENCIA",
+        "campos": {
+          "atributo": "ocupacao"
+        }
+      }
+    },
+    {
+      "id": "A7",
+      "nivel": "REQUISITO",
+      "dado": "fila do hub",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "eventos_nao_entregues",
+        "igual": 0
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "id": "DT06",
+  "versao": "v0dt",
+  "titulo": "Preferência alterada com o hub offline",
+  "tipo": "GEMEO_DIGITAL",
+  "modo": "IDEAL",
+  "duracao_ms": 520000,
+  "descricao": "O enlace cai de t=30 s a t=150 s. Em t=60 s o titular muda o tempo de apagamento para 120 s. O morador entra em t=200 s e sai em t=300 s.",
+  "comportamento_ideal": "A versão fica 'pendente' no app até o hub confirmá-la na reconexão; daí em diante a luz apaga 120 s após a saída.",
+  "comportamento_referencia": "A plataforma distribui a versão pendente ao restabelecer a sessão (RF-SYN-06); o hub aplica e confirma.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 20000,
+      "ocupante": "app",
+      "acao": "APP_CONSULTA"
+    },
+    {
+      "t_ms": 60000,
+      "ocupante": "app",
+      "acao": "APP_PREFERENCIA",
+      "t_apagamento_ms": 120000
+    },
+    {
+      "t_ms": 70000,
+      "ocupante": "app",
+      "acao": "APP_CONSULTA"
+    },
+    {
+      "t_ms": 200000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 200000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 90000
+    },
+    {
+      "t_ms": 300000,
+      "ocupante": "morador",
+      "acao": "SAIR"
+    },
+    {
+      "t_ms": 450000,
+      "ocupante": "app",
+      "acao": "APP_CONSULTA"
+    }
+  ],
+  "falhas": [
+    {
+      "t_ms": 30000,
+      "tipo": "CANAL_DESCONECTA",
+      "duracao_ms": 120000
+    }
+  ],
+  "requisitos": [
+    "RF-OPR-07",
+    "RF-SYN-06",
+    "INV-14",
+    "CV29"
+  ],
+  "regras": [
+    "RN-DT-07"
+  ]
+}

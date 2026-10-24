@@ -1,0 +1,86 @@
+{
+  "cenario": "DT04",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-05",
+    "RNF-CON-07",
+    "INV-10"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "comando duplicado no canal",
+      "quando": "as duas cópias chegam",
+      "entao": {
+        "tipo": "comando",
+        "indice": 1,
+        "nivel": "EFEITO_OBSERVADO"
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "comando duplicado",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "efeitos_duplicados_remotos",
+        "igual": 0
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "segunda cópia",
+      "quando": "o hub a recebe",
+      "entao": {
+        "tipo": "evento",
+        "camada": "SISTEMA",
+        "evento": "COMANDO_REMOTO_RECEBIDO",
+        "campos": {
+          "decisao": "REPETIDO"
+        }
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "comando duplicado",
+      "quando": "o controlador decide",
+      "entao": {
+        "tipo": "intencao",
+        "acao": "ACENDER",
+        "entre_ms": [
+          70000,
+          80000
+        ],
+        "max": 1
+      }
+    },
+    {
+      "id": "A5",
+      "nivel": "REQUISITO",
+      "dado": "falha injetada",
+      "quando": "o comando passa pelo canal",
+      "entao": {
+        "tipo": "evento",
+        "camada": "REDE",
+        "evento": "MSG_DUPLICADA",
+        "campos": {
+          "mensagem": "COMANDO"
+        }
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

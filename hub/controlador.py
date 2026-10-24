@@ -2,7 +2,14 @@
 
 Os alunos implementam a interface `Controlador`. O controlador recebe
 apenas evidências (nunca a verdade do simulador), devolve intenções e
-informa o estado inferido. O tempo `agora_ms` é monotônico: não salta
+informa o estado inferido.
+
+v0dt: duas evidências novas chegam pelo mesmo `ao_evento`, com origem
+PLATAFORMA. COMANDO_REMOTO (acao, chave_remota) já chega validado quanto à
+validade e à duplicidade; toda intenção devolvida ao tratá-lo responde ao
+comando, e devolver lista vazia é recusá-lo. CONFIGURACAO (versao e
+parâmetros) avisa que a configuração mudou; o objeto ConfigSala recebido em
+`iniciar` já vem atualizado pelo hub. O tempo `agora_ms` é monotônico: não salta
 quando o relógio de parede do hub é ajustado (cenário F06).
 """
 from __future__ import annotations
@@ -11,7 +18,7 @@ from typing import Optional, Protocol, runtime_checkable
 
 from sim.modelos import (
     ACENDER, ACESA_AUTO, ACESA_MANUAL, APAGADA, APAGADA_MANUAL, APAGAR,
-    AUTOMATICA, DESCONHECIDA, DESCONHECIDO, LUZ_ACESA, MANUAL, OCUPADA, VAZIA,
+    AUTOMATICA, DESCONHECIDA, DESCONHECIDO, LUZ_ACESA, MANUAL, OCUPADA, REMOTA, VAZIA,
     ConfigSala, EstadoSala, Evidencia, Intencao,
 )
 
@@ -34,7 +41,7 @@ class Controlador(Protocol):
 
 
 class ControladorReferencia:
-    """Implementa as regras RN-I0-01 a RN-I0-05 do plano.
+    """Implementa as regras RN-I0-01 a RN-I0-05 do plano e a RN-DT-09 da v0dt.
 
     RN-I0-06 a RN-I0-08 (classificação, nova tentativa e reinício) ficam no
     executor do hub, para que os controladores dos alunos tratem só da decisão.
@@ -50,6 +57,7 @@ class ControladorReferencia:
         self.ocupacao = DESCONHECIDA          # Figura 3: início em Desconhecida
         self.luz = APAGADA
         self.manual_ate: Optional[int] = None
+        self.tipo_intervencao = MANUAL       # MANUAL (interruptor) ou REMOTA (app)
         self.ultima_det: Optional[int] = None
         self.causa_det = ""
         self.detectou_agora = False
@@ -74,6 +82,12 @@ class ControladorReferencia:
             self._heartbeat(ev, agora_ms)
         elif t == "INTERRUPTOR":
             return self._manual(agora_ms) + self._avaliar(agora_ms)
+        elif t == "COMANDO_REMOTO":
+            return self._remoto(ev, agora_ms) + self._avaliar(agora_ms)
+        elif t == "CONFIGURACAO":
+            for k, v in ev.dados.items():
+                if k in self.cfg.__dataclass_fields__:
+                    setattr(self.cfg, k, v)
         elif t == "LEITURA_LAMPADA":
             # RN-I0-08: após reinício, adota o estado observado da lâmpada
             self.luz = ACESA_AUTO if ev.dados.get("acesa") else APAGADA
@@ -94,7 +108,7 @@ class ControladorReferencia:
         return EstadoSala(
             ocupacao=self.ocupacao,
             luz=self.luz,
-            precedencia=MANUAL if self.manual_ate is not None else AUTOMATICA,
+            precedencia=self.tipo_intervencao if self.manual_ate is not None else AUTOMATICA,
             idade_evidencia_ms=idade,
             alertas=tuple(sorted(self.alertas)),
         )
@@ -144,11 +158,29 @@ class ControladorReferencia:
     def _manual(self, agora: int) -> list[Intencao]:
         """RN-I0-05: o interruptor alterna a luz e cria precedência de 15 min."""
         self.manual_ate = agora + self.cfg.t_manual_ms
+        self.tipo_intervencao = MANUAL
         if self.luz in LUZ_ACESA:
             self.luz = APAGADA_MANUAL
             return [Intencao(APAGAR, "INTERRUPTOR", "RN-I0-05", MANUAL)]
         self.luz = ACESA_MANUAL
         return [Intencao(ACENDER, "INTERRUPTOR", "RN-I0-05", MANUAL)]
+
+    def _remoto(self, ev: Evidencia, agora: int) -> list[Intencao]:
+        """RN-DT-09: comando do app cria precedência REMOTA por T_manual.
+
+        É recusado (lista vazia) se houver precedência manual ativa; o
+        interruptor, depois, sempre prevalece sobre a precedência remota.
+        """
+        if self.manual_ate is not None and self.tipo_intervencao == MANUAL:
+            return []
+        acao = ev.dados.get("acao")
+        self.manual_ate = agora + self.cfg.t_manual_ms
+        self.tipo_intervencao = REMOTA
+        if acao == ACENDER:
+            self.luz = ACESA_MANUAL
+            return [Intencao(ACENDER, "COMANDO_REMOTO", "RN-DT-09", REMOTA)]
+        self.luz = APAGADA_MANUAL
+        return [Intencao(APAGAR, "COMANDO_REMOTO", "RN-DT-09", REMOTA)]
 
     def _avaliar(self, agora: int) -> list[Intencao]:
         saida: list[Intencao] = []

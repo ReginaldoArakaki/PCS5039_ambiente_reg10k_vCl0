@@ -1,0 +1,66 @@
+{
+  "cenario": "DT08",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RNF-DES-01",
+    "RF-SYN-01",
+    "RF-SYN-02",
+    "PS11"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "canal realista",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "atualidade_gemeo_ms_p95",
+        "max": 5000
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "canal realista",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "divergencia_alem_prazo_s",
+        "igual": 0
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "canal realista",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "eventos_nao_entregues",
+        "igual": 0
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "CARACTERIZACAO",
+      "dado": "canal realista",
+      "quando": "mensagens se perdem",
+      "entao": {
+        "tipo": "evento",
+        "camada": "REDE",
+        "evento": "MSG_PERDIDA"
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

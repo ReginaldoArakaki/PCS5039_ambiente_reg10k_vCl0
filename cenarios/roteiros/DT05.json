@@ -1,0 +1,69 @@
+{
+  "id": "DT05",
+  "versao": "v0dt",
+  "titulo": "Desconexão de 10 min com o morador entrando e saindo",
+  "tipo": "GEMEO_DIGITAL",
+  "modo": "IDEAL",
+  "duracao_ms": 900000,
+  "descricao": "O enlace cai de t=60 s a t=660 s. O morador sai em t=300 s, volta em t=400 s e sai de novo em t=560 s.",
+  "comportamento_ideal": "A automação local segue normal. O gêmeo remoto fica 'desatualizado' durante a queda; na volta recebe o estado atual antes do histórico e fica atual em até 5 s.",
+  "comportamento_referencia": "Na reconexão o R registra a divergência (ainda mostrava a sala ocupada) e adota o estado do hub (RN27).",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 280000
+    },
+    {
+      "t_ms": 300000,
+      "ocupante": "morador",
+      "acao": "SAIR"
+    },
+    {
+      "t_ms": 400000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 400000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 150000
+    },
+    {
+      "t_ms": 560000,
+      "ocupante": "morador",
+      "acao": "SAIR"
+    }
+  ],
+  "falhas": [
+    {
+      "t_ms": 60000,
+      "tipo": "CANAL_DESCONECTA",
+      "duracao_ms": 600000
+    }
+  ],
+  "requisitos": [
+    "RF-SYN-03",
+    "RF-SYN-04",
+    "RF-SYN-05",
+    "RNF-CON-01",
+    "RNF-CON-06",
+    "CF06"
+  ],
+  "regras": [
+    "RN-DT-03",
+    "RN-DT-04",
+    "RN-DT-08"
+  ]
+}

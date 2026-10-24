@@ -1,0 +1,72 @@
+{
+  "cenario": "DT09",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-03",
+    "RN07",
+    "RNP-MP3-03"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "precedência manual ativa",
+      "quando": "o titular toca em Acender",
+      "entao": {
+        "tipo": "comando",
+        "indice": 1,
+        "nivel": "REJEITADA"
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "comando recusado",
+      "quando": "o cenário segue",
+      "entao": {
+        "tipo": "luz_constante",
+        "valor": "APAGADA",
+        "entre_ms": [
+          31000,
+          150000
+        ]
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "comando recusado",
+      "quando": "o controlador decide",
+      "entao": {
+        "tipo": "sem_intencao",
+        "acao": "ACENDER",
+        "entre_ms": [
+          60000,
+          150000
+        ]
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "CARACTERIZACAO",
+      "dado": "comando recusado",
+      "quando": "o app mostra o motivo",
+      "entao": {
+        "tipo": "comando",
+        "indice": 1,
+        "nivel": "REJEITADA",
+        "motivo": "PRECEDENCIA_MANUAL"
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

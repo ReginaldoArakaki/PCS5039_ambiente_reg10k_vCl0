@@ -15,7 +15,10 @@ DECISAO = "DECISAO"
 ATUACAO = "ATUACAO"
 ESTADO = "ESTADO"
 SISTEMA = "SISTEMA"
-CAMADAS = (VERDADE, PERCEPCAO, DECISAO, ATUACAO, ESTADO, SISTEMA)
+# v0dt: canal simulado e plataforma (DTReg10k-R, comandos, configuração, app)
+REDE = "REDE"
+PLATAFORMA = "PLATAFORMA"
+CAMADAS = (VERDADE, PERCEPCAO, DECISAO, ATUACAO, ESTADO, SISTEMA, REDE, PLATAFORMA)
 
 # Ocupação inferida (Figura 3)
 OCUPADA = "OCUPADA"
@@ -34,12 +37,21 @@ ACENDER = "ACENDER"
 APAGAR = "APAGAR"
 AUTOMATICA = "AUTOMATICA"
 MANUAL = "MANUAL"
+REMOTA = "REMOTA"  # v0dt: comando do app; abaixo da manual, acima da automática
 
 # Níveis de resultado da atuação (RN02 / RN-I0-06)
 EFEITO_OBSERVADO = "EFEITO_OBSERVADO"
 EXECUCAO_RELATADA = "EXECUCAO_RELATADA"
 DESCONHECIDO = "DESCONHECIDO"
 SUBSTITUIDA = "SUBSTITUIDA"
+# Resultados exclusivos de comando remoto (RF-OPR-04)
+REJEITADA = "REJEITADA"
+EXPIRADA = "EXPIRADA"
+
+# Atualidade de um atributo no DTReg10k-R (RN-DT-04)
+ATUAL = "ATUAL"
+DESATUALIZADO = "DESATUALIZADO"
+SEM_EVIDENCIA = "SEM_EVIDENCIA"
 
 
 @dataclass(frozen=True)
@@ -50,7 +62,8 @@ class Evidencia:
     t_ms: int  # instante em que o dispositivo emitiu (tempo monotônico)
     origem: str  # SA-01, SP-01, INT-01, LAMP-01, ATU-01, HUB
     tipo: str  # PASSAGEM, MOVIMENTO, FIM_MOVIMENTO, HEARTBEAT, INTERRUPTOR,
-    #            EFEITO, LEITURA_LAMPADA, CONFIRMACAO, RESULTADO
+    #            EFEITO, LEITURA_LAMPADA, CONFIRMACAO, RESULTADO,
+    #            COMANDO_REMOTO e CONFIGURACAO (v0dt, origem PLATAFORMA)
     dados: dict = field(default_factory=dict)
 
 
@@ -61,7 +74,7 @@ class Intencao:
     acao: str  # ACENDER | APAGAR
     causa: str  # PASSAGEM_SA, MOVIMENTO_SP, AUSENCIA, INTERRUPTOR, ...
     regra: str  # RN-I0-xx que justifica a decisão
-    precedencia: str = AUTOMATICA  # AUTOMATICA | MANUAL
+    precedencia: str = AUTOMATICA  # AUTOMATICA | MANUAL | REMOTA
 
 
 @dataclass(frozen=True)

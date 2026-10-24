@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Simulação Reg10k — Incremento 0</title>
+<title>Simulação Reg10k — v0dt</title>
 <style>
 :root{
   --bg:#f6f7f9; --panel:#ffffff; --ink:#1d2330; --ink2:#566070; --line:#dfe3ea; --accent:#1f4e8c;
@@ -39,7 +39,8 @@ th{font-size:12px;color:var(--ink2);font-weight:600;background:#fafbfc;position:
 tr.click{cursor:pointer} tr.click:hover td{background:#f3f6fb} tr.sel td{background:#e9f0fb}
 .chip{display:inline-block;padding:1px 7px;margin:1px 2px;border:1px solid var(--line);border-radius:5px;font-size:11.5px;background:#fff;cursor:pointer;white-space:nowrap}
 .chip:hover{border-color:var(--accent);color:var(--accent)}
-.t-NORMAL{color:var(--no)} .t-FALSO_POSITIVO{color:var(--fp)} .t-FALSO_NEGATIVO{color:var(--fn)} .t-FALHA{color:var(--fa)}
+.t-NORMAL{color:var(--no)} .t-FALSO_POSITIVO{color:var(--fp)} .t-FALSO_NEGATIVO{color:var(--fn)} .t-FALHA{color:var(--fa)} .t-GEMEO_DIGITAL{color:#0f766e}
+.ver{font-size:10.5px;font-weight:700;padding:0 5px;border-radius:4px;border:1px solid var(--line);color:var(--ink2)} .ver.dt{color:#0f766e;border-color:#99d5cb;background:#effaf7}
 .tipo{font-size:11px;font-weight:700;letter-spacing:.02em}
 .grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
 .layout-model{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px}
@@ -60,7 +61,11 @@ tr.click{cursor:pointer} tr.click:hover td{background:#f3f6fb} tr.sel td{backgro
 .ticker{max-height:230px;overflow:auto;font-size:12.5px}
 .ticker div{padding:3px 0;border-bottom:1px dashed var(--line)}
 .cam{display:inline-block;width:76px;font-size:10.5px;font-weight:700;color:#fff;border-radius:4px;text-align:center;padding:0 3px;margin-right:6px}
-.c-VERDADE{background:#475569}.c-PERCEPCAO{background:#0e7490}.c-DECISAO{background:#1f4e8c}.c-ATUACAO{background:#a16207}.c-ESTADO{background:#6d28d9}.c-SISTEMA{background:#b42318}
+.c-VERDADE{background:#475569}.c-PERCEPCAO{background:#0e7490}.c-DECISAO{background:#1f4e8c}.c-ATUACAO{background:#a16207}.c-ESTADO{background:#6d28d9}.c-SISTEMA{background:#b42318}.c-REDE{background:#0f766e}.c-PLATAFORMA{background:#be185d}
+.views{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.view{border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff;font-size:12.5px}
+.view h4{margin:0 0 4px;font-size:12px;color:var(--ink2);text-transform:uppercase;letter-spacing:.03em}
+.view .big{font-size:14px;font-weight:700}
 .metrics{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
 .metric{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff}
 .metric .v{font-size:20px;font-weight:700} .metric .n{font-size:12px;color:var(--ink2)} .metric.ok{border-color:#9bd3b4} .metric.bad{border-color:#f0a19b;background:#fff8f7}
@@ -80,7 +85,7 @@ tr.click{cursor:pointer} tr.click:hover td{background:#f3f6fb} tr.sel td{backgro
 <body>
 <header>
   <div>
-    <h1>Simulação Reg10k — Incremento 0</h1>
+    <h1>Simulação Reg10k — v0dt <span class="small muted" style="font-weight:500">sala do incremento 0 com gêmeo digital</span></h1>
     <div class="sub" id="sub"></div>
   </div>
   <div style="flex:1"></div>
@@ -112,15 +117,28 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmtT = ms => { if (ms == null) return "—"; const s = ms / 1000, m = Math.floor(s / 60); return `${m}:${(s - m * 60).toFixed(1).padStart(4, "0")}`; };
 const fmtN = v => v == null ? "—" : (typeof v === "number" ? (Number.isInteger(v) ? v.toLocaleString("pt-BR") : v.toLocaleString("pt-BR", {maximumFractionDigits: 1})) : esc(v));
-const TIPO_NOME = {NORMAL: "Normal", FALSO_POSITIVO: "Falso positivo", FALSO_NEGATIVO: "Falso negativo", FALHA: "Falha"};
+const TIPO_NOME = {NORMAL: "Normal", FALSO_POSITIVO: "Falso positivo", FALSO_NEGATIVO: "Falso negativo", FALHA: "Falha", GEMEO_DIGITAL: "Gêmeo digital"};
+const CAMADAS = ["VERDADE","PERCEPCAO","DECISAO","ATUACAO","ESTADO","SISTEMA","REDE","PLATAFORMA"];
+const verTag = c => `<span class="ver${c.versao === "v0dt" ? " dt" : ""}">${c.versao || "v0"}</span>`;
+const FALHAS_REDE = ["CANAL_DESCONECTA","PLATAFORMA_FORA","CANAL_LATENCIA","CANAL_DUPLICA","CANAL_PERDE"];
 const NOMES = Object.fromEntries(D.sala.ocupantes.map(o => [o.id, o.nome || o.id]));
 const CTRLS = D.meta.controladores;
 const CEN = Object.fromEntries(D.cenarios.map(c => [c.id, c]));
 const LIMITES = {latencia_reacao_ms_p95: ["max", 500], atraso_percebido_ms_max: ["max", 1000], desperdicio_por_saida_s_max: ["max", 90], apagamentos_indevidos: ["max", 0]};
+// Metas do gêmeo (PS11, PS12, INV-07, INV-10): valem com o canal ideal e sem queda de hub, enlace ou plataforma
+const LIMITES_DT = {atualidade_gemeo_ms_p95: ["max", 5000], comando_remoto_ms_p95: ["max", 3000], comandos_vencidos_executados: ["max", 0],
+  efeitos_duplicados_remotos: ["max", 0], reconciliacao_ms_max: ["max", 5000], divergencia_alem_prazo_s: ["max", 0]};
+function limite(c, id) {
+  if (id in LIMITES) return c.tipo === "NORMAL" && c.modo === "IDEAL" ? LIMITES[id] : null;
+  if (!(id in LIMITES_DT)) return null;
+  const quedas = (c.falhas || []).some(f => ["CANAL_LATENCIA", "HUB_REINICIO"].includes(f.tipo));
+  if (["comando_remoto_ms_p95"].includes(id) && quedas) return null;
+  return LIMITES_DT[id];
+}
 
 const S = {tab: "cenarios", cen: D.cenarios[0].id, ctrl: CTRLS[0], t: 0, playing: false, speed: 20,
-           modelSec: "geral", filtroTipo: "", busca: "", cmpA: CTRLS[0], cmpB: CTRLS[1] || CTRLS[0],
-           zoom: 1, camadas: new Set(["VERDADE","PERCEPCAO","DECISAO","ATUACAO","ESTADO","SISTEMA"]), hb: false, buscaEv: ""};
+           modelSec: "geral", filtroTipo: "", filtroVer: "", busca: "", cmpA: CTRLS[0], cmpB: CTRLS[1] || CTRLS[0],
+           zoom: 1, camadas: new Set(CAMADAS), hb: false, buscaEv: ""};
 
 function ex(cen = S.cen, ctrl = S.ctrl) { return D.execucoes[`${cen}|${ctrl}`]; }
 function lerHash() {
@@ -152,8 +170,11 @@ function derivar(cen, ctrl) {
   const r = {fim, luz: new Degraus(false), presentes: new Degraus(""), ocup: new Degraus("DESCONHECIDA"),
     luzEst: new Degraus("APAGADA"), prec: new Degraus("AUTOMATICA"), alertas: new Degraus(""),
     spAlto: new Degraus(false), passagens: [], intencoes: [], resultados: [], falhas: [], sistema: [], hbs: [],
-    hubOff: [], verdade: [], interruptores: [], spMudo: [], queimada: null};
-  let hubDesl = null, spMudoIni = null;
+    hubOff: [], verdade: [], interruptores: [], spMudo: [], queimada: null,
+    // v0dt: o que a plataforma acha (DTReg10k-R), canal e app
+    remotos: [], remOcup: new Degraus(null), remLuz: new Degraus(null), remAtual: new Degraus("SEM_EVIDENCIA"), sessao: new Degraus(false),
+    enlaceFora: [], platFora: [], perdas: [], duplicadas: [], app: [], appRes: [], divergencias: [], cmdHub: [], latencia: []};
+  let hubDesl = null, spMudoIni = null, enlaceIni = null, platIni = null, latIni = null;
   for (const v of e.eventos) {
     const t = v.t_ms;
     if (v.camada === "VERDADE") {
@@ -177,10 +198,30 @@ function derivar(cen, ctrl) {
     else if (v.camada === "SISTEMA") {
       if (v.tipo === "HUB_DESLIGADO") hubDesl = t;
       if (v.tipo === "HUB_LIGADO" && hubDesl != null) { r.hubOff.push([hubDesl, t]); hubDesl = null; }
-      if (v.tipo !== "FIM") r.sistema.push(v);
+      if (v.tipo === "COMANDO_REMOTO_RECEBIDO" || v.tipo === "CONFIG_APLICADA" || v.tipo === "CONFIG_RECUSADA") r.cmdHub.push(v);
+      if (v.tipo !== "FIM" && v.tipo !== "SINCRONIZACAO") r.sistema.push(v);
+    } else if (v.camada === "PLATAFORMA") {
+      if (v.tipo === "ESTADO_REMOTO") { r.remotos.push(v); r.remOcup.set(t, v.ocupacao); r.remLuz.set(t, v.luz); r.remAtual.set(t, v.atualidade); }
+      else if (v.tipo === "APP_RESULTADO" || v.tipo === "APP_CONFIG") r.appRes.push(v);
+      else if (v.tipo.startsWith("APP_")) r.app.push(v);
+      else if (v.tipo === "DIVERGENCIA") r.divergencias.push(v);
+      else r.app.push(v);
+    } else if (v.camada === "REDE") {
+      if (v.tipo === "SESSAO_ESTABELECIDA") r.sessao.set(t, true);
+      else if (v.tipo === "SESSAO_CAIU") r.sessao.set(t, false);
+      else if (v.tipo === "ENLACE_CAIU") enlaceIni = t;
+      else if (v.tipo === "ENLACE_VOLTOU" && enlaceIni != null) { r.enlaceFora.push([enlaceIni, t]); enlaceIni = null; }
+      else if (v.tipo === "PLATAFORMA_FORA") platIni = t;
+      else if (v.tipo === "PLATAFORMA_VOLTOU" && platIni != null) { r.platFora.push([platIni, t]); platIni = null; }
+      else if (v.tipo === "MSG_PERDIDA") r.perdas.push(v);
+      else if (v.tipo === "MSG_DUPLICADA") r.duplicadas.push(v);
+      else if (v.tipo === "LATENCIA_ALTERADA") { if (v.latencia_extra_ms) latIni = [t, v.latencia_extra_ms]; else if (latIni) { r.latencia.push([latIni[0], t, latIni[1]]); latIni = null; } }
     }
   }
   if (hubDesl != null) r.hubOff.push([hubDesl, fim]);
+  if (enlaceIni != null) r.enlaceFora.push([enlaceIni, fim]);
+  if (platIni != null) r.platFora.push([platIni, fim]);
+  if (latIni) r.latencia.push([latIni[0], fim, latIni[1]]);
   return (CACHE[k] = r);
 }
 
@@ -204,10 +245,10 @@ function desc(v) {
     case "EFEITO": return `Sensor da lâmpada: ${v.acesa ? "acesa" : "apagada"}`;
     case "LEITURA_LAMPADA": return `Leitura da lâmpada após reinício: ${v.acesa ? "acesa" : "apagada"}`;
     case "CONFIRMACAO": return `Atuador confirma ${v.chave}`;
-    case "INTENCAO": return `Intenção ${v.acao} — ${v.causa} (${v.regra}, ${v.precedencia.toLowerCase()})`;
+    case "INTENCAO": return `Intenção ${v.acao} — ${v.causa} (${v.regra}, ${v.precedencia.toLowerCase()})${v.chave_remota ? ` para ${v.chave_remota}` : ""}`;
     case "COMUTACAO": return `Relé ${v.ligado ? "ligado" : "desligado"} (${v.chave})`;
     case "RESULTADO": return `Resultado ${v.chave}: ${v.nivel}${v.divergencia ? " — divergência de efeito" : ""}`;
-    case "ESTADO_SALA": return `Estado: ocupação ${v.ocupacao}, luz ${v.luz}${v.precedencia === "MANUAL" ? " (manual)" : ""}`;
+    case "ESTADO_SALA": return `Estado: ocupação ${v.ocupacao}, luz ${v.luz}${v.precedencia !== "AUTOMATICA" ? ` (${v.precedencia.toLowerCase()})` : ""}`;
     case "ALERTA": return `Alerta ${v.alerta} ${v.ativo ? "ativado" : "encerrado"}`;
     case "HUB_DESLIGADO": return "Hub desligado";
     case "HUB_LIGADO": return `Hub ligado (boot ${v.boot})`;
@@ -215,6 +256,33 @@ function desc(v) {
     case "RETENTATIVA": return `Nova tentativa de ${v.acao} (${v.chave})`;
     case "RELOGIO_SALTO": return `Relógio do hub salta ${v.delta_ms / 1000} s`;
     case "FIM": return "Fim do cenário";
+    case "SINCRONIZACAO": return `Balanço da sincronização: ${v.hub?.publicadas ?? "—"} mensagens publicadas, ${v.hub?.pendentes_na_fila ?? "—"} na fila, ${v.plataforma?.duplicadas_descartadas ?? 0} duplicatas descartadas`;
+    case "COMANDO_REMOTO": return `Comando remoto ${v.chave_remota}: ${v.acao} (do app)`;
+    case "CONFIGURACAO": return `Nova configuração v${v.versao}${v.t_apagamento_ms ? `: T_apagamento ${v.t_apagamento_ms / 1000} s` : ""}`;
+    case "COMANDO_REMOTO_RECEBIDO": return `Hub recebe ${v.chave} (${v.acao}): ${({ACEITO: "aceito", EXPIRADO: "vencido, recusado", REPETIDO: "repetido, sem efeito"})[v.decisao] || v.decisao}`;
+    case "CONFIG_APLICADA": return `Hub aplica a configuração v${v.versao}${v.t_apagamento_ms ? ` (T_apagamento ${v.t_apagamento_ms / 1000} s)` : ""}`;
+    case "CONFIG_RECUSADA": return `Hub recusa a configuração v${v.versao} (já aplicou v${v.aplicada})`;
+    case "SESSAO_ESTABELECIDA": return `Sessão hub ↔ plataforma estabelecida${v.fila ? ` (${v.fila} na fila)` : ""}`;
+    case "SESSAO_CAIU": return `Sessão hub ↔ plataforma caiu: ${v.motivo}`;
+    case "ENLACE_CAIU": return "Enlace de rede cai";
+    case "ENLACE_VOLTOU": return "Enlace de rede volta";
+    case "PLATAFORMA_FORA": return "Plataforma fora do ar";
+    case "PLATAFORMA_VOLTOU": return "Plataforma volta";
+    case "MSG_PERDIDA": return `Mensagem ${v.mensagem}${v.n ? ` n=${v.n}` : ""}${v.chave ? ` ${v.chave}` : ""} perdida (${v.sentido === "SOBE" ? "hub → plataforma" : "plataforma → hub"}, ${v.motivo})`;
+    case "MSG_DUPLICADA": return `Mensagem ${v.mensagem}${v.chave ? ` ${v.chave}` : ""} duplicada no canal (${v.sentido === "SOBE" ? "hub → plataforma" : "plataforma → hub"})`;
+    case "LATENCIA_ALTERADA": return v.latencia_extra_ms ? `Canal fica lento: +${v.latencia_extra_ms / 1000} s (${v.sentidos.join(", ")})` : "Latência do canal volta ao normal";
+    case "ESTADO_REMOTO": return `DTReg10k-R: ${v.ocupacao ?? "—"}, luz ${v.luz ?? "—"} · ${v.atualidade}${v.conexao === "DESCONECTADO" ? " · hub desconectado" : ""}${v.origem === "RESUMO" ? " (resumo)" : ""}`;
+    case "DIVERGENCIA": return `Divergência em ${v.atributo}: R tinha ${v.valor_remoto}, hub tem ${v.valor_local} → ${v.resolucao === "ADOTA_LOCAL" ? "adota o hub (RN27)" : v.resolucao}`;
+    case "APP_COMANDO": return `App: titular toca em ${v.acao} (${v.chave})`;
+    case "COMANDO_CRIADO": return `Plataforma cria ${v.chave} (${v.acao}), válido até ${fmtT(v.valida_ate_ms)}`;
+    case "COMANDO_RECUSADO": return `Plataforma recusa ${v.chave}: ${v.motivo}${v.idade_estado_ms != null ? `, estado com ${Math.round(v.idade_estado_ms / 1000)} s` : ""}`;
+    case "COMANDO_RESULTADO": return `Plataforma recebe resultado de ${v.chave}: ${v.nivel}${v.motivo ? ` (${v.motivo})` : ""}`;
+    case "APP_RESULTADO": return `App mostra ${v.chave}: ${v.nivel}${v.motivo ? ` (${v.motivo})` : ""}${v.final ? "" : " — provisório"} após ${(v.latencia_ms / 1000).toFixed(1)} s`;
+    case "APP_PREFERENCIA": return `App: titular muda a preferência (${Object.entries(v.parametros).map(([k, x]) => `${k} = ${x}`).join(", ")})`;
+    case "CONFIG_VERSAO": return `Configuração v${v.versao}: ${v.estado}`;
+    case "CONFIG_REJEITADA": return `Plataforma rejeita a preferência: ${v.motivo}`;
+    case "APP_CONFIG": return `App mostra a configuração${v.versao ? ` v${v.versao}` : ""}: ${v.estado}${v.motivo ? ` (${v.motivo})` : ""}`;
+    case "APP_CONSULTA": return v.disponivel ? `App consulta: ${v.ocupacao ?? "—"}, luz ${v.luz ?? "—"} · ${v.atualidade}${v.idade_ms != null ? `, idade ${(v.idade_ms / 1000).toFixed(1)} s` : ""}` : "App consulta: plataforma indisponível";
     default: return v.tipo;
   }
 }
@@ -222,7 +290,7 @@ const cam = c => `<span class="cam c-${c}">${c}</span>`;
 const tipoTag = t => `<span class="tipo t-${t}">${(TIPO_NOME[t] || t).toUpperCase()}</span>`;
 function entaoTxt(e) {
   const x = {...e}; const t = x.tipo; delete x.tipo;
-  const kv = Object.entries(x).map(([k, v]) => `${k}=${Array.isArray(v) ? `[${v.map(n => typeof n === "number" && n >= 1000 ? fmtT(n) : n).join(", ")}]` : (typeof v === "number" && k.endsWith("_ms") ? fmtT(v) : v)}`).join(", ");
+  const kv = Object.entries(x).map(([k, v]) => `${k}=${v && typeof v === "object" && !Array.isArray(v) ? Object.entries(v).map(([a, b]) => `${a}: ${b}`).join(", ") : Array.isArray(v) ? `[${v.map(n => typeof n === "number" && n >= 1000 ? fmtT(n) : n).join(", ")}]` : (typeof v === "number" && k.endsWith("_ms") ? fmtT(v) : v)}`).join(", ");
   return `${t}${kv ? ` (${kv})` : ""}`;
 }
 function baixar(nome, texto, tipo = "text/csv") {
@@ -239,7 +307,8 @@ const csv = rows => rows.map(r => r.map(c => { const s = String(c ?? ""); return
 
 // ------------------------------------------------------------------- cabeçalho
 function cabecalho() {
-  $("#sub").textContent = `Sala de 5 × 4 m · morador e cachorro · ${D.cenarios.length} cenários · controladores: ${CTRLS.join(", ")} · gerado em ${D.meta.gerado_em}`;
+  const nDt = D.cenarios.filter(c => c.versao === "v0dt").length;
+  $("#sub").textContent = `Sala de 5 × 4 m · morador e cachorro · gêmeo local e remoto · ${D.cenarios.length - nDt} cenários de regressão (v0) e ${nDt} do gêmeo · controladores: ${CTRLS.join(", ")} · gerado em ${D.meta.gerado_em}`;
   const p = D.meta.problemas;
   $("#status").innerHTML = p.length ? `<span class="pill bad" title="${esc(p.join("\n"))}">${p.length} problema(s) no catálogo</span>`
     : `<span class="pill ok">Catálogo sem problemas</span>`;
@@ -260,7 +329,7 @@ function trocar() {
   $("#selbar").style.display = (S.tab === "animacao" || S.tab === "painel") ? "flex" : "none";
   $("#selCen").value = S.cen; $("#selCtrl").value = S.ctrl;
   const e = ex(), c = CEN[S.cen];
-  $("#selInfo").innerHTML = `${tipoTag(c.tipo)} · ${c.modo.toLowerCase()} · ${fmtT(c.duracao_ms)} · requisitos ${e.requisitos.ok}/${e.requisitos.total} · ` +
+  $("#selInfo").innerHTML = `${verTag(c)} ${tipoTag(c.tipo)} · ${c.modo.toLowerCase()}${e.modo_rede && e.modo_rede !== c.modo ? ` · rede ${e.modo_rede.toLowerCase()}` : ""} · ${fmtT(c.duracao_ms)} · requisitos ${e.requisitos.ok}/${e.requisitos.total} · ` +
     (e.requisitos_ok ? '<span class="pill ok">aprovado</span>' : '<span class="pill bad">reprovado</span>');
   if (S.tab === "modelo") renderModelo();
   if (S.tab === "cenarios") renderCenarios();
@@ -277,14 +346,17 @@ function renderModelo() {
                 ["ambiente","Ambiente e dispositivos"],["rastreio","Rastreabilidade V1–V3"],["avaliacao","Métricas e invariantes"]];
   let h = "";
   if (S.modelSec === "geral") {
-    h = `<div class="card"><h2>Ambiente do incremento 0</h2>
-      <p>Uma sala de 5 × 4 m com uma porta para o exterior, dois moradores (uma pessoa e um cachorro de grande porte, que também é ocupante pela RN-I0-01),
-      um sensor de passagem (SA) no batente, um sensor de presença PIR (SP) no canto nordeste com uma zona cega de 10% da área, um atuador (relé),
+    h = `<div class="card"><h2>Ambiente da v0dt</h2>
+      <p>A sala do incremento 0 não muda: 5 × 4 m, uma porta para o exterior, dois moradores (uma pessoa e um cachorro de grande porte, que também é ocupante pela RN-I0-01),
+      um sensor de passagem (SA) no batente, um sensor de presença PIR (SP) com uma zona cega de 10% da área, um atuador (relé),
       uma lâmpada com sensor de efeito e um interruptor. O hub roda um <b>controlador plugável</b>: a referência ou o de um grupo de alunos.</p>
-      <p class="muted small">Toda execução registra seis camadas de eventos. A camada de verdade só é lida pelo oráculo; o controlador nunca a vê (OR-06).</p>
+      <p>A v0dt acrescenta o <b>gêmeo digital</b> (DTReg10k): o <b>DTReg10k-L</b> no hub, o <b>DTReg10k-R</b> na plataforma, um <b>canal</b> simulado entre os dois
+      (atraso, perda, duplicação e desconexão) e o <b>app</b> do titular (consulta, comando remoto e preferência). A página mostra três pontos de vista no mesmo instante:
+      o que <b>acontece</b> (verdade), o que o <b>hub acha</b> e o que a <b>plataforma acha</b>.</p>
+      <p class="muted small">Toda execução registra oito camadas de eventos. A camada de verdade só é lida pelo oráculo; o controlador nunca a vê (OR-06). Os 20 cenários da v0 rodam sem alteração como regressão.</p>
       <table><tr><th>Camada</th><th>Quem gera</th><th>Classe V2</th></tr>${M.camadas.map(c => `<tr><td>${cam(c.id)}</td><td>${esc(c.quem)}</td><td>${esc(c.v2)}</td></tr>`).join("")}</table></div>
-      <div class="card"><h2>Trilha incremental</h2><table><tr><th>Inc.</th><th>Dias</th><th>Acrescenta</th></tr>
-      ${M.trilha.map(t => `<tr${t.inc === 0 ? ' class="sel"' : ""}><td>${t.inc}</td><td>${t.dias}</td><td>${esc(t.acrescenta)}</td></tr>`).join("")}</table></div>`;
+      <div class="card"><h2>Trilha incremental</h2><p class="small muted">O número da versão acompanha o porte da automação; o sufixo <b>dt</b> indica o gêmeo digital.</p><table><tr><th>Inc.</th><th>Versão</th><th>Dias</th><th>Acrescenta</th></tr>
+      ${M.trilha.map(t => `<tr${t.inc === D.meta.incremento ? ' class="sel"' : ""}><td>${t.inc}</td><td class="mono">${t.versao || ""}</td><td>${t.dias}</td><td>${esc(t.acrescenta)}</td></tr>`).join("")}</table></div>`;
   } else if (S.modelSec === "diagramas") {
     h = `<div class="card"><h2>Diagramas UML</h2><p class="muted small">Clique para ampliar. As fontes Mermaid estão em <span class="mono">docs/uml/</span>.</p>
       <div class="diag">${M.diagramas.map(d => `<figure data-src="${d.src}"><img src="${d.src}" alt="${esc(d.titulo)}"><figcaption><b>${esc(d.titulo)}</b><br><span class="muted">${esc(d.descricao)}</span><br><span class="mono">${d.fonte}</span></figcaption></figure>`).join("")}</div></div>`;
@@ -294,7 +366,7 @@ function renderModelo() {
   } else if (S.modelSec === "parametros") {
     h = `<div class="card"><h2>Parâmetros de controle</h2><p class="muted small">Valores de <span class="mono">cenarios/sala.json</span> → <span class="mono">controle</span>; um roteiro pode sobrescrevê-los.</p>
       <table><tr><th>Parâmetro</th><th>Plano</th><th>Chave</th><th>Valor na sala</th></tr>
-      ${M.parametros.map(p => `<tr><td>${esc(p.id)}</td><td>${esc(p.valor)}</td><td class="mono">${p.chave}</td><td class="mono">${fmtN(D.sala.controle[p.chave])} ms</td></tr>`).join("")}</table>
+      ${M.parametros.map(p => `<tr><td>${esc(p.id)}</td><td>${esc(p.valor)}</td><td class="mono">${p.fonte ? p.fonte + "." : ""}${p.chave}</td><td class="mono">${fmtN((p.fonte ? D.sala[p.fonte] : D.sala.controle)[p.chave])} ms</td></tr>`).join("")}</table>
       <p class="small muted">PS05 = T_apagamento de 60 s sem detecção, alinhado à V1 v02 (decisão A13, que substituiu "duas leituras com 3 s de intervalo").</p></div>`;
   } else if (S.modelSec === "ambiente") {
     const ds = D.sala.dispositivos;
@@ -302,14 +374,19 @@ function renderModelo() {
     h = `<div class="card"><h2>Dispositivos e modos</h2><p class="muted small">Modo ideal valida a lógica; modo realista acrescenta ruído e falhas aleatórias. Fonte: <span class="mono">cenarios/sala.json</span>.</p>
       <table><tr><th>Dispositivo</th><th>Parâmetro</th><th>Ideal</th><th>Realista</th></tr>
       ${Object.entries(ds).map(([id, d]) => chaves.filter(k => k in d.ideal || k in d.realista).map((k, i) => `<tr><td>${i ? "" : `<b>${id}</b><br><span class="small muted">${esc(d.descricao)}</span>`}</td><td class="mono">${k}</td><td class="mono">${esc(JSON.stringify(d.ideal[k]))}</td><td class="mono">${esc(JSON.stringify(d.realista[k]))}</td></tr>`).join("")).join("")}
+      </table></div>
+      <div class="card"><h2>Canal e app (v0dt)</h2><p class="muted small">O modo da rede segue o do roteiro, salvo quando o roteiro define <span class="mono">rede.modo</span> (DT08 usa dispositivos ideais e canal realista). Fonte: <span class="mono">cenarios/sala.json</span> → <span class="mono">plataforma</span>.</p>
+      <table><tr><th>Elemento</th><th>Parâmetro</th><th>Ideal</th><th>Realista</th></tr>
+      ${[["canal", "Canal hub ↔ plataforma"], ["app", "App ↔ plataforma"]].map(([k, nome]) => { const d = D.sala.plataforma[k]; return Object.keys(d.ideal).map((pk, i) => `<tr><td>${i ? "" : `<b>${nome}</b>`}</td><td class="mono">${pk}</td><td class="mono">${esc(JSON.stringify(d.ideal[pk]))}</td><td class="mono">${esc(JSON.stringify(d.realista[pk]))}</td></tr>`).join(""); }).join("")}
       </table></div>`;
   } else if (S.modelSec === "rastreio") {
     h = `<div class="card"><h2>Rastreabilidade com V1–V3</h2><table><tr><th>ID</th><th>Descrição</th><th>Cenários que exercitam</th></tr>
       ${Object.entries(M.requisitos).map(([id, t]) => `<tr><td class="mono">${id}</td><td>${esc(t)}</td><td>${chipsCen(cenariosQueUsam(id))}</td></tr>`).join("")}</table></div>`;
   } else if (S.modelSec === "avaliacao") {
     h = `<div class="card"><h2>Métricas</h2><table><tr><th>Métrica</th><th>Definição</th></tr>${M.metricas.map(m => `<tr><td><b>${esc(m.nome)}</b><br><span class="mono small">${m.id}</span></td><td>${esc(m.def)}</td></tr>`).join("")}</table>
-      <p class="small muted">Limites (cenários normais, modo ideal): latência p95 ≤ 500 ms, atraso percebido ≤ 1 s, desperdício por saída ≤ 90 s, 0 apagamentos indevidos.</p></div>
-      <div class="card"><h2>Invariantes verificadas em toda execução</h2><table><tr><th>ID</th><th>Verificação</th><th>Base</th></tr>${M.invariantes.map(i => `<tr><td class="mono">${i.id}</td><td>${esc(i.texto)}</td><td class="small">${esc(i.base)}</td></tr>`).join("")}</table></div>
+      <p class="small muted">Limites (cenários normais, modo ideal): latência p95 ≤ 500 ms, atraso percebido ≤ 1 s, desperdício por saída ≤ 90 s, 0 apagamentos indevidos.
+      Gêmeo: atualidade p95 ≤ 5 s, comando remoto p95 ≤ 3 s (sem rede lenta nem reinício), reconciliação ≤ 5 s, 0 comandos vencidos executados, 0 efeitos duplicados, 0 s de divergência além do prazo.</p></div>
+      <div class="card"><h2>Invariantes verificadas em toda execução</h2><p class="small muted">A OR-12 usa execução pareada: o mesmo roteiro e a mesma semente, sem as falhas de rede. Só se aplica a cenários com falha de rede ou canal realista e sem comando ou preferência do app (que mudam decisões de propósito).</p><table><tr><th>ID</th><th>Verificação</th><th>Base</th></tr>${M.invariantes.map(i => `<tr><td class="mono">${i.id}</td><td>${esc(i.texto)}</td><td class="small">${esc(i.base)}</td></tr>`).join("")}</table></div>
       <div class="card"><h2>Requisito × caracterização</h2><p>Cada asserção esperada tem um nível. <b>Requisito</b> vale para qualquer controlador (falhar reprova).
       <b>Caracterização</b> descreve o comportamento da referência, inclusive suas limitações conhecidas; em outro controlador, "difere" é informação, não falha.</p></div>`;
   }
@@ -330,22 +407,24 @@ function resultadoCel(cid, ctrl) {
 }
 function renderCenarios() {
   const b = S.busca.toLowerCase();
-  const lista = D.cenarios.filter(c => (!S.filtroTipo || c.tipo === S.filtroTipo) &&
+  const lista = D.cenarios.filter(c => (!S.filtroTipo || c.tipo === S.filtroTipo) && (!S.filtroVer || (c.versao || "v0") === S.filtroVer) &&
     (!b || `${c.id} ${c.titulo} ${(c.requisitos || []).join(" ")} ${(c.regras || []).join(" ")}`.toLowerCase().includes(b)));
   const c = CEN[S.cen];
   const tipos = Object.keys(TIPO_NOME);
   let h = `<div class="card"><div class="controls" style="margin-top:0">
       <label class="small">Tipo <select id="fTipo"><option value="">todos</option>${tipos.map(t => `<option value="${t}"${S.filtroTipo === t ? " selected" : ""}>${TIPO_NOME[t]}</option>`).join("")}</select></label>
+      <label class="small">Versão <select id="fVer"><option value="">todas</option><option value="v0"${S.filtroVer === "v0" ? " selected" : ""}>v0 (regressão)</option><option value="v0dt"${S.filtroVer === "v0dt" ? " selected" : ""}>v0dt (gêmeo)</option></select></label>
       <input type="text" id="fBusca" placeholder="Buscar ID, título, requisito ou regra" value="${esc(S.busca)}" style="min-width:280px">
       <span class="small muted">${lista.length} de ${D.cenarios.length} cenários · ${tipos.map(t => `${TIPO_NOME[t]}: ${D.cenarios.filter(x => x.tipo === t).length}`).join(" · ")}</span>
       <span style="flex:1"></span><button class="b" id="csvCat">Exportar CSV</button></div>
-    <div class="tablebox" style="max-height:480px"><table><tr><th>ID</th><th>Tipo</th><th>Cenário</th><th>Modo</th><th>Duração</th>${CTRLS.map(k => `<th>${esc(k)}</th>`).join("")}</tr>
-    ${lista.map(x => `<tr class="click${x.id === S.cen ? " sel" : ""}" data-c="${x.id}"><td class="mono"><b>${x.id}</b></td><td>${tipoTag(x.tipo)}</td><td>${esc(x.titulo)}</td><td class="small">${x.modo.toLowerCase()}</td><td class="small">${fmtT(x.duracao_ms)}</td>${CTRLS.map(k => `<td>${resultadoCel(x.id, k)}</td>`).join("")}</tr>`).join("")}
+    <div class="tablebox" style="max-height:480px"><table><tr><th>ID</th><th>Versão</th><th>Tipo</th><th>Cenário</th><th>Modo</th><th>Duração</th>${CTRLS.map(k => `<th>${esc(k)}</th>`).join("")}</tr>
+    ${lista.map(x => `<tr class="click${x.id === S.cen ? " sel" : ""}" data-c="${x.id}"><td class="mono"><b>${x.id}</b></td><td>${verTag(x)}</td><td>${tipoTag(x.tipo)}</td><td>${esc(x.titulo)}</td><td class="small">${x.modo.toLowerCase()}${x.rede?.modo && x.rede.modo !== x.modo ? `<br>rede ${x.rede.modo.toLowerCase()}` : ""}</td><td class="small">${fmtT(x.duracao_ms)}</td>${CTRLS.map(k => `<td>${resultadoCel(x.id, k)}</td>`).join("")}</tr>`).join("")}
     </table></div></div>`;
 
   // Detalhe do cenário selecionado
   const asserts = (c.esperado?.assercoes || []);
-  h += `<div class="card"><h2>${c.id} — ${esc(c.titulo)} ${tipoTag(c.tipo)}</h2>
+  const par = ex(c.id, S.ctrl).execucao_pareada ? (ex(c.id, S.ctrl).invariantes["OR-12"].ok ? '<span class="pill ok">OR-12: decisões locais idênticas sem a falha de rede</span>' : '<span class="pill bad">OR-12: decisões locais mudaram com a rede</span>') : "";
+  h += `<div class="card"><h2>${c.id} — ${esc(c.titulo)} ${verTag(c)} ${tipoTag(c.tipo)} ${par}</h2>
     <div class="grid2"><div>
       <p>${esc(c.descricao || "")}</p>
       <div class="kv"><div>Ideal</div><div>${esc(c.comportamento_ideal || "")}</div><div>Referência</div><div>${esc(c.comportamento_referencia || "")}</div>
@@ -354,8 +433,8 @@ function renderCenarios() {
       <div class="controls"><button class="b pri" data-goanim>▶ Ver animação</button><button class="b" data-gopainel>Ver painel</button><button class="b" data-edit>Abrir no editor</button></div>
     </div><div>
       <h3 style="margin-top:0">Roteiro</h3><div class="tablebox" style="max-height:220px"><table><tr><th>t</th><th>Quem</th><th>Ação ou falha</th></tr>
-      ${[...c.acoes.map(a => [a.t_ms, NOMES[a.ocupante] || a.ocupante, a.acao + (a.ate ? ` → (${a.ate.join(", ")})` : "") + (a.duracao_ms ? ` por ${a.duracao_ms / 1000} s` : "") + (a.vel_m_s ? ` a ${a.vel_m_s} m/s` : "")]),
-         ...c.falhas.map(f => [f.t_ms, "falha", `<b class="err">${f.tipo}</b>` + (f.duracao_ms ? ` por ${f.duracao_ms / 1000} s` : "")])]
+      ${[...c.acoes.map(a => [a.t_ms, a.ocupante === "app" ? "App (titular)" : (NOMES[a.ocupante] || a.ocupante), a.acao + (a.comando ? ` ${a.comando}` : "") + (a.t_apagamento_ms ? ` T_apagamento = ${a.t_apagamento_ms / 1000} s` : "") + (a.ate ? ` → (${a.ate.join(", ")})` : "") + (a.duracao_ms ? ` por ${a.duracao_ms / 1000} s` : "") + (a.vel_m_s ? ` a ${a.vel_m_s} m/s` : "")]),
+         ...c.falhas.map(f => [f.t_ms, "falha", `<b class="err">${f.tipo}</b>` + (f.duracao_ms ? ` por ${f.duracao_ms / 1000} s` : "") + (f.latencia_ms ? ` +${f.latencia_ms / 1000} s` : "") + (f.sentido ? ` (${f.sentido})` : "") + (f.mensagem ? ` ${f.mensagem}` : "")])]
         .sort((a, b) => a[0] - b[0]).map(r => `<tr><td class="mono">${fmtT(r[0])}</td><td>${esc(r[1])}</td><td>${r[2].startsWith("<b") ? r[2] : esc(r[2])}</td></tr>`).join("")}
       </table></div></div></div>
     <h3>Asserções esperadas</h3><div class="tablebox"><table><tr><th>ID</th><th>Nível</th><th>Dado</th><th>Quando</th><th>Então</th>${CTRLS.map(k => `<th>${esc(k)}</th>`).join("")}</tr>
@@ -383,6 +462,7 @@ function renderCenarios() {
   $("#tab-cenarios").innerHTML = h;
   const T = $("#tab-cenarios");
   $("#fTipo").onchange = e => { S.filtroTipo = e.target.value; renderCenarios(); };
+  $("#fVer").onchange = e => { S.filtroVer = e.target.value; renderCenarios(); };
   $("#fBusca").oninput = e => { S.busca = e.target.value; const pos = e.target.selectionStart; renderCenarios(); const i = $("#fBusca"); i.focus(); i.setSelectionRange(pos, pos); };
   T.querySelectorAll("tr[data-c]").forEach(r => r.onclick = () => { S.cen = r.dataset.c; S.t = 0; renderCenarios(); gravarHash(); T.querySelector(".card:nth-child(2)").scrollIntoView({behavior: "smooth", block: "start"}); });
   T.querySelectorAll("[data-rq],[data-rg]").forEach(ch => ch.onclick = () => { S.modelSec = ch.dataset.rq ? "rastreio" : "regras"; irPara("modelo"); });
@@ -402,18 +482,19 @@ function renderCenarios() {
 
 // ------------------------------------------------------------- editor de roteiro
 const ACOES = ["ENTRAR","SAIR","ANDAR","ANDAR_ALEATORIO","PARADO","MICROGESTOS","GESTO","PASSAR_PORTA_SEM_ENTRAR","INTERRUPTOR"];
-const FALHAS = ["SP_SEM_RESPOSTA","BATERIA_BAIXA","SP_FALSO_DISPARO","SA_ESPURIO","SA_PERDE_PROXIMA","LAMPADA_QUEIMADA","ATUADOR_TRAVADO","HUB_REINICIO","RELOGIO_SALTO"];
-const ED = {id: "X01", titulo: "Novo cenário", tipo: "NORMAL", modo: "IDEAL", duracao_s: 180, descricao: "", requisitos: "", linhas: [
+const ACOES_APP = ["APP_COMANDO","APP_PREFERENCIA","APP_CONSULTA"];
+const FALHAS = ["SP_SEM_RESPOSTA","BATERIA_BAIXA","SP_FALSO_DISPARO","SA_ESPURIO","SA_PERDE_PROXIMA","LAMPADA_QUEIMADA","ATUADOR_TRAVADO","HUB_REINICIO","RELOGIO_SALTO", ...FALHAS_REDE];
+const ED = {id: "X01", titulo: "Novo cenário", tipo: "NORMAL", modo: "IDEAL", rede: "", duracao_s: 180, descricao: "", requisitos: "", linhas: [
   {t: 5, quem: "morador", o: "ENTRAR", p: ""}, {t: 10, quem: "morador", o: "ANDAR_ALEATORIO", p: '{"duracao_ms": 60000}'}, {t: 75, quem: "morador", o: "SAIR", p: ""}]};
 function carregarNoEditor(c) {
-  Object.assign(ED, {id: c.id + "b", titulo: c.titulo + " (variação)", tipo: c.tipo, modo: c.modo, duracao_s: c.duracao_ms / 1000,
+  Object.assign(ED, {id: c.id + "b", titulo: c.titulo + " (variação)", tipo: c.tipo, modo: c.modo, rede: c.rede?.modo || "", duracao_s: c.duracao_ms / 1000,
     descricao: c.descricao || "", requisitos: (c.requisitos || []).join(", "),
     linhas: [...c.acoes.map(a => { const {t_ms, ocupante, acao, ...r} = a; return {t: t_ms / 1000, quem: ocupante, o: acao, p: Object.keys(r).length ? JSON.stringify(r) : ""}; }),
              ...c.falhas.map(f => { const {t_ms, tipo, ...r} = f; return {t: t_ms / 1000, quem: "falha", o: tipo, p: Object.keys(r).length ? JSON.stringify(r) : ""}; })].sort((a, b) => a.t - b.t)});
   renderCenarios();
 }
 function editorHTML() {
-  const quem = [...D.sala.ocupantes.map(o => o.id), "falha"];
+  const quem = [...D.sala.ocupantes.map(o => o.id), "app", "falha"];
   return `<div class="card" id="editor"><h2>Editor de roteiro</h2>
     <p class="small muted">Monte um cenário e baixe o JSON. Salve em <span class="mono">cenarios/roteiros/&lt;ID&gt;.json</span> e rode
     <span class="mono">python -m sim --cenario &lt;ID&gt;</span> (ou <span class="mono">python -m catalogo</span> para incluí-lo na página). A página não executa a simulação: a lógica fica só no motor Python.</p>
@@ -421,14 +502,15 @@ function editorHTML() {
       <label class="small">Título <input type="text" id="edTit" value="${esc(ED.titulo)}" size="34"></label>
       <label class="small">Tipo <select id="edTipo">${Object.keys(TIPO_NOME).map(t => `<option${t === ED.tipo ? " selected" : ""}>${t}</option>`).join("")}</select></label>
       <label class="small">Modo <select id="edModo">${["IDEAL","REALISTA"].map(t => `<option${t === ED.modo ? " selected" : ""}>${t}</option>`).join("")}</select></label>
+      <label class="small">Rede <select id="edRede">${[["", "como o modo"], ["IDEAL", "IDEAL"], ["REALISTA", "REALISTA"]].map(([v, t]) => `<option value="${v}"${v === ED.rede ? " selected" : ""}>${t}</option>`).join("")}</select></label>
       <label class="small">Duração (s) <input type="number" id="edDur" value="${ED.duracao_s}" min="10" style="width:90px"></label></div>
     <div class="controls"><label class="small" style="flex:1">Descrição <input type="text" id="edDesc" value="${esc(ED.descricao)}" style="width:100%"></label>
       <label class="small">Requisitos <input type="text" id="edReq" value="${esc(ED.requisitos)}" placeholder="RF-OPR-01, CV02" size="22"></label></div>
     <div class="small muted editor-row" style="font-weight:600"><span>t (s)</span><span>Quem</span><span>Ação ou falha</span><span>Parâmetros (JSON, opcional)</span><span></span></div>
     <div id="edLinhas">${ED.linhas.map((l, i) => `<div class="editor-row" data-i="${i}">
       <input type="number" step="0.1" value="${l.t}" data-k="t"><select data-k="quem">${quem.map(q => `<option${q === l.quem ? " selected" : ""}>${q}</option>`).join("")}</select>
-      <select data-k="o">${(l.quem === "falha" ? FALHAS : ACOES).map(o => `<option${o === l.o ? " selected" : ""}>${o}</option>`).join("")}</select>
-      <input type="text" value="${esc(l.p)}" data-k="p" placeholder='ex.: {"ate": [2.5, 2.0]}'><button class="b" data-del title="Remover">×</button></div>`).join("")}</div>
+      <select data-k="o">${(l.quem === "falha" ? FALHAS : l.quem === "app" ? ACOES_APP : ACOES).map(o => `<option${o === l.o ? " selected" : ""}>${o}</option>`).join("")}</select>
+      <input type="text" value="${esc(l.p)}" data-k="p" placeholder='${l.quem === "app" ? 'ex.: {"comando": "ACENDER"} ou {"t_apagamento_ms": 120000}' : l.quem === "falha" ? 'ex.: {"duracao_ms": 60000}' : 'ex.: {"ate": [2.5, 2.0]}'}'><button class="b" data-del title="Remover">×</button></div>`).join("")}</div>
     <div class="controls"><button class="b" id="edAdd">+ Linha</button><span style="flex:1"></span><span id="edMsg" class="small"></span>
       <button class="b" id="edCopy">Copiar JSON</button><button class="b pri" id="edBaixar">Baixar JSON</button></div>
     <details><summary class="small muted">Prévia do JSON</summary><pre class="mono" id="edPrev" style="white-space:pre-wrap;max-height:300px;overflow:auto"></pre></details></div>`;
@@ -442,19 +524,23 @@ function roteiroDoEditor() {
     if (l.quem === "falha") falhas.push({t_ms, tipo: l.o, ...p}); else {
       if (l.o === "ANDAR" && !p.ate) erros.push(`linha ${i + 1}: ANDAR exige {"ate": [x, y]}`);
       if (l.o === "ANDAR_ALEATORIO" && !p.duracao_ms) erros.push(`linha ${i + 1}: ANDAR_ALEATORIO exige {"duracao_ms": ...}`);
+      if (l.o === "APP_COMANDO" && !["ACENDER", "APAGAR"].includes(p.comando)) erros.push(`linha ${i + 1}: APP_COMANDO exige {"comando": "ACENDER"} ou "APAGAR"`);
+      if (l.o === "APP_PREFERENCIA" && !p.t_apagamento_ms) erros.push(`linha ${i + 1}: APP_PREFERENCIA exige {"t_apagamento_ms": ...}`);
       acoes.push({t_ms, ocupante: l.quem, acao: l.o, ...p}); }
   });
   if (!/^[A-Z]{1,2}[0-9]{2}[A-Za-z0-9_-]*$/.test(ED.id)) erros.push("ID deve seguir o padrão do catálogo (ex.: X01, FN06)");
-  const r = {id: ED.id, titulo: ED.titulo, tipo: ED.tipo, modo: ED.modo, duracao_ms: Math.round(ED.duracao_s * 1000), descricao: ED.descricao,
+  const r = {id: ED.id, ...(ED.tipo === "GEMEO_DIGITAL" || ED.rede || ED.linhas.some(l => l.quem === "app" || FALHAS_REDE.includes(l.o)) ? {versao: "v0dt"} : {}),
+    titulo: ED.titulo, tipo: ED.tipo, modo: ED.modo, ...(ED.rede ? {rede: {modo: ED.rede}} : {}), duracao_ms: Math.round(ED.duracao_s * 1000), descricao: ED.descricao,
     comportamento_ideal: "", comportamento_referencia: "", estado_inicial: {ocupantes_na_sala: [], luz: "APAGADA"},
     acoes: acoes.sort((a, b) => a.t_ms - b.t_ms), falhas: falhas.sort((a, b) => a.t_ms - b.t_ms),
     requisitos: ED.requisitos.split(",").map(s => s.trim()).filter(Boolean), regras: []};
   return {r, erros};
 }
 function ligarEditor() {
-  const ler = () => { ED.id = $("#edId").value.trim(); ED.titulo = $("#edTit").value; ED.tipo = $("#edTipo").value; ED.modo = $("#edModo").value;
+  const ler = () => { ED.id = $("#edId").value.trim(); ED.titulo = $("#edTit").value; ED.tipo = $("#edTipo").value; ED.modo = $("#edModo").value; ED.rede = $("#edRede").value;
     ED.duracao_s = Number($("#edDur").value); ED.descricao = $("#edDesc").value; ED.requisitos = $("#edReq").value;
-    document.querySelectorAll("#edLinhas .editor-row").forEach(row => { const l = ED.linhas[row.dataset.i]; row.querySelectorAll("[data-k]").forEach(inp => l[inp.dataset.k] = inp.value); }); };
+    document.querySelectorAll("#edLinhas .editor-row").forEach(row => { const l = ED.linhas[row.dataset.i]; row.querySelectorAll("[data-k]").forEach(inp => l[inp.dataset.k] = inp.value);
+      const lista = l.quem === "falha" ? FALHAS : l.quem === "app" ? ACOES_APP : ACOES; if (!lista.includes(l.o)) l.o = lista[0]; }); };
   const prev = () => { const {r, erros} = roteiroDoEditor(); $("#edPrev").textContent = JSON.stringify(r, null, 2);
     $("#edMsg").innerHTML = erros.length ? `<span class="err">${esc(erros[0])}${erros.length > 1 ? ` (+${erros.length - 1})` : ""}</span>` : '<span style="color:var(--ok)">roteiro válido</span>'; return {r, erros}; };
   $("#editor").addEventListener("input", () => { ler(); prev(); });
@@ -475,7 +561,8 @@ const X = x => M0 + x * PX, Y = y => M0 + (D.sala.profundidade_m - y) * PX;
 let A = null; // elementos da animação
 function montarAnimacao() {
   const s = D.sala, W = s.largura_m, H = s.profundidade_m, z = s.zonas_cegas[0], porta = s.porta, sp = s.dispositivos["SP-01"];
-  const largura = X(W) + M0, altura = Y(0) + 90;
+  const largura = X(W) + M0, altura = Y(0) + 150;
+  const yN = Y(0) + 105, xH = X(0) + 40, xP = X(W / 2) + 10, xA = X(W) - 30; // faixa hub ↔ plataforma ↔ app
   const r = sp.alcance_m * PX, cx = X(sp.x), cy = Y(sp.y);
   const arco = `M${cx},${cy} L${cx - r},${cy} A${r},${r} 0 0 0 ${cx},${cy + r} Z`;
   const svg = `<svg viewBox="0 0 ${largura} ${altura}" id="cena" role="img" aria-label="Planta da sala">
@@ -504,6 +591,16 @@ function montarAnimacao() {
       <text y="4" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${o.tipo === "CACHORRO" ? "R" : "M"}</text>
       <text class="lbl" y="-20" text-anchor="middle" font-size="11.5" font-weight="600" stroke="#fff" stroke-width="3" paint-order="stroke" fill="#0f172a">${esc(o.nome || o.id)}</text></g>`).join("")}</g>
     <text id="relogio" x="${X(W)}" y="${Y(H) - 14}" text-anchor="end" font-size="13" fill="#334155" class="mono"></text>
+    <g id="rede" font-size="12">
+      <line id="lkHP" x1="${xH + 38}" y1="${yN}" x2="${xP - 52}" y2="${yN}" stroke="#0f766e" stroke-width="4"/>
+      <line id="lkPA" x1="${xP + 52}" y1="${yN}" x2="${xA - 30}" y2="${yN}" stroke="#be185d" stroke-width="3" stroke-dasharray="2 4"/>
+      <rect x="${xH - 38}" y="${yN - 18}" width="76" height="36" rx="6" fill="#ede9fe" stroke="#6d28d9"/><text x="${xH}" y="${yN - 2}" text-anchor="middle" font-weight="700" fill="#4c1d95">Hub</text><text x="${xH}" y="${yN + 12}" text-anchor="middle" font-size="10.5" fill="#4c1d95">DTReg10k-L</text>
+      <rect id="platBox" x="${xP - 52}" y="${yN - 18}" width="104" height="36" rx="18" fill="#fce7f3" stroke="#be185d"/><text x="${xP}" y="${yN - 2}" text-anchor="middle" font-weight="700" fill="#831843">Plataforma</text><text x="${xP}" y="${yN + 12}" text-anchor="middle" font-size="10.5" fill="#831843">DTReg10k-R</text>
+      <rect id="appBox" x="${xA - 30}" y="${yN - 22}" width="40" height="44" rx="7" fill="#fff" stroke="#334155" stroke-width="2"/><text x="${xA - 10}" y="${yN + 4}" text-anchor="middle" font-weight="700" fill="#334155">App</text>
+      <text id="lkTxt" x="${(xH + xP) / 2}" y="${yN - 10}" text-anchor="middle" font-size="11" fill="#0f766e">conectado</text>
+      <text id="msgTxt" x="${(xH + xP) / 2}" y="${yN + 22}" text-anchor="middle" font-size="11" fill="#b42318"></text>
+      <text id="appTxt" x="${xA - 10}" y="${yN + 38}" text-anchor="middle" font-size="11" fill="#334155"></text>
+    </g>
   </svg>`;
   const c = CEN[S.cen];
   $("#tab-animacao").innerHTML = `<div class="anim"><div class="card" style="padding:10px">${svg}
@@ -511,9 +608,9 @@ function montarAnimacao() {
         <label class="small">Velocidade <select id="vel">${[1, 5, 20, 60, 120].map(v => `<option value="${v}"${v === S.speed ? " selected" : ""}>${v}×</option>`).join("")}</select></label>
         <span class="mono small" id="tTxt"></span></div>
       <div style="position:relative"><input type="range" id="tSlider" min="0" max="${c.duracao_ms}" step="100" style="width:100%"><svg id="marks" width="100%" height="12" style="display:block"></svg></div>
-      <div class="legend small"><span><i style="background:var(--person)"></i>Morador</span><span><i style="background:var(--dog)"></i>Rex (cachorro)</span><span><i style="background:#ffe680"></i>luz acesa</span><span><i style="background:#0e7490;opacity:.4"></i>cobertura do SP</span><span><i style="background:repeating-linear-gradient(45deg,#94a3b8 0 3px,transparent 3px 6px)"></i>zona cega</span></div>
+      <div class="legend small"><span><i style="background:#0f766e"></i>sessão hub ↔ plataforma</span><span><i style="background:#fecaca"></i>sem sessão</span><span><i style="background:var(--person)"></i>Morador</span><span><i style="background:var(--dog)"></i>Rex (cachorro)</span><span><i style="background:#ffe680"></i>luz acesa</span><span><i style="background:#0e7490;opacity:.4"></i>cobertura do SP</span><span><i style="background:repeating-linear-gradient(45deg,#94a3b8 0 3px,transparent 3px 6px)"></i>zona cega</span></div>
       <p class="small muted" style="margin:6px 0 0">Atalhos: espaço = tocar/pausar, ← → = 1 s (com Shift, 10 s). Marcas na régua: ▲ acender, ▼ apagar, ■ falha.</p></div>
-    <div><div class="card"><h2>${c.id} — ${esc(c.titulo)}</h2><div class="kv" id="estado"></div></div>
+    <div><div class="card"><h2>${c.id} — ${esc(c.titulo)}</h2><div class="views" id="vistas"></div><div class="kv" id="estado"></div></div>
       <div class="card"><h2>Eventos recentes</h2><div class="ticker" id="ticker"></div></div></div></div>`;
   A = {cen: S.cen, ctrl: S.ctrl, d: derivar(S.cen, S.ctrl), pos: D.posicoes[S.cen]};
   $("#play").onclick = () => tocar(!S.playing);
@@ -523,7 +620,7 @@ function montarAnimacao() {
   // marcas na régua
   const d = A.d, w = 1000;
   $("#marks").setAttribute("viewBox", `0 0 ${w} 12`); $("#marks").setAttribute("preserveAspectRatio", "none");
-  $("#marks").innerHTML = d.intencoes.map(i => `<text x="${i.t_ms / d.fim * w}" y="11" font-size="11" text-anchor="middle" fill="${i.acao === "ACENDER" ? "#a16207" : "#334155"}">${i.acao === "ACENDER" ? "▲" : "▼"}</text>`).join("") +
+  $("#marks").innerHTML = d.intencoes.map(i => `<text x="${i.t_ms / d.fim * w}" y="11" font-size="11" text-anchor="middle" fill="${i.precedencia === "REMOTA" ? "#0f766e" : i.acao === "ACENDER" ? "#a16207" : "#334155"}">${i.acao === "ACENDER" ? "▲" : "▼"}</text>`).join("") +
     d.falhas.map(f => `<rect x="${f.t_ms / d.fim * w - 3}" y="2" width="6" height="8" fill="var(--bad)"/>`).join("");
   quadro();
 }
@@ -566,6 +663,7 @@ function quadro() {
   const hb = d.hbs.filter(h => h.t_ms <= t).pop();
   const ultI = d.intencoes.filter(i => i.t_ms <= t).pop();
   const res = ultI && d.resultados.find(r => r.chave === ultI.chave && r.t_ms <= t);
+  const ultApp = d.app.filter(v => v.t_ms <= t && v.tipo.startsWith("APP_")).pop(), ultRes = d.appRes.filter(v => v.t_ms <= t).pop();
   const pillOcup = {OCUPADA: "ok", VAZIA: "n", DESCONHECIDA: "warn"}[ocup];
   const verdadeTxt = D.sala.ocupantes.map(o => { const p = posicao(o.id, t); return `${esc(o.nome || o.id)}: ${p ? (p[2] ? "na sala, em movimento" : "na sala, parado") : "fora"}`; }).join("<br>");
   const real = presentes.length > 0, inferido = ocup === "OCUPADA";
@@ -575,11 +673,36 @@ function quadro() {
     <div>SA (porta)</div><div>${ultP != null ? `última passagem há ${((t - ultP) / 1000).toFixed(1)} s` : "nenhuma passagem"}</div>
     <div>SP (PIR)</div><div>${mudo ? '<span class="pill bad">sem resposta</span>' : alto ? '<span class="pill ok">detectando</span>' : '<span class="pill n">repouso</span>'}${hb ? ` <span class="small muted">bateria ${hb.bateria}%</span>` : ""}</div>
     <div><b>Controle</b></div><div>${hubOff ? '<span class="pill bad">hub desligado</span>' : `<span class="pill ${pillOcup}">${ocup}</span> ${confere}`}</div>
-    <div>Luz (controle)</div><div class="mono">${hubOff ? "—" : luzEst}${prec === "MANUAL" ? ' <span class="pill warn">precedência manual</span>' : ""}</div>
+    <div>Luz (controle)</div><div class="mono">${hubOff ? "—" : luzEst}${prec !== "AUTOMATICA" ? ` <span class="pill warn">precedência ${prec.toLowerCase()}</span>` : ""}</div>
     <div>Lâmpada (física)</div><div>${acesa ? '<span class="pill" style="background:#fff3bf;color:#7a5b00">acesa</span>' : '<span class="pill n">apagada</span>'}</div>
     <div>Alertas</div><div>${alertas ? alertas.split(", ").map(a => `<span class="pill bad">${a}</span>`).join(" ") : '<span class="muted">nenhum</span>'}</div>
-    <div>Última decisão</div><div class="small">${ultI ? `${fmtT(ultI.t_ms)} <b>${ultI.acao}</b> por ${ultI.causa} (${ultI.regra})${res ? ` → <span class="mono">${res.nivel}</span>` : ""}` : "—"}</div>`;
-  const evs = ex().eventos.filter(v => v.t_ms <= t && v.tipo !== "HEARTBEAT" && v.camada !== "ESTADO").slice(-9).reverse();
+    <div>Última decisão</div><div class="small">${ultI ? `${fmtT(ultI.t_ms)} <b>${ultI.acao}</b> por ${ultI.causa} (${ultI.regra})${res ? ` → <span class="mono">${res.nivel}</span>` : ""}` : "—"}</div>
+    <div>Último app</div><div class="small">${ultApp ? `${fmtT(ultApp.t_ms)} ${esc(desc(ultApp))}` : "—"}${ultRes ? `<br>${fmtT(ultRes.t_ms)} ${esc(desc(ultRes))}` : ""}</div>`;
+  // Três pontos de vista
+  const remReg = d.remotos.filter(v => v.t_ms <= t).pop();
+  const platFora = d.platFora.some(([a, b]) => t >= a && t < b), enlaceFora = d.enlaceFora.some(([a, b]) => t >= a && t < b);
+  const sessao = d.sessao.at(t), rAt = d.remAtual.at(t), rOc = d.remOcup.at(t), rLz = d.remLuz.at(t);
+  const idade = remReg && remReg.recepcao_ms != null ? t - remReg.recepcao_ms : null;
+  const selo = {ATUAL: '<span class="pill ok">atual</span>', DESATUALIZADO: '<span class="pill warn">desatualizado</span>', SEM_EVIDENCIA: '<span class="pill n">sem evidência</span>'}[rAt];
+  const confereR = platFora ? '<span class="pill n">plataforma fora</span>' : rAt !== "ATUAL" ? '<span class="pill n">não afirma o estado atual</span>'
+    : (hubOff ? '<span class="pill warn">hub desligado</span>' : (rOc === ocup && rLz === luzEst ? '<span class="pill ok">confere com o hub</span>' : '<span class="pill warn">sincronizando</span>'));
+  $("#vistas").innerHTML = `
+    <div class="view"><h4>O que acontece</h4><div class="big">${presentes.length ? presentes.map(o => esc(NOMES[o] || o)).join(" e ") + " na sala" : "Sala vazia"}</div><div>lâmpada ${acesa ? "acesa" : "apagada"}</div></div>
+    <div class="view"><h4>O que o hub acha (L)</h4>${hubOff ? '<div class="big">hub desligado</div>' : `<div class="big">${ocup}</div><div class="mono">${luzEst}</div>${confere}`}</div>
+    <div class="view"><h4>O que a plataforma acha (R)</h4>${platFora ? '<div class="big">indisponível</div>' : `<div class="big">${rOc ?? "—"}</div><div class="mono">${rLz ?? "—"}</div>${selo}${idade != null ? ` <span class="small muted">idade ${(idade / 1000).toFixed(0)} s</span>` : ""}<div>${confereR}</div>`}</div>`;
+  // Faixa hub ↔ plataforma ↔ app
+  const cor = platFora ? "#94a3b8" : sessao ? "#0f766e" : "#dc2626";
+  $("#lkHP").setAttribute("stroke", cor); $("#lkHP").setAttribute("stroke-dasharray", sessao ? "" : "6 5");
+  $("#lkTxt").textContent = platFora ? "plataforma fora do ar" : sessao ? (d.latencia.some(([a, b]) => t >= a && t < b) ? "conectado, rede lenta" : "conectado") : enlaceFora ? "enlace fora" : hubOff ? "hub desligado" : "sem sessão";
+  $("#lkTxt").setAttribute("fill", cor);
+  $("#platBox").setAttribute("opacity", platFora ? 0.35 : 1);
+  const flash = (l, w = 1500) => l.filter(v => v.t_ms <= t && t - v.t_ms < w);
+  const pd = flash(d.perdas), dp = flash(d.duplicadas);
+  $("#msgTxt").textContent = [pd.length ? `${pd.length} msg perdida(s)` : "", dp.length ? `${dp.length} duplicada(s)` : ""].filter(Boolean).join(" · ");
+  const ap = flash(d.app, 2500).pop(), ar = flash(d.appRes, 4000).pop();
+  $("#appBox").setAttribute("stroke", ap || ar ? "#be185d" : "#334155");
+  $("#appTxt").textContent = ar ? (ar.nivel || ar.estado || "") : ap ? ap.tipo.replace("APP_", "").toLowerCase() : "";
+  const evs = ex().eventos.filter(v => v.t_ms <= t && v.tipo !== "HEARTBEAT" && v.camada !== "ESTADO" && !(v.tipo === "ESTADO_REMOTO" && !v.mudanca && v.origem === "RESUMO")).slice(-10).reverse();
   $("#ticker").innerHTML = evs.map(v => `<div><span class="mono">${fmtT(v.t_ms)}</span> ${cam(v.camada)}${esc(desc(v))}</div>`).join("");
 }
 function tocar(on) { S.playing = on; if (on && S.t >= CEN[S.cen].duracao_ms) S.t = 0; ultimoQuadro = performance.now(); quadro(); }
@@ -603,27 +726,31 @@ document.addEventListener("keydown", e => {
 
 // ======================================================================= PAINEL
 const CORES = {OCUPADA: "#22a06b", VAZIA: "#cbd5e1", DESCONHECIDA: "#f5a524", APAGADA: "#cbd5e1", ACESA_AUTO: "#facc15", ACESA_MANUAL: "#f59e0b", APAGADA_MANUAL: "#64748b"};
+const COR_NIVEL = {EFEITO_OBSERVADO: "#1a7f4b", EXECUCAO_RELATADA: "#65a30d", DESCONHECIDO: "#f59e0b", SUBSTITUIDA: "#64748b", REJEITADA: "#b42318", EXPIRADA: "#7c2d12",
+  PENDENTE: "#f59e0b", APLICADA: "#1a7f4b", RECUSADA: "#b42318"};
 function renderPainel() {
   const c = CEN[S.cen], e = ex(), d = derivar(S.cen, S.ctrl), m = e.metricas, normal = c.tipo === "NORMAL";
   const met = D.modelo.metricas.map(mm => {
-    const v = m[mm.id], lim = normal && c.modo === "IDEAL" ? LIMITES[mm.id] : null;
+    const v = m[mm.id], lim = limite(c, mm.id);
     const ok = lim && v != null ? v <= lim[1] : null;
     return `<div class="metric ${ok === true ? "ok" : ok === false ? "bad" : ""}" title="${esc(mm.def)}"><div class="n">${esc(mm.nome)}</div><div class="v">${fmtN(v)}</div>${!lim ? "" : v == null ? `<div class="small muted">limite ≤ ${lim[1]} · não se aplica</div>` : `<div class="small ${ok ? "" : "err"}">limite ≤ ${lim[1]} ${ok ? "✓" : "✗"}</div>`}</div>`;
   }).join("");
   const asserts = (c.esperado?.assercoes || []).map(a => { const r = e.assercoes[a.id]; const req = a.nivel === "REQUISITO";
     const cls = r.ok ? "ok" : req ? "bad" : "warn"; const txt = r.ok ? (req ? "ok" : "= ref.") : (req ? "falha" : "difere");
     return `<tr><td class="mono">${a.id}</td><td class="small">${req ? "requisito" : "caracterização"}</td><td>${esc(a.dado)} → ${esc(a.quando)}</td><td class="mono small">${esc(entaoTxt(a.entao))}</td><td><span class="pill ${cls}">${txt}</span> <span class="small muted">${esc(r.detalhe)}</span></td></tr>`; }).join("");
-  const inv = Object.entries(e.invariantes).map(([k, v]) => `<span class="pill ${v.ok ? "ok" : "bad"}" title="${esc(v.violacoes.join("\n"))}">${k} ${v.ok ? "✓" : "✗"}</span>`).join(" ");
+  const inv = Object.entries(e.invariantes).map(([k, v]) => v.aplica === false ? `<span class="pill n" title="Sem execução pareada neste cenário">${k} n/a</span>`
+    : `<span class="pill ${v.ok ? "ok" : "bad"}" title="${esc(v.violacoes.join("\n"))}">${k} ${v.ok ? "✓" : "✗"}</span>`).join(" ");
   const dist = e.distribuicao ? `<h3>Distribuição no modo realista (${Object.values(e.distribuicao)[0]?.n || 0} sementes)</h3><table><tr><th>Métrica</th><th>mín.</th><th>média</th><th>mediana</th><th>p95</th><th>máx.</th></tr>
     ${Object.entries(e.distribuicao).map(([k, s]) => `<tr><td>${esc((D.modelo.metricas.find(x => x.id === k) || {nome: k}).nome)}</td>${["min","media","mediana","p95","max"].map(q => `<td>${fmtN(s[q])}</td>`).join("")}</tr>`).join("")}</table>` : "";
   $("#tab-painel").innerHTML = `
-    <div class="card"><div class="controls" style="margin-top:0"><h2 style="margin:0">${c.id} — ${esc(c.titulo)}</h2><span class="small">${tipoTag(c.tipo)} · controlador <b>${esc(S.ctrl)}</b> · semente ${e.semente} · ${e.modo.toLowerCase()}</span>
+    <div class="card"><div class="controls" style="margin-top:0"><h2 style="margin:0">${c.id} — ${esc(c.titulo)}</h2><span class="small">${verTag(c)} ${tipoTag(c.tipo)} · controlador <b>${esc(S.ctrl)}</b> · semente ${e.semente} · ${e.modo.toLowerCase()}${e.modo_rede && e.modo_rede !== e.modo ? ` · rede ${e.modo_rede.toLowerCase()}` : ""}</span>
       <span style="flex:1"></span><label class="small noprint">Zoom <select id="zoom">${[1, 2, 4, 8, 16].map(z => `<option value="${z}"${z === S.zoom ? " selected" : ""}>${z}×</option>`).join("")}</select></label>
       <button class="b noprint" id="pdf">Imprimir / PDF</button></div>
       <div class="tl-wrap" id="tl"></div>
       <div class="legend small" style="margin-top:6px"><span><i style="background:#22a06b"></i>ocupada</span><span><i style="background:#f5a524"></i>desconhecida</span><span><i style="background:#cbd5e1"></i>vazia / apagada</span>
         <span><i style="background:#facc15"></i>acesa (auto)</span><span><i style="background:#f59e0b"></i>acesa (manual)</span><span><i style="background:#64748b"></i>apagada (manual)</span>
-        <span><i style="background:rgba(220,38,38,.25)"></i>desperdício</span><span><i style="background:rgba(124,58,237,.3)"></i>escuro com ocupante</span></div>
+        <span><i style="background:rgba(220,38,38,.25)"></i>desperdício</span><span><i style="background:rgba(124,58,237,.3)"></i>escuro com ocupante</span>
+        <span><i style="background:repeating-linear-gradient(45deg,#475569 0 2px,transparent 2px 5px)"></i>R desatualizado</span><span><i style="background:#99d5cb"></i>sessão ativa</span><span><i style="background:#fecaca"></i>sem sessão</span><span><i style="background:#94a3b8"></i>plataforma fora</span></div>
       <p class="small muted noprint" style="margin:4px 0 0">Clique na linha do tempo para posicionar o cursor (compartilhado com a animação). ← → movem 1 s.</p></div>
     <div class="card"><h2>Métricas</h2><div class="metrics">${met}</div>${dist}
       <h3>Invariantes</h3><div>${inv}</div>
@@ -631,7 +758,7 @@ function renderPainel() {
       <p class="small muted">Hash do registro (semente ${e.semente}): <span class="mono">${e.hash_eventos.slice(0, 16)}…</span> · ${e.n_eventos.toLocaleString("pt-BR")} eventos ·
         execução ${e.determinismo_ok ? "determinística ✓" : "não determinística ✗"} · arquivo <span class="mono">saida/${c.id}/${S.ctrl}/${e.semente}/eventos.jsonl</span></p></div>
     <div class="card"><h2>Registro de eventos</h2>
-      <div class="controls noprint" style="margin-top:0">${["VERDADE","PERCEPCAO","DECISAO","ATUACAO","ESTADO","SISTEMA"].map(k => `<label class="small"><input type="checkbox" data-cam="${k}"${S.camadas.has(k) ? " checked" : ""}> ${cam(k)}</label>`).join("")}
+      <div class="controls noprint" style="margin-top:0">${CAMADAS.map(k => `<label class="small"><input type="checkbox" data-cam="${k}"${S.camadas.has(k) ? " checked" : ""}> ${cam(k)}</label>`).join("")}
         <label class="small"><input type="checkbox" id="hb"${S.hb ? " checked" : ""}> heartbeats</label><input type="text" id="buscaEv" placeholder="filtrar texto" value="${esc(S.buscaEv)}">
         <span style="flex:1"></span><span class="small muted" id="nEv"></span><button class="b" id="csvEv">Exportar CSV</button></div>
       <div class="tablebox" id="evBox"></div></div>`;
@@ -650,9 +777,11 @@ function janela() {
 }
 function desenharLinhaDoTempo() {
   const d = derivar(S.cen, S.ctrl), [w0, w1] = janela();
-  const W = Math.max(700, $("#tl").clientWidth || 1100), L = 150, R = 12, lane = 24, gap = 6;
+  const W = Math.max(700, $("#tl").clientWidth || 1100), L = 182, R = 12, lane = 24, gap = 6;
   const x = t => L + (Math.max(w0, Math.min(w1, t)) - w0) / (w1 - w0) * (W - L - R);
-  const lanes = ["Verdade · Morador", "Verdade · Rex", "SA (porta)", "SP (PIR)", "Ocupação inferida", "Decisões", "Luz (controle)", "Lâmpada (física)", "Sistema e falhas"];
+  const lanes = ["Verdade · Morador", "Verdade · Rex", "SA (porta)", "SP (PIR)", "Ocupação · hub (L)", "Decisões", "Luz · hub (L)", "Lâmpada (física)",
+                 "Ocupação · plataforma (R)", "Luz · plataforma (R)", "Canal", "App", "Sistema e falhas"];
+  const LS = 12; // faixa "Sistema e falhas"
   const yl = i => 22 + i * (lane + gap);
   let s = `<svg width="${W}" height="${yl(lanes.length) + 4}" id="tlsvg" style="display:block;cursor:crosshair">`;
   // grade de tempo
@@ -676,7 +805,7 @@ function desenharLinhaDoTempo() {
   d.hbs.forEach(h => s += h.t_ms >= w0 && h.t_ms <= w1 ? `<circle cx="${x(h.t_ms)}" cy="${yl(3) + lane - 3}" r="1.8" fill="#64748b"><title>heartbeat ${fmtT(h.t_ms)} · bateria ${h.bateria}%</title></circle>` : "");
   d.ocup.segs(d.fim).forEach(([a, b, v]) => s += bar(4, a, b, CORES[v], `${v} ${fmtT(a)}–${fmtT(b)}`));
   d.intencoes.forEach(i => { if (i.t_ms < w0 || i.t_ms > w1) return; const up = i.acao === "ACENDER", cx = x(i.t_ms), y0 = yl(5);
-    s += `<path d="${up ? `M${cx - 7},${y0 + 19} L${cx + 7},${y0 + 19} L${cx},${y0 + 5}Z` : `M${cx - 7},${y0 + 5} L${cx + 7},${y0 + 5} L${cx},${y0 + 19}Z`}" fill="${i.precedencia === "MANUAL" ? "#f59e0b" : up ? "#a16207" : "#334155"}"><title>${fmtT(i.t_ms)} ${i.acao} — ${i.causa} (${i.regra}, ${i.precedencia})</title></path>`; });
+    s += `<path d="${up ? `M${cx - 7},${y0 + 19} L${cx + 7},${y0 + 19} L${cx},${y0 + 5}Z` : `M${cx - 7},${y0 + 5} L${cx + 7},${y0 + 5} L${cx},${y0 + 19}Z`}" fill="${i.precedencia === "MANUAL" ? "#f59e0b" : i.precedencia === "REMOTA" ? "#0f766e" : up ? "#a16207" : "#334155"}"><title>${fmtT(i.t_ms)} ${i.acao} — ${i.causa} (${i.regra}, ${i.precedencia})</title></path>`; });
   d.luzEst.segs(d.fim).forEach(([a, b, v]) => s += bar(6, a, b, CORES[v], `${v} ${fmtT(a)}–${fmtT(b)}`));
   d.luz.segs(d.fim).forEach(([a, b, v]) => s += bar(7, a, b, v ? "#facc15" : "#cbd5e1", `${v ? "acesa" : "apagada"} ${fmtT(a)}–${fmtT(b)}`));
   // destaques: desperdício e escuro com ocupante (verdade × lâmpada)
@@ -684,10 +813,29 @@ function desenharLinhaDoTempo() {
   for (let j = 0; j + 1 < pts.length; j++) { const a = pts[j], b = pts[j + 1]; const l = d.luz.at(a), o = !!pres.at(a), man = d.luzEst.at(a) === "APAGADA_MANUAL";
     if (l && !o) s += bar(7, a, b, "rgba(220,38,38,.35)", `desperdício ${fmtT(a)}–${fmtT(b)}`, 1, 8);
     if (!l && o && !man) s += bar(7, a, b, "rgba(124,58,237,.45)", `escuro com ocupante ${fmtT(a)}–${fmtT(b)}`, 1, 8); }
-  d.hubOff.forEach(([a, b]) => s += bar(8, a, b, "#fecaca", `hub desligado ${fmtT(a)}–${fmtT(b)}`));
-  d.falhas.forEach(f => s += f.t_ms >= w0 && f.t_ms <= w1 ? `<rect x="${x(f.t_ms) - 4}" y="${yl(8) + 6}" width="8" height="12" fill="var(--bad)"><title>${fmtT(f.t_ms)} falha ${f.falha}</title></rect>` : "");
-  d.sistema.filter(v => v.tipo === "ALERTA" && v.ativo || v.tipo === "RETENTATIVA" || v.tipo === "RELOGIO_SALTO").forEach(v => s += v.t_ms >= w0 && v.t_ms <= w1 ? `<circle cx="${x(v.t_ms)}" cy="${yl(8) + 12}" r="5" fill="#f59e0b" stroke="#fff"><title>${fmtT(v.t_ms)} ${esc(desc(v))}</title></circle>` : "");
-  s += `<defs><pattern id="hatchR" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#dc2626" stroke-width="2.5"/></pattern></defs>`;
+  // v0dt: o que a plataforma acha (R), hachurado quando não é "atual"
+  d.remOcup.segs(d.fim).forEach(([a, b, v]) => { if (v != null) s += bar(8, a, b, CORES[v], `R: ${v} ${fmtT(a)}–${fmtT(b)}`); });
+  d.remLuz.segs(d.fim).forEach(([a, b, v]) => { if (v != null) s += bar(9, a, b, CORES[v], `R: ${v} ${fmtT(a)}–${fmtT(b)}`); });
+  d.remAtual.segs(d.fim).filter(g => g[2] !== "ATUAL").forEach(([a, b, v]) => { s += bar(8, a, b, "url(#hatchG)", `R ${v.toLowerCase()} ${fmtT(a)}–${fmtT(b)}`); s += bar(9, a, b, "url(#hatchG)", `R ${v.toLowerCase()} ${fmtT(a)}–${fmtT(b)}`); });
+  d.divergencias.forEach(v => s += v.t_ms >= w0 && v.t_ms <= w1 ? `<circle cx="${x(v.t_ms)}" cy="${yl(8) + lane / 2}" r="5" fill="#be185d" stroke="#fff"><title>${fmtT(v.t_ms)} ${esc(desc(v))}</title></circle>` : "");
+  // canal
+  d.sessao.segs(d.fim).forEach(([a, b, v]) => s += bar(10, a, b, v ? "#99d5cb" : "#fecaca", `${v ? "sessão ativa" : "sem sessão"} ${fmtT(a)}–${fmtT(b)}`, 1, 10));
+  d.enlaceFora.forEach(([a, b]) => s += bar(10, a, b, "url(#hatchR)", `enlace fora ${fmtT(a)}–${fmtT(b)}`, 1, 22));
+  d.platFora.forEach(([a, b]) => s += bar(10, a, b, "#94a3b8", `plataforma fora ${fmtT(a)}–${fmtT(b)}`, 0.8, 22));
+  d.latencia.forEach(([a, b, l]) => s += bar(10, a, b, "#f59e0b", `canal lento (+${l / 1000} s) ${fmtT(a)}–${fmtT(b)}`, 0.7, 6));
+  d.perdas.forEach(v => s += v.t_ms >= w0 && v.t_ms <= w1 ? `<text x="${x(v.t_ms)}" y="${yl(10) + 8}" font-size="10" text-anchor="middle" fill="#b42318">×<title>${fmtT(v.t_ms)} ${esc(desc(v))}</title></text>` : "");
+  d.duplicadas.forEach(v => s += v.t_ms >= w0 && v.t_ms <= w1 ? `<text x="${x(v.t_ms)}" y="${yl(10) + 22}" font-size="10" text-anchor="middle" fill="#7c3aed">◆<title>${fmtT(v.t_ms)} ${esc(desc(v))}</title></text>` : "");
+  // app
+  d.app.filter(v => v.tipo.startsWith("APP_")).forEach(v => { if (v.t_ms < w0 || v.t_ms > w1) return; const cx = x(v.t_ms), y0 = yl(11);
+    const forma = v.tipo === "APP_COMANDO" ? `<path d="M${cx - 6},${y0 + 17} L${cx + 6},${y0 + 17} L${cx},${y0 + 5}Z"` : v.tipo === "APP_PREFERENCIA" ? `<rect x="${cx - 5}" y="${y0 + 6}" width="10" height="10"` : `<circle cx="${cx}" cy="${y0 + 11}" r="4.5"`;
+    s += `${forma} fill="#be185d"><title>${fmtT(v.t_ms)} ${esc(desc(v))}</title>${forma.startsWith("<path") ? "</path>" : forma.startsWith("<rect") ? "</rect>" : "</circle>"}`; });
+  d.appRes.forEach(v => s += v.t_ms >= w0 && v.t_ms <= w1 ? `<rect x="${x(v.t_ms) - 3}" y="${yl(11) + 17}" width="6" height="6" fill="${COR_NIVEL[v.nivel || v.estado] || "#334155"}"><title>${fmtT(v.t_ms)} ${esc(desc(v))}</title></rect>` : "");
+  d.hubOff.forEach(([a, b]) => s += bar(LS, a, b, "#fecaca", `hub desligado ${fmtT(a)}–${fmtT(b)}`));
+  d.falhas.forEach(f => s += f.t_ms >= w0 && f.t_ms <= w1 ? `<rect x="${x(f.t_ms) - 4}" y="${yl(LS) + 6}" width="8" height="12" fill="var(--bad)"><title>${fmtT(f.t_ms)} falha ${f.falha}</title></rect>` : "");
+  d.sistema.filter(v => v.tipo === "ALERTA" && v.ativo || v.tipo === "RETENTATIVA" || v.tipo === "RELOGIO_SALTO").forEach(v => s += v.t_ms >= w0 && v.t_ms <= w1 ? `<circle cx="${x(v.t_ms)}" cy="${yl(LS) + 12}" r="5" fill="#f59e0b" stroke="#fff"><title>${fmtT(v.t_ms)} ${esc(desc(v))}</title></circle>` : "");
+  d.cmdHub.forEach(v => s += v.t_ms >= w0 && v.t_ms <= w1 ? `<circle cx="${x(v.t_ms)}" cy="${yl(LS) + 12}" r="4" fill="${v.decisao === "ACEITO" || v.tipo === "CONFIG_APLICADA" ? "#0f766e" : "#b42318"}" stroke="#fff"><title>${fmtT(v.t_ms)} ${esc(desc(v))}</title></circle>` : "");
+  s += `<defs><pattern id="hatchR" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#dc2626" stroke-width="2.5"/></pattern>
+    <pattern id="hatchG" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#475569" stroke-width="2" opacity=".55"/></pattern></defs>`;
   s += `<line id="cursor" y1="16" y2="${yl(lanes.length)}" stroke="#1f4e8c" stroke-width="1.5"/></svg>`;
   $("#tl").innerHTML = s;
   const svg = $("#tlsvg");

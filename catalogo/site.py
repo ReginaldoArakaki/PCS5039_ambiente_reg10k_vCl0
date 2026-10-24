@@ -1,4 +1,4 @@
-"""Gera site/index.html: página única, offline, com os dados embutidos (plano §11)."""
+"""Gera site/index.html: página única, offline, com os dados embutidos (plano §11 e v0dt §10)."""
 from __future__ import annotations
 
 import base64
@@ -60,7 +60,8 @@ def montar_dados(cat: dict) -> dict:
         evs, pos = _compactar_eventos(cat["_eventos"][(e["cenario"], e["controlador"])])
         posicoes.setdefault(e["cenario"], pos)
         execucoes[chave] = {
-            **{k: e[k] for k in ("cenario", "controlador", "semente", "modo", "hash_eventos", "n_eventos",
+            **{k: e.get(k) for k in ("cenario", "controlador", "semente", "modo", "modo_rede", "execucao_pareada",
+                                     "hash_eventos", "n_eventos",
                                  "metricas", "invariantes", "assercoes", "requisitos", "caracterizacao",
                                  "requisitos_ok", "aprovado")},
             "determinismo_ok": e.get("determinismo_ok"),

@@ -1,0 +1,90 @@
+{
+  "cenario": "DT07",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RNF-CON-01",
+    "RNF-CON-02",
+    "RF-SYN-03",
+    "CV05"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "plataforma fora",
+      "quando": "o morador volta em t=280 s",
+      "entao": {
+        "tipo": "luz",
+        "valor": "ACESA",
+        "desde_ms": 280000,
+        "ate_ms": 281500
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "plataforma fora",
+      "quando": "o morador sai",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "desperdicio_por_saida_s_max",
+        "max": 90
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "plataforma fora",
+      "quando": "a fila cresce",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "fila_max",
+        "min": 5
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "plataforma de volta",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "eventos_nao_entregues",
+        "igual": 0
+      }
+    },
+    {
+      "id": "A5",
+      "nivel": "REQUISITO",
+      "dado": "plataforma de volta em t=360 s",
+      "quando": "t = 370 s",
+      "entao": {
+        "tipo": "gemeo",
+        "em_ms": 370000,
+        "atualidade": "ATUAL",
+        "ocupacao": "OCUPADA"
+      }
+    },
+    {
+      "id": "A6",
+      "nivel": "REQUISITO",
+      "dado": "sessão restabelecida",
+      "quando": "o R recebe o estado atual",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "reconciliacao_ms_max",
+        "max": 5000
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

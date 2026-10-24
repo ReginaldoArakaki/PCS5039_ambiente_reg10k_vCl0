@@ -1,0 +1,39 @@
+{
+  "id": "DT04",
+  "versao": "v0dt",
+  "titulo": "O canal duplica o comando",
+  "tipo": "GEMEO_DIGITAL",
+  "modo": "IDEAL",
+  "duracao_ms": 150000,
+  "descricao": "A sala está vazia. O canal entrega duas vezes o próximo comando. Em t=70 s o titular toca em Acender.",
+  "comportamento_ideal": "Um único efeito; a segunda cópia é reconhecida pela chave de idempotência e registrada como repetida.",
+  "comportamento_referencia": "O agente recusa a cópia (REPETIDO) sem entregá-la ao controlador.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 70000,
+      "ocupante": "app",
+      "acao": "APP_COMANDO",
+      "comando": "ACENDER"
+    }
+  ],
+  "falhas": [
+    {
+      "t_ms": 0,
+      "tipo": "CANAL_DUPLICA",
+      "mensagem": "COMANDO",
+      "sentido": "DESCE"
+    }
+  ],
+  "requisitos": [
+    "RF-OPR-05",
+    "RNF-CON-07",
+    "INV-10"
+  ],
+  "regras": [
+    "RN-DT-05"
+  ]
+}

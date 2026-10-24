@@ -27,7 +27,8 @@
         "NORMAL",
         "FALSO_POSITIVO",
         "FALSO_NEGATIVO",
-        "FALHA"
+        "FALHA",
+        "GEMEO_DIGITAL"
       ]
     },
     "modo": {
@@ -77,7 +78,8 @@
             "minimum": 0
           },
           "ocupante": {
-            "type": "string"
+            "type": "string",
+            "description": "ocupante da sala ou 'app' (titular fora de casa, v0dt)"
           },
           "acao": {
             "enum": [
@@ -89,7 +91,10 @@
               "MICROGESTOS",
               "GESTO",
               "PASSAR_PORTA_SEM_ENTRAR",
-              "INTERRUPTOR"
+              "INTERRUPTOR",
+              "APP_COMANDO",
+              "APP_PREFERENCIA",
+              "APP_CONSULTA"
             ]
           },
           "ate": {
@@ -123,6 +128,16 @@
           "intervalo_max_ms": {
             "type": "integer",
             "minimum": 0
+          },
+          "comando": {
+            "enum": [
+              "ACENDER",
+              "APAGAR"
+            ]
+          },
+          "t_apagamento_ms": {
+            "type": "integer",
+            "minimum": 0
           }
         },
         "allOf": [
@@ -153,6 +168,60 @@
                 "duracao_ms"
               ]
             }
+          },
+          {
+            "if": {
+              "properties": {
+                "acao": {
+                  "const": "APP_COMANDO"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "comando"
+              ],
+              "properties": {
+                "ocupante": {
+                  "const": "app"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "acao": {
+                  "const": "APP_PREFERENCIA"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "t_apagamento_ms"
+              ],
+              "properties": {
+                "ocupante": {
+                  "const": "app"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "acao": {
+                  "const": "APP_CONSULTA"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "ocupante": {
+                  "const": "app"
+                }
+              }
+            }
           }
         ]
       }
@@ -180,7 +249,12 @@
               "LAMPADA_QUEIMADA",
               "ATUADOR_TRAVADO",
               "HUB_REINICIO",
-              "RELOGIO_SALTO"
+              "RELOGIO_SALTO",
+              "CANAL_DESCONECTA",
+              "PLATAFORMA_FORA",
+              "CANAL_LATENCIA",
+              "CANAL_DUPLICA",
+              "CANAL_PERDE"
             ]
           },
           "duracao_ms": {
@@ -194,8 +268,64 @@
           },
           "delta_ms": {
             "type": "integer"
+          },
+          "latencia_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sentido": {
+            "enum": [
+              "SOBE",
+              "DESCE",
+              "AMBOS"
+            ]
+          },
+          "mensagem": {
+            "enum": [
+              "EVENTO",
+              "RESUMO",
+              "COMANDO",
+              "CONFIG",
+              "ACK",
+              "ACK_COMANDO",
+              "RESULTADO_COMANDO",
+              "RESULTADO_CONFIG"
+            ]
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "tipo": {
+                  "const": "CANAL_LATENCIA"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "latencia_ms"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "tipo": {
+                  "enum": [
+                    "CANAL_DUPLICA",
+                    "CANAL_PERDE"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "mensagem"
+              ]
+            }
+          }
+        ]
       }
     },
     "requisitos": {
@@ -208,7 +338,7 @@
       "type": "array",
       "items": {
         "type": "string",
-        "pattern": "^RN-I0-0[1-8]$"
+        "pattern": "^RN-(I0|DT)-0[1-9]$"
       }
     },
     "controle": {
@@ -217,6 +347,26 @@
         "type": "integer",
         "minimum": 0
       }
+    },
+    "versao": {
+      "enum": [
+        "v0",
+        "v0dt"
+      ],
+      "description": "Versão em que o cenário entrou (v0dt: gêmeo digital)"
+    },
+    "rede": {
+      "type": "object",
+      "description": "v0dt: modo do canal hub ↔ plataforma (padrão: o modo do roteiro)",
+      "properties": {
+        "modo": {
+          "enum": [
+            "IDEAL",
+            "REALISTA"
+          ]
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

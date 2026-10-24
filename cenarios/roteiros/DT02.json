@@ -1,0 +1,54 @@
+{
+  "id": "DT02",
+  "versao": "v0dt",
+  "titulo": "Comando remoto com o hub desconectado",
+  "tipo": "GEMEO_DIGITAL",
+  "modo": "IDEAL",
+  "duracao_ms": 240000,
+  "descricao": "O morador está na sala com a luz acesa. O enlace cai em t=60 s por 2 min; em t=90 s o titular toca em Apagar.",
+  "comportamento_ideal": "O app recebe a recusa na hora, com o motivo, a última evidência e a idade. Nada fica pendente: na volta, a luz continua acesa.",
+  "comportamento_referencia": "A plataforma recusa por HUB_DESCONECTADO sem enviar nada ao hub.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 230000
+    },
+    {
+      "t_ms": 90000,
+      "ocupante": "app",
+      "acao": "APP_COMANDO",
+      "comando": "APAGAR"
+    },
+    {
+      "t_ms": 95000,
+      "ocupante": "app",
+      "acao": "APP_CONSULTA"
+    }
+  ],
+  "falhas": [
+    {
+      "t_ms": 60000,
+      "tipo": "CANAL_DESCONECTA",
+      "duracao_ms": 120000
+    }
+  ],
+  "requisitos": [
+    "RF-OPR-03",
+    "RNP-MP3-02",
+    "CF04"
+  ],
+  "regras": [
+    "RN-DT-06"
+  ]
+}

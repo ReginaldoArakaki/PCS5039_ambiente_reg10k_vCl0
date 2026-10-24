@@ -1,0 +1,76 @@
+{
+  "cenario": "DT02",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-03",
+    "RNP-MP3-02",
+    "CF04"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "hub desconectado",
+      "quando": "o titular toca em Apagar em t=90 s",
+      "entao": {
+        "tipo": "comando",
+        "indice": 1,
+        "nivel": "REJEITADA",
+        "motivo": "HUB_DESCONECTADO",
+        "latencia_max_ms": 1000
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "recusa na plataforma",
+      "quando": "o comando é criado",
+      "entao": {
+        "tipo": "evento",
+        "camada": "PLATAFORMA",
+        "evento": "COMANDO_RECUSADO",
+        "campos": {
+          "motivo": "HUB_DESCONECTADO"
+        }
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "comando recusado",
+      "quando": "o enlace volta em t=180 s",
+      "entao": {
+        "tipo": "luz_constante",
+        "valor": "ACESA",
+        "entre_ms": [
+          11000,
+          240000
+        ]
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "hub desconectado",
+      "quando": "o titular consulta o app em t=95 s",
+      "entao": {
+        "tipo": "app_consulta",
+        "indice": 1,
+        "campos": {
+          "atualidade": "DESATUALIZADO",
+          "conexao": "DESCONECTADO"
+        }
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

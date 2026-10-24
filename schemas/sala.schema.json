@@ -12,7 +12,8 @@
     "zonas_cegas",
     "ocupantes",
     "dispositivos",
-    "controle"
+    "controle",
+    "plataforma"
   ],
   "properties": {
     "id": {
@@ -146,6 +147,190 @@
       "additionalProperties": {
         "type": "integer",
         "minimum": 0
+      }
+    },
+    "plataforma": {
+      "type": "object",
+      "description": "v0dt: canal, DTReg10k-R, comandos remotos, configuração e app",
+      "required": [
+        "canal",
+        "app",
+        "resumo_ms",
+        "limite_atualidade_ms",
+        "validade_comando_ms",
+        "prazo_resultado_ms",
+        "reenvio_ms",
+        "reconexao_min_ms",
+        "reconexao_max_ms",
+        "reconexao_jitter",
+        "t_apagamento_limites_ms"
+      ],
+      "properties": {
+        "descricao": {
+          "type": "string"
+        },
+        "canal": {
+          "type": "object",
+          "required": [
+            "ideal",
+            "realista"
+          ],
+          "properties": {
+            "ideal": {
+              "type": "object",
+              "required": [
+                "latencia_ms",
+                "p_perda",
+                "p_duplicacao"
+              ],
+              "properties": {
+                "latencia_ms": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "p_perda": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "p_duplicacao": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "realista": {
+              "type": "object",
+              "required": [
+                "latencia_ms",
+                "p_perda",
+                "p_duplicacao"
+              ],
+              "properties": {
+                "latencia_ms": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "p_perda": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "p_duplicacao": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            }
+          }
+        },
+        "app": {
+          "type": "object",
+          "required": [
+            "ideal",
+            "realista"
+          ],
+          "properties": {
+            "ideal": {
+              "type": "object",
+              "required": [
+                "latencia_ms"
+              ],
+              "properties": {
+                "latencia_ms": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              }
+            },
+            "realista": {
+              "type": "object",
+              "required": [
+                "latencia_ms"
+              ],
+              "properties": {
+                "latencia_ms": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              }
+            }
+          }
+        },
+        "resumo_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limite_atualidade_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "validade_comando_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "prazo_resultado_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reenvio_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reconexao_min_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reconexao_max_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reconexao_jitter": {
+          "type": "object",
+          "properties": {
+            "ideal": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "realista": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "t_apagamento_limites_ms": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
       }
     }
   }

@@ -39,6 +39,51 @@
       "id": "RN-I0-08",
       "texto": "Após um reinício, o hub começa com ocupação desconhecida, lê a lâmpada pelo sensor de efeito e registra uma lacuna.",
       "origem": "RN12"
+    },
+    {
+      "id": "RN-DT-01",
+      "texto": "O DTReg10k-L é a autoridade sobre fatos locais (evidências, decisões, resultados); o DTReg10k-R é a autoridade sobre a configuração. Divergências são resolvidas por essa autoridade e registradas.",
+      "origem": "RN27, RN28; RF-SYN-05"
+    },
+    {
+      "id": "RN-DT-02",
+      "texto": "O hub publica cada evento com número de sequência e um resumo de estado a cada 30 s. Sem sessão, guarda tudo na fila persistente.",
+      "origem": "RF-SYN-01 a RF-SYN-03"
+    },
+    {
+      "id": "RN-DT-03",
+      "texto": "Na reconexão, o hub envia primeiro o estado atual e depois o histórico em ordem. O histórico nunca restabelece a atualidade.",
+      "origem": "RF-SYN-04; RN12"
+    },
+    {
+      "id": "RN-DT-04",
+      "texto": "O DTReg10k-R marca o estado como ATUAL (sessão ativa e idade ≤ 60 s), DESATUALIZADO ou SEM_EVIDENCIA. Depois de uma queda de sessão, só um estado novo do hub o torna atual de novo.",
+      "origem": "PS06; RF-ACO-01; RNF-USA-03"
+    },
+    {
+      "id": "RN-DT-05",
+      "texto": "Todo comando remoto tem validade de 30 s e chave de idempotência. O hub recusa o vencido e o repetido. Sem resultado em 10 s, o app mostra 'desconhecido'.",
+      "origem": "PS01, PS02; RF-OPR-03 a RF-OPR-05"
+    },
+    {
+      "id": "RN-DT-06",
+      "texto": "Com o hub desconectado, o app recebe recusa imediata com o motivo, a última evidência e a idade; o comando não fica pendente.",
+      "origem": "CF04; RNP-MP3-02"
+    },
+    {
+      "id": "RN-DT-07",
+      "texto": "Mudança de preferência cria nova versão de configuração, 'pendente' até o hub confirmá-la; o hub nunca aplica versão menor ou igual à já aplicada.",
+      "origem": "RF-OPR-07; RF-SYN-06; INV-14"
+    },
+    {
+      "id": "RN-DT-08",
+      "texto": "Indisponibilidade da plataforma ou do canal não altera a automação local.",
+      "origem": "RNF-CON-01"
+    },
+    {
+      "id": "RN-DT-09",
+      "texto": "Comando remoto aceito cria precedência REMOTA por 15 min sobre a automação. É recusado se houver precedência manual ativa; o interruptor sempre prevalece sobre o app.",
+      "origem": "RN07; R10 §7.2 (precedência)"
     }
   ],
   "parametros": [
@@ -71,6 +116,48 @@
       "id": "Validade da evidência (PS04)",
       "valor": "10 s",
       "chave": "validade_evidencia_ms"
+    },
+    {
+      "id": "Resumo de estado",
+      "valor": "30 s",
+      "chave": "resumo_ms",
+      "fonte": "plataforma"
+    },
+    {
+      "id": "Limite de atualidade (PS06)",
+      "valor": "60 s",
+      "chave": "limite_atualidade_ms",
+      "fonte": "plataforma"
+    },
+    {
+      "id": "Validade do comando remoto (PS01)",
+      "valor": "30 s",
+      "chave": "validade_comando_ms",
+      "fonte": "plataforma"
+    },
+    {
+      "id": "Prazo do resultado (PS02)",
+      "valor": "10 s",
+      "chave": "prazo_resultado_ms",
+      "fonte": "plataforma"
+    },
+    {
+      "id": "Reenvio sem confirmação",
+      "valor": "3 s",
+      "chave": "reenvio_ms",
+      "fonte": "plataforma"
+    },
+    {
+      "id": "Reconexão (espera inicial)",
+      "valor": "1 s, dobrando",
+      "chave": "reconexao_min_ms",
+      "fonte": "plataforma"
+    },
+    {
+      "id": "Reconexão (espera máxima)",
+      "valor": "30 s",
+      "chave": "reconexao_max_ms",
+      "fonte": "plataforma"
     }
   ],
   "requisitos": {
@@ -94,7 +181,32 @@
     "RN02": "V1 — intenção, execução relatada e efeito observado são distintos",
     "RN09": "V1 — SA e SP não identificam pessoa, idade, direção ou contagem",
     "RN12": "V1 — dados tardios não apagam conclusões históricas",
-    "RN-I0-01": "Incremento 0 — ocupante inclui animal de grande porte (RN34 na V1 v02, decisão A12)"
+    "RN-I0-01": "Incremento 0 — ocupante inclui animal de grande porte (RN34 na V1 v02, decisão A12)",
+    "RF-OPR-03": "Comando remoto com validade, chave de idempotência e recusa com motivo",
+    "RF-OPR-07": "Preferência alterada fica 'pendente de aplicação' até a confirmação do hub",
+    "RF-SYN-02": "Resumo de estado a cada 30 s para medir a atualidade",
+    "RF-SYN-03": "Fila local persistente durante a desconexão",
+    "RF-SYN-04": "Reconexão ordenada: estado atual antes do histórico",
+    "RF-SYN-05": "Autoridade por tipo de registro e registro da divergência",
+    "RF-SYN-06": "Distribuição R → L da configuração e confirmação da versão aplicada",
+    "RF-ACO-01": "App mostra estado com idade e atualidade",
+    "RNF-DES-01": "Atualidade do gêmeo: p95 ≤ 5 s (PS11)",
+    "RNF-DES-02": "Comando remoto: toque → resultado no app, p95 ≤ 3 s (PS12)",
+    "RNF-CON-02": "Fila do hub para até 7 dias de eventos",
+    "RNF-CON-06": "Reconexão automática com espera exponencial",
+    "RNF-CON-07": "Efeito único mesmo com mensagens duplicadas",
+    "INV-07": "V2 — intenção só é executada dentro da validade",
+    "INV-10": "V2 — chave de idempotência única por intenção",
+    "INV-14": "V2 — versão aplicada no hub ≤ versão vigente na plataforma",
+    "CF04": "V3 — comando remoto pelo app",
+    "CF06": "V3 — desconexão e reconexão do hub",
+    "CV05": "V1 — plataforma indisponível: a casa continua funcionando",
+    "CV29": "V1 — preferência alterada com o hub offline",
+    "PS11": "V1 — sincronização em tempo real, p95 ≤ 5 s (A11)",
+    "RN07": "V1 — cada intervenção tem solicitante, motivo, prazo, resultado e precedência",
+    "RN34": "V1 — ocupante inclui animal de grande porte (A12)",
+    "RNP-MP3-02": "V1 — comandos remotos com validade, autorização e precedência",
+    "RNP-MP3-03": "V1 — intervenção manual com precedência temporária"
   },
   "metricas": [
     {
@@ -136,6 +248,36 @@
       "id": "ocupacao_desconhecida_s",
       "nome": "Ocupação desconhecida (s)",
       "def": "Tempo em que o controlador declara ocupação desconhecida."
+    },
+    {
+      "id": "atualidade_gemeo_ms_p95",
+      "nome": "Atualidade do gêmeo p95 (ms)",
+      "def": "Da mudança de estado no hub (DTReg10k-L) até o DTReg10k-R refleti-la, com sessão ativa. Limite: 5 s (PS11, RNF-DES-01)."
+    },
+    {
+      "id": "comando_remoto_ms_p95",
+      "nome": "Comando remoto p95 (ms)",
+      "def": "Do toque no app até o app mostrar o resultado classificado. Limite: 3 s (PS12, RNF-DES-02)."
+    },
+    {
+      "id": "comandos_vencidos_executados",
+      "nome": "Comandos vencidos executados",
+      "def": "Intenções remotas executadas depois de validaAte. Limite: 0 (INV-07)."
+    },
+    {
+      "id": "efeitos_duplicados_remotos",
+      "nome": "Efeitos duplicados (remoto)",
+      "def": "Intenções a mais para a mesma chave de comando remoto. Limite: 0 (INV-10)."
+    },
+    {
+      "id": "reconciliacao_ms_max",
+      "nome": "Reconciliação máx. (ms)",
+      "def": "Da sessão restabelecida até o DTReg10k-R voltar a ATUAL. Limite: 5 s."
+    },
+    {
+      "id": "divergencia_alem_prazo_s",
+      "nome": "Divergência L × R (s)",
+      "def": "Tempo em que o R diz 'atual' com ocupação ou luz diferentes do L, descontados os 5 s de sincronização. Limite: 0."
     }
   ],
   "invariantes": [
@@ -151,7 +293,7 @@
     },
     {
       "id": "OR-03",
-      "texto": "Ocupação Vazia só depois de 60 s sem detecção.",
+      "texto": "Ocupação Vazia só depois de T_apagamento sem detecção (60 s, ou o valor da configuração aplicada).",
       "base": "INV-09 ajustada"
     },
     {
@@ -168,6 +310,36 @@
       "id": "OR-06",
       "texto": "O controlador nunca recebe eventos da camada de verdade.",
       "base": "Contrato §7.2"
+    },
+    {
+      "id": "OR-07",
+      "texto": "Nenhuma intenção remota é aceita ou executada depois de validaAte.",
+      "base": "INV-07; PS01"
+    },
+    {
+      "id": "OR-08",
+      "texto": "O DTReg10k-R (e o app) nunca dizem 'atual' sem sessão ou com estado de mais de 60 s.",
+      "base": "RN-DT-04; RNF-USA-03"
+    },
+    {
+      "id": "OR-09",
+      "texto": "O estado aplicado no R só avança: histórico ou mensagem atrasada nunca substitui estado mais recente.",
+      "base": "RN-DT-03; RN12"
+    },
+    {
+      "id": "OR-10",
+      "texto": "Versão aplicada no hub ≤ versão vigente no R; versão pendente termina aplicada, recusada ou substituída com a sessão ativa.",
+      "base": "INV-14"
+    },
+    {
+      "id": "OR-11",
+      "texto": "Cada comando remoto produz no máximo uma intenção, mesmo com duplicação no canal.",
+      "base": "INV-10; RN11"
+    },
+    {
+      "id": "OR-12",
+      "texto": "Com a plataforma ou o canal fora, as decisões locais são idênticas às da mesma execução sem a falha de rede (execução pareada).",
+      "base": "RNF-CON-01; RN-DT-08"
     }
   ],
   "camadas": [
@@ -193,13 +365,23 @@
     },
     {
       "id": "ESTADO",
-      "quem": "Controlador (a cada 1 s e a cada mudança)",
+      "quem": "Controlador (a cada 1 s e a cada mudança) — é o DTReg10k-L",
       "v2": "EstadoComodo"
     },
     {
       "id": "SISTEMA",
       "quem": "Hub e injetor de falhas",
       "v2": "Falha, reinício, lacuna, relógio"
+    },
+    {
+      "id": "REDE",
+      "quem": "Canal simulado e agente (sessão, perdas, duplicações)",
+      "v2": "— (transporte; I-EVT, I-CMD, I-CFG)"
+    },
+    {
+      "id": "PLATAFORMA",
+      "quem": "DTReg10k-R, comandos, configuração e app",
+      "v2": "RepresentacaoRemota, Intencao (remota), ConfiguracaoVersionada"
     }
   ],
   "diagramas": [
@@ -237,38 +419,64 @@
       "id": "componentes",
       "titulo": "Componentes",
       "descricao": "Simulador, hub com controlador plugável, avaliação e página."
+    },
+    {
+      "id": "componentes-v0dt",
+      "titulo": "Componentes — v0dt",
+      "descricao": "Simulador e controlador da v0 sem mudança; entram agente de sincronização, canal, plataforma e app."
+    },
+    {
+      "id": "sequencia-DT01",
+      "titulo": "Sequência — comando remoto (DT01, DT03, DT04)",
+      "descricao": "Validade de 30 s, chave de idempotência e classificação do resultado."
+    },
+    {
+      "id": "sequencia-DT05",
+      "titulo": "Sequência — desconexão e reconexão (DT05)",
+      "descricao": "Fila persistente; estado atual antes do histórico; divergência resolvida pela autoridade do hub."
+    },
+    {
+      "id": "estados-gemeo-remoto",
+      "titulo": "Estados — atualidade do DTReg10k-R",
+      "descricao": "Sem evidência, atual e desatualizado; só um estado novo do hub restabelece a atualidade."
     }
   ],
   "trilha": [
     {
       "inc": 0,
+      "versao": "v0",
       "dias": "1–3",
       "acrescenta": "1 sala, 1 porta, morador e cachorro; SA, SP, atuador, lâmpada, interruptor; JSON e painel"
     },
     {
       "inc": 1,
+      "versao": "v0dt",
       "dias": "4–5",
-      "acrescenta": "2º cômodo e passagem"
+      "acrescenta": "Gêmeo digital L/R, canal, plataforma e app simulados — mesma sala, mesmo morador e Rex"
     },
     {
       "inc": 2,
+      "versao": "v1dt",
       "dias": "6–7",
-      "acrescenta": "Mais pessoas e visitante"
+      "acrescenta": "2º cômodo e passagem; o gêmeo espelha os dois cômodos"
     },
     {
       "inc": 3,
+      "versao": "v1dt.1",
       "dias": "8–9",
-      "acrescenta": "Plataforma, gêmeo L/R, app e desconexão"
+      "acrescenta": "Mais pessoas e visitante"
     },
     {
       "inc": 4,
+      "versao": "v2dt",
       "dias": "10–11",
       "acrescenta": "Casa A (4 cômodos)"
     },
     {
       "inc": 5,
+      "versao": "v3dt",
       "dias": "12–13",
-      "acrescenta": "Casa B (7 cômodos) e aprendizado do gêmeo"
+      "acrescenta": "Casa B (7 cômodos) e aprendizado completo do gêmeo"
     }
   ]
 }

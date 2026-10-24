@@ -1,0 +1,41 @@
+{
+  "id": "DT03",
+  "versao": "v0dt",
+  "titulo": "Rede lenta: o comando chega vencido",
+  "tipo": "GEMEO_DIGITAL",
+  "modo": "IDEAL",
+  "duracao_ms": 180000,
+  "descricao": "A sala está vazia. De t=60 s a t=120 s, o sentido plataforma → hub tem 35 s de atraso. Em t=70 s o titular toca em Acender.",
+  "comportamento_ideal": "O comando chega ao hub depois da validade (30 s) e é recusado como EXPIRADA; a luz não muda. O app mostra 'desconhecido' após 10 s e depois o resultado final.",
+  "comportamento_referencia": "O agente de sincronização recusa o vencido; as cópias reenviadas chegam como repetidas.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 70000,
+      "ocupante": "app",
+      "acao": "APP_COMANDO",
+      "comando": "ACENDER"
+    }
+  ],
+  "falhas": [
+    {
+      "t_ms": 60000,
+      "tipo": "CANAL_LATENCIA",
+      "latencia_ms": 35000,
+      "sentido": "DESCE",
+      "duracao_ms": 60000
+    }
+  ],
+  "requisitos": [
+    "RF-OPR-03",
+    "RF-OPR-04",
+    "INV-07",
+    "CV04"
+  ],
+  "regras": [
+    "RN-DT-05"
+  ]
+}

@@ -13,11 +13,14 @@ IDS = [r["id"] for r in ROTEIROS]
 CTRLS = descobrir_controladores()
 
 
-def test_catalogo_tem_20_cenarios():
+def test_catalogo_tem_20_cenarios_da_v0_e_12_do_gemeo():
     tipos = [r["tipo"] for r in ROTEIROS]
-    assert len(ROTEIROS) == 20
+    assert len(ROTEIROS) == 32
     assert tipos.count("NORMAL") == 6 and tipos.count("FALSO_POSITIVO") == 3
     assert tipos.count("FALSO_NEGATIVO") == 5 and tipos.count("FALHA") == 6
+    assert tipos.count("GEMEO_DIGITAL") == 12
+    assert all(r.get("versao", "v0") == "v0" for r in ROTEIROS if not r["id"].startswith("DT"))
+    assert all(r["versao"] == "v0dt" for r in ROTEIROS if r["id"].startswith("DT"))
 
 
 @pytest.mark.parametrize("roteiro", ROTEIROS, ids=IDS)

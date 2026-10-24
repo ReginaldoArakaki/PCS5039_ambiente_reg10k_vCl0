@@ -1,0 +1,36 @@
+flowchart LR
+    subgraph SIM["Simulador (v0, sem mudança)"]
+        MUN[Mundo e ocupantes] --> DSP[Dispositivos: SA, SP, atuador, lâmpada, interruptor]
+        FAL[Injetor de falhas: dispositivos, hub e rede] --> DSP
+    end
+    subgraph HUB["Hub"]
+        CTL{{Controlador plugável}}
+        DTL[(DTReg10k-L: registro, estado, versão aplicada)]
+        AGS[Agente de sincronização · fila persistente]
+        CTL --> DTL --> AGS
+        AGS -->|COMANDO_REMOTO, CONFIGURACAO| CTL
+    end
+    subgraph CAN["Canal simulado"]
+        UP[SOBE: do hub para a plataforma]
+        DOWN[DESCE: da plataforma para o hub]
+    end
+    subgraph PLAT["Plataforma simulada"]
+        GW[Gateway · descarta duplicatas]
+        DTR[(DTReg10k-R: projeção, idade, atualidade)]
+        CMD[Comandos · validade 30 s · chave]
+        CFG[Configuração versionada]
+        GW --> DTR
+    end
+    APP([App simulado · titular]) --> CMD
+    APP --> CFG
+    DTR --> APP
+    DSP -->|I-EVT| CTL
+    CTL -->|I-CMD local| DSP
+    AGS --> UP --> GW
+    CMD --> DOWN
+    CFG --> DOWN
+    DOWN --> AGS
+    MUN -. VERDADE .-> ORA[Oráculo: OR-01 a OR-12]
+    DTL -.-> ORA
+    DTR -.-> ORA
+    ORA --> WEB[Página: verdade × hub × plataforma]

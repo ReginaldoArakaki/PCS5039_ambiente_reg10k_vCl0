@@ -1,0 +1,22 @@
+sequenceDiagram
+    autonumber
+    participant CTL as Controlador
+    participant AG as Agente (hub)
+    participant C as Canal
+    participant R as DTReg10k-R
+    actor T as Titular (app)
+    Note over C: t = 60 s, enlace cai
+    AG->>AG: SESSAO_CAIU, espera 1 s, 2 s, 4 s ... até 30 s
+    R->>R: DESATUALIZADO, DESCONECTADO
+    T->>R: consulta
+    R-->>T: último estado, com idade e selo desatualizado
+    CTL->>AG: decisões locais continuam (OR-12)
+    AG->>AG: eventos vão para a fila persistente
+    Note over C: t = 660 s, enlace volta
+    AG->>C: tentativa de reconexão
+    AG->>R: 1º RESUMO com o estado atual (n alto)
+    R->>R: DIVERGENCIA: R dizia OCUPADA, hub diz VAZIA. Adota o hub (RN27)
+    R->>R: ATUAL
+    AG->>R: depois, o histórico da fila em ordem de n
+    R->>R: histórico vai ao registro, não muda o estado atual (OR-09)
+    R-->>AG: ACK de cada mensagem, a fila esvazia

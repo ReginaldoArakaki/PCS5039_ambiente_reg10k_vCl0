@@ -1,0 +1,54 @@
+{
+  "id": "DT10",
+  "versao": "v0dt",
+  "titulo": "Hub reinicia com a plataforma conectada",
+  "tipo": "GEMEO_DIGITAL",
+  "modo": "IDEAL",
+  "duracao_ms": 240000,
+  "descricao": "O morador está na sala. O hub fica 25 s desligado a partir de t=100 s. O titular consulta o app em t=105 s e t=140 s.",
+  "comportamento_ideal": "O R passa a 'desatualizado' assim que a sessão cai; na volta, a lacuna é registrada e o R fica atual de novo.",
+  "comportamento_referencia": "O agente religa com a fila persistida e restabelece a sessão 1 s após o boot.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 225000
+    },
+    {
+      "t_ms": 105000,
+      "ocupante": "app",
+      "acao": "APP_CONSULTA"
+    },
+    {
+      "t_ms": 140000,
+      "ocupante": "app",
+      "acao": "APP_CONSULTA"
+    }
+  ],
+  "falhas": [
+    {
+      "t_ms": 100000,
+      "tipo": "HUB_REINICIO",
+      "duracao_ms": 25000
+    }
+  ],
+  "requisitos": [
+    "RF-SYN-01",
+    "RF-SYN-04",
+    "RNF-USA-03"
+  ],
+  "regras": [
+    "RN-I0-08",
+    "RN-DT-04"
+  ]
+}

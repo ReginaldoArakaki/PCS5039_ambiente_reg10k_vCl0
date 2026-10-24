@@ -39,6 +39,21 @@
       "ideal": {"latencia_ms": [50, 50]}, "realista": {"latencia_ms": [50, 100]}
     }
   },
+  "plataforma": {
+    "descricao": "v0dt: canal hub ↔ plataforma, DTReg10k-R, comandos remotos, configuração versionada e app",
+    "canal": {
+      "ideal":    {"latencia_ms": [100, 100], "p_perda": 0,    "p_duplicacao": 0},
+      "realista": {"latencia_ms": [50, 400],  "p_perda": 0.01, "p_duplicacao": 0.005}
+    },
+    "app": {
+      "ideal":    {"latencia_ms": [150, 150]},
+      "realista": {"latencia_ms": [100, 400]}
+    },
+    "resumo_ms": 30000, "limite_atualidade_ms": 60000, "validade_comando_ms": 30000, "prazo_resultado_ms": 10000,
+    "reenvio_ms": 3000, "reconexao_min_ms": 1000, "reconexao_max_ms": 30000,
+    "reconexao_jitter": {"ideal": 0, "realista": 0.2},
+    "t_apagamento_limites_ms": [30000, 1800000]
+  },
   "controle": {
     "t_apagamento_ms": 60000, "t_manual_ms": 900000, "t_heartbeat_falha_ms": 30000,
     "t_confirmacao_ms": 10000, "t_retentativa_ms": 2000, "validade_evidencia_ms": 10000

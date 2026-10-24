@@ -1,0 +1,66 @@
+{
+  "id": "DT07",
+  "versao": "v0dt",
+  "titulo": "Plataforma fora do ar por 5 min",
+  "tipo": "GEMEO_DIGITAL",
+  "modo": "IDEAL",
+  "duracao_ms": 480000,
+  "descricao": "A plataforma para de t=60 s a t=360 s. O morador sai em t=200 s, volta em t=280 s e sai em t=330 s.",
+  "comportamento_ideal": "A casa funciona normalmente; a fila do hub cresce e esvazia na volta, sem perda.",
+  "comportamento_referencia": "O agente guarda os eventos na fila persistente e os envia, depois do estado atual, quando a sessão volta.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 185000
+    },
+    {
+      "t_ms": 200000,
+      "ocupante": "morador",
+      "acao": "SAIR"
+    },
+    {
+      "t_ms": 280000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 280000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 45000
+    },
+    {
+      "t_ms": 330000,
+      "ocupante": "morador",
+      "acao": "SAIR"
+    }
+  ],
+  "falhas": [
+    {
+      "t_ms": 60000,
+      "tipo": "PLATAFORMA_FORA",
+      "duracao_ms": 300000
+    }
+  ],
+  "requisitos": [
+    "RNF-CON-01",
+    "RNF-CON-02",
+    "RF-SYN-03",
+    "CV05"
+  ],
+  "regras": [
+    "RN-DT-02",
+    "RN-DT-08"
+  ]
+}

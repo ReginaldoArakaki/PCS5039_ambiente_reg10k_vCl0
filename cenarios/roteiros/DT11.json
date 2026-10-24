@@ -1,0 +1,48 @@
+{
+  "id": "DT11",
+  "versao": "v0dt",
+  "titulo": "Relógio do hub salta −5 min durante a sincronização",
+  "tipo": "GEMEO_DIGITAL",
+  "modo": "IDEAL",
+  "duracao_ms": 360000,
+  "descricao": "O morador está na sala; em t=120 s o relógio de parede do hub volta 5 min. O morador sai em t=240 s.",
+  "comportamento_ideal": "O R ordena pelo número de sequência e mede a idade pela recepção; a atualidade não regride.",
+  "comportamento_referencia": "Os eventos chegam marcados com relógio não confiável; o R não usa o relógio do hub.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 225000
+    },
+    {
+      "t_ms": 240000,
+      "ocupante": "morador",
+      "acao": "SAIR"
+    }
+  ],
+  "falhas": [
+    {
+      "t_ms": 120000,
+      "tipo": "RELOGIO_SALTO",
+      "delta_ms": -300000
+    }
+  ],
+  "requisitos": [
+    "RF-SYN-01",
+    "RNF-DES-01"
+  ],
+  "regras": [
+    "RN-DT-03",
+    "RN-DT-04"
+  ]
+}

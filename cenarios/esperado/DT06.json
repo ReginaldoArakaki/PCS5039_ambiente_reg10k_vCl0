@@ -1,0 +1,113 @@
+{
+  "cenario": "DT06",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-07",
+    "RF-SYN-06",
+    "INV-14",
+    "CV29"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "hub desconectado",
+      "quando": "o titular muda a preferência",
+      "entao": {
+        "tipo": "config",
+        "versao": 2,
+        "estado": "PENDENTE",
+        "ate_ms": 100000
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "versão pendente",
+      "quando": "o titular consulta o app em t=70 s",
+      "entao": {
+        "tipo": "app_consulta",
+        "indice": 2,
+        "campos": {
+          "config_versao": 2,
+          "config_estado": "PENDENTE"
+        }
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "sessão restabelecida",
+      "quando": "o hub recebe a versão 2",
+      "entao": {
+        "tipo": "evento",
+        "camada": "SISTEMA",
+        "evento": "CONFIG_APLICADA",
+        "campos": {
+          "versao": 2
+        },
+        "entre_ms": [
+          150000,
+          165000
+        ]
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "hub confirmou",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "config",
+        "versao": 2,
+        "estado": "APLICADA"
+      }
+    },
+    {
+      "id": "A5",
+      "nivel": "REQUISITO",
+      "dado": "T_apagamento = 120 s",
+      "quando": "100 s depois da saída",
+      "entao": {
+        "tipo": "luz",
+        "valor": "ACESA",
+        "em_ms": 400000
+      }
+    },
+    {
+      "id": "A6",
+      "nivel": "REQUISITO",
+      "dado": "T_apagamento = 120 s",
+      "quando": "130 s depois da saída",
+      "entao": {
+        "tipo": "luz",
+        "valor": "APAGADA",
+        "em_ms": 430000
+      }
+    },
+    {
+      "id": "A7",
+      "nivel": "REQUISITO",
+      "dado": "versão aplicada",
+      "quando": "o titular consulta o app em t=450 s",
+      "entao": {
+        "tipo": "app_consulta",
+        "indice": 3,
+        "campos": {
+          "config_versao": 2,
+          "config_estado": "APLICADA"
+        }
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

@@ -8,7 +8,7 @@ import statistics
 from pathlib import Path
 from typing import Callable, Iterable, Optional
 
-from avaliacao.oraculo import avaliar
+from avaliacao.oraculo import avaliar, roteiro_sem_rede, tem_app, tem_falha_de_rede
 from hub.controlador import Controlador, ControladorReferencia
 from sim.motor import simular
 
@@ -20,7 +20,11 @@ METRICAS_NUMERICAS = (
     "desperdicio_s", "escuro_com_ocupante_s", "apagamentos_indevidos", "acionamentos",
     "latencia_reacao_ms_p95", "atraso_percebido_ms_max", "desperdicio_por_saida_s_max",
     "ocupacao_desconhecida_s",
+    # v0dt
+    "atualidade_gemeo_ms_p95", "comando_remoto_ms_p95", "comandos_vencidos_executados",
+    "efeitos_duplicados_remotos", "reconciliacao_ms_max", "divergencia_alem_prazo_s",
 )
+VERSAO = "v0dt"
 
 
 # --------------------------------------------------------------- carregamento
@@ -34,7 +38,7 @@ def carregar_sala() -> dict:
 
 def carregar_roteiros(ids: Optional[Iterable[str]] = None) -> list[dict]:
     todos = [ler_json(p) for p in sorted((CENARIOS / "roteiros").glob("*.json"))]
-    ordem = {"NORMAL": 0, "FALSO_POSITIVO": 1, "FALSO_NEGATIVO": 2, "FALHA": 3}
+    ordem = {"NORMAL": 0, "FALSO_POSITIVO": 1, "FALSO_NEGATIVO": 2, "FALHA": 3, "GEMEO_DIGITAL": 4}
     todos.sort(key=lambda r: (ordem.get(r["tipo"], 9), r["id"]))
     if ids:
         ids = set(ids)
@@ -82,12 +86,19 @@ def executar(roteiro: dict, fabrica, semente: int = SEMENTE_REFERENCIA, sala: Op
     reg = simular(sala, roteiro, fabrica, semente)
     nome = getattr(fabrica, "nome", "controlador")
     esperado = carregar_esperado(roteiro["id"])
-    av = avaliar(reg.eventos, roteiro, sala, esperado)
+    # OR-12: execução pareada sem falhas de rede (só faz sentido sem ações do app)
+    par = None
+    if tem_falha_de_rede(roteiro) and not tem_app(roteiro):
+        par = simular(sala, roteiro_sem_rede(roteiro), fabrica, semente).eventos
+    av = avaliar(reg.eventos, roteiro, sala, esperado, par)
     resumo = {
         "cenario": roteiro["id"],
         "controlador": nome,
         "semente": semente,
         "modo": roteiro.get("modo", "IDEAL"),
+        "modo_rede": (roteiro.get("rede", {}).get("modo") or roteiro.get("modo", "IDEAL")).upper(),
+        "versao_cenario": roteiro.get("versao", "v0"),
+        "execucao_pareada": par is not None,
         "hash_eventos": reg.hash(),
         "n_eventos": len(reg.eventos),
         **av,
@@ -134,7 +145,8 @@ def gerar_catalogo(controladores: dict[str, Callable[[], object]], ids=None, n_s
                 res["determinismo_ok"] = h2 == res["hash_eventos"]
                 if not res["determinismo_ok"]:
                     problemas.append(f"{r['id']}/{nome}: execução não determinística")
-            if r.get("modo") == "REALISTA" and n_sementes > 0:
+            realista = r.get("modo") == "REALISTA" or r.get("rede", {}).get("modo") == "REALISTA"
+            if realista and n_sementes > 0:
                 res["distribuicao"] = distribuicao(r, fab, n_sementes, sala)
             inv_falhas = [k for k, v in res["invariantes"].items() if not v["ok"]]
             if inv_falhas:
@@ -150,12 +162,13 @@ def gerar_catalogo(controladores: dict[str, Callable[[], object]], ids=None, n_s
                 f"indevidos {res['metricas']['apagamentos_indevidos']}")
             execucoes.append(res)
     catalogo = {
-        "versao": "0.1",
-        "incremento": 0,
+        "versao": VERSAO,
+        "incremento": 1,
         "sala": sala,
         "cenarios": [
-            {**{k: r[k] for k in ("id", "titulo", "tipo", "modo", "duracao_ms", "descricao",
-                                  "comportamento_ideal", "comportamento_referencia", "requisitos", "regras")
+            {"versao": r.get("versao", "v0"),
+             **{k: r[k] for k in ("id", "titulo", "tipo", "modo", "duracao_ms", "descricao",
+                                  "comportamento_ideal", "comportamento_referencia", "requisitos", "regras", "rede")
                 if k in r},
              "esperado": carregar_esperado(r["id"])}
             for r in roteiros

@@ -4,6 +4,9 @@
   percepção, decisões e estado (plano §7.1).
 - Executor: aplica RN-I0-06 (classificação), RN-I0-07 (nova tentativa com a
   mesma chave) e RN-I0-08 (reinício com lacuna e leitura da lâmpada).
+- v0dt: recebe do agente de sincronização os comandos remotos (como evidência
+  COMANDO_REMOTO) e as novas versões de configuração (evidência CONFIGURACAO),
+  e devolve ao agente o resultado de cada comando remoto.
 """
 from __future__ import annotations
 
@@ -11,7 +14,7 @@ from typing import Callable, Optional
 
 from sim.modelos import (
     ACENDER, ATUACAO, DECISAO, DESCONHECIDO, EFEITO_OBSERVADO, ESTADO,
-    EXECUCAO_RELATADA, PERCEPCAO, SISTEMA, SUBSTITUIDA, VERDADE,
+    EXECUCAO_RELATADA, MANUAL, PERCEPCAO, SISTEMA, SUBSTITUIDA, VERDADE,
     ConfigSala, Evidencia, Intencao,
 )
 from hub.registro import Registro
@@ -31,17 +34,21 @@ class Executor:
         self.n += 1
         return f"I-{self.boot}-{self.n:04d}"
 
-    def enviar(self, intencao: Intencao, t: int, evidencia_id: Optional[str], ocupacao: str) -> None:
+    def enviar(self, intencao: Intencao, t: int, evidencia_id: Optional[str], ocupacao: str,
+               chave_remota: Optional[str] = None) -> None:
         # Uma intenção nova substitui as pendentes (o último pedido vale)
         for chave in list(self.pend):
             p = self.pend.pop(chave)
             self._resultado(t, chave, p["acao"], SUBSTITUIDA, False)
         chave = self.nova_chave()
+        extra = {"chave_remota": chave_remota} if chave_remota else {}
+        if chave_remota:
+            self.hub.remotas[chave] = chave_remota
         self.hub.reg.add(
             DECISAO, "INTENCAO", t, acao=intencao.acao, causa=intencao.causa,
             regra=intencao.regra, precedencia=intencao.precedencia, chave=chave,
             evidencia_id=evidencia_id, ocupacao_no_momento=ocupacao,
-            controlador=self.hub.ctrl.nome,
+            controlador=self.hub.ctrl.nome, **extra,
         )
         self.pend[chave] = {"acao": intencao.acao, "t_envio": t, "tentativas": 1, "confirmado": False}
         self.hub.comandar_atuador(chave, intencao.acao, t)
@@ -77,6 +84,9 @@ class Executor:
 
     def _resultado(self, t: int, chave: str, acao: str, nivel: str, divergencia: bool) -> None:
         self.hub.reg.add(ATUACAO, "RESULTADO", t, chave=chave, acao=acao, nivel=nivel, divergencia=divergencia)
+        remota = self.hub.remotas.pop(chave, None)
+        if remota and self.hub.agente is not None:
+            self.hub.agente.resultado_comando(t, remota, nivel)
         self.hub.resultados_a_entregar.append(
             Evidencia(f"res-{chave}", t, "HUB", "RESULTADO",
                       {"chave": chave, "acao": acao, "nivel": nivel, "divergencia": divergencia})
@@ -99,6 +109,10 @@ class Hub:
         self.alertas_ativos: set[str] = set()
         self.desligado_em: Optional[int] = None
         self.entregas = {c: 0 for c in ("PERCEPCAO", "VERDADE")}
+        self.agente = None                     # v0dt: agente de sincronização
+        self.remotas: dict[str, str] = {}      # chave do executor → chave do comando remoto
+        self._chave_remota: Optional[str] = None
+        self._intencoes_remotas = 0
         self._iniciar_controlador()
 
     # ----------------------------------------------------------- ciclo de vida
@@ -116,6 +130,9 @@ class Hub:
         self.ctrl = None
         self.executor = None
         self.alertas_ativos = set()
+        self.remotas = {}
+        if self.agente is not None:
+            self.agente.desligar(t)
 
     def ligar(self, t: int, lampada_acesa: bool) -> None:
         self.boot += 1
@@ -125,6 +142,34 @@ class Hub:
         self._iniciar_controlador()
         # RN-I0-08: lê o estado da lâmpada pelo sensor de efeito
         self.receber(t, "LAMP-01", "LEITURA_LAMPADA", {"acesa": lampada_acesa}, t)
+        if self.agente is not None:
+            self.agente.ligar(t)
+
+    # ------------------------------------------------------------------ v0dt
+    def comando_remoto(self, t: int, chave: str, acao: str, solicitante: str) -> Optional[str]:
+        """Entrega o comando remoto ao controlador. Devolve o motivo da recusa, ou None se virou intenção."""
+        if not self.ligado:
+            return "HUB_DESLIGADO"
+        self._chave_remota = chave
+        self._intencoes_remotas = 0
+        try:
+            self.receber(t, "PLATAFORMA", "COMANDO_REMOTO",
+                         {"chave_remota": chave, "acao": acao, "solicitante": solicitante}, t)
+        finally:
+            self._chave_remota = None
+        if self._intencoes_remotas:
+            return None
+        e = self.ctrl.estado()
+        return "PRECEDENCIA_MANUAL" if e.precedencia == MANUAL else "SEM_DECISAO_DO_CONTROLADOR"
+
+    def aplicar_config(self, t: int, versao: int, parametros: dict) -> None:
+        """RN-DT-07: aplica a versão (o agente já garantiu que é maior que a aplicada)."""
+        for k, v in parametros.items():
+            if k in self.cfg.__dataclass_fields__:
+                setattr(self.cfg, k, v)
+        self.reg.add(SISTEMA, "CONFIG_APLICADA", t, versao=versao, **parametros)
+        if self.ligado:
+            self.receber(t, "PLATAFORMA", "CONFIGURACAO", {"versao": versao, **parametros}, t)
 
     # --------------------------------------------------------------- barramento
     def receber(self, t_emissao: float, origem: str, tipo: str, dados: dict, agora: int) -> None:
@@ -144,7 +189,11 @@ class Hub:
     def _executar(self, intencoes, agora: int, evidencia_id: Optional[str]) -> None:
         for it in intencoes or []:
             ocup = self.ctrl.estado().ocupacao
-            self.executor.enviar(it, agora, evidencia_id, ocup)
+            # Toda intenção devolvida ao tratar o COMANDO_REMOTO responde a ele
+            remota = self._chave_remota
+            if remota:
+                self._intencoes_remotas += 1
+            self.executor.enviar(it, agora, evidencia_id, ocup, remota)
 
     def tick(self, t: int) -> None:
         if not self.ligado:

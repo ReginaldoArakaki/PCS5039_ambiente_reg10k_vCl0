@@ -1,0 +1,12 @@
+stateDiagram-v2
+    [*] --> SemEvidencia
+    SemEvidencia --> Atual: primeiro estado do hub com sessão ativa
+    Atual --> Atual: estado ou resumo recebido (idade volta a 0)
+    Atual --> Desatualizado: idade > 60 s (PS06)
+    Atual --> Desatualizado: sessão cai (enlace, hub ou plataforma)
+    Desatualizado --> Atual: sessão ativa e estado novo do hub (n maior)
+    Desatualizado --> Desatualizado: histórico da fila (não restabelece a atualidade)
+    note right of Desatualizado
+        O app mostra o último valor com idade e o selo
+        "desatualizado", nunca como estado atual (RNF-USA-03)
+    end note

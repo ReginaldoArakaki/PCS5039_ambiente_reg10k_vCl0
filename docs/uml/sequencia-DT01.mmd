@@ -1,0 +1,36 @@
+sequenceDiagram
+    autonumber
+    actor T as Titular (app)
+    participant CMD as Comandos (plataforma)
+    participant C as Canal
+    participant AG as Agente (hub)
+    participant CTL as Controlador
+    participant EX as Executor e atuador
+    participant R as DTReg10k-R
+    T->>CMD: Acender (t)
+    alt hub desconectado (DT02)
+        CMD-->>T: REJEITADA: HUB_DESCONECTADO, última evidência e idade
+    else sessão ativa
+        CMD->>CMD: Intenção remota, validaAte = t + 30 s, chave CMD-nnn
+        CMD->>C: COMANDO
+        C->>AG: entrega (atraso, perda ou duplicação)
+        AG-->>CMD: ACK_COMANDO
+        alt agora > validaAte (DT03)
+            AG->>R: RESULTADO_COMANDO: EXPIRADA
+        else chave já vista (DT04)
+            AG->>AG: COMANDO_REMOTO_RECEBIDO: REPETIDO, sem efeito
+        else válido
+            AG->>CTL: evidência COMANDO_REMOTO
+            alt precedência manual (DT09)
+                CTL-->>AG: lista vazia
+                AG->>R: RESULTADO_COMANDO: REJEITADA
+            else
+                CTL-->>AG: Intencao ACENDER, precedência REMOTA
+                AG->>EX: executa com chave local
+                EX-->>AG: EFEITO_OBSERVADO
+                AG->>R: RESULTADO_COMANDO: EFEITO_OBSERVADO
+            end
+        end
+        R-->>T: resultado e idade
+    end
+    Note over T,R: PS12 toque → resultado p95 ≤ 3 s. Sem resultado em 10 s o app mostra DESCONHECIDO

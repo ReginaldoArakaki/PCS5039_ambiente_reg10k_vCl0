@@ -1,0 +1,82 @@
+{
+  "cenario": "DT10",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-SYN-01",
+    "RF-SYN-04",
+    "RNF-USA-03"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "hub desligado",
+      "quando": "t = 101 s",
+      "entao": {
+        "tipo": "gemeo",
+        "em_ms": 101000,
+        "atualidade": "DESATUALIZADO",
+        "conexao": "DESCONECTADO"
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "hub desligado",
+      "quando": "o titular consulta em t=105 s",
+      "entao": {
+        "tipo": "app_consulta",
+        "indice": 1,
+        "campos": {
+          "atualidade": "DESATUALIZADO"
+        }
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "hub religado",
+      "quando": "o titular consulta em t=140 s",
+      "entao": {
+        "tipo": "app_consulta",
+        "indice": 2,
+        "campos": {
+          "atualidade": "ATUAL",
+          "ocupacao": "OCUPADA"
+        }
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "hub religado",
+      "quando": "a sessão volta",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "reconciliacao_ms_max",
+        "max": 5000
+      }
+    },
+    {
+      "id": "A5",
+      "nivel": "REQUISITO",
+      "dado": "fila persistente",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "eventos_nao_entregues",
+        "igual": 0
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

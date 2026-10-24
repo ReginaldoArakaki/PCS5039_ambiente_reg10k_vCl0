@@ -1,0 +1,64 @@
+{
+  "id": "DT12",
+  "versao": "v0dt",
+  "titulo": "Rex sozinho; o titular consulta pelo app",
+  "tipo": "GEMEO_DIGITAL",
+  "modo": "IDEAL",
+  "duracao_ms": 300000,
+  "descricao": "O morador e o Rex entram; o morador sai em t=60 s e o Rex fica andando. O titular consulta o app em t=120 s e t=240 s.",
+  "comportamento_ideal": "O app mostra a sala ocupada e a luz acesa, com estado atual. Nada distingue o cachorro de uma pessoa (RN09, RN34).",
+  "comportamento_referencia": "O gêmeo espelha a ocupação inferida pelo hub, que conta o Rex como ocupante.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 12000,
+      "ocupante": "rex",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 12000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 48000
+    },
+    {
+      "t_ms": 12000,
+      "ocupante": "rex",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 288000
+    },
+    {
+      "t_ms": 60000,
+      "ocupante": "morador",
+      "acao": "SAIR"
+    },
+    {
+      "t_ms": 120000,
+      "ocupante": "app",
+      "acao": "APP_CONSULTA"
+    },
+    {
+      "t_ms": 240000,
+      "ocupante": "app",
+      "acao": "APP_CONSULTA"
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-ACO-01",
+    "RN34",
+    "RN09"
+  ],
+  "regras": [
+    "RN-I0-01",
+    "RN-DT-04"
+  ]
+}

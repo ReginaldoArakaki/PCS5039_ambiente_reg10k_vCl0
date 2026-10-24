@@ -1,0 +1,63 @@
+{
+  "cenario": "DT12",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-ACO-01",
+    "RN34",
+    "RN09"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "Rex sozinho",
+      "quando": "consulta em t=120 s",
+      "entao": {
+        "tipo": "app_consulta",
+        "indice": 1,
+        "campos": {
+          "ocupacao": "OCUPADA",
+          "atualidade": "ATUAL"
+        }
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "Rex sozinho",
+      "quando": "consulta em t=240 s",
+      "entao": {
+        "tipo": "app_consulta",
+        "indice": 2,
+        "campos": {
+          "ocupacao": "OCUPADA",
+          "atualidade": "ATUAL"
+        }
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "Rex é ocupante (RN34)",
+      "quando": "o cenário segue",
+      "entao": {
+        "tipo": "luz_constante",
+        "valor": "ACESA",
+        "entre_ms": [
+          11000,
+          300000
+        ]
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

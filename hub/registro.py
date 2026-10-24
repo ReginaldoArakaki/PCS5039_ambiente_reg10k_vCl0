@@ -19,6 +19,8 @@ class Registro:
         self.offset_ms = 0
         self.deriva_ppm = 0.0
         self.relogio_confiavel = True
+        # v0dt: o agente de sincronização observa o registro para publicar no DTReg10k-R
+        self.ouvintes: list = []
 
     def relogio_hub(self, t_ms: int) -> int:
         return int(round(t_ms * (1 + self.deriva_ppm / 1e6))) + self.offset_ms
@@ -32,11 +34,14 @@ class Registro:
             "camada": camada,
             "tipo": tipo,
         }
-        if camada != VERDADE:
+        # O relógio de parede é do hub: a verdade, o canal e a plataforma não o usam
+        if camada not in (VERDADE, "REDE", "PLATAFORMA"):
             ev["relogio_hub_ms"] = self.relogio_hub(int(round(t_ms)))
             ev["relogio_confiavel"] = self.relogio_confiavel
         ev.update(dados)
         self.eventos.append(ev)
+        for ouvir in self.ouvintes:
+            ouvir(ev)
         return ev
 
     # ------------------------------------------------------------ persistência

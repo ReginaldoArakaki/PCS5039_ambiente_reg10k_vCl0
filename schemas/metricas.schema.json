@@ -41,7 +41,10 @@
         "escuro_com_ocupante_s",
         "apagamentos_indevidos",
         "acionamentos",
-        "latencia_reacao_ms_p95"
+        "latencia_reacao_ms_p95",
+        "atualidade_gemeo_ms_p95",
+        "comandos_vencidos_executados",
+        "efeitos_duplicados_remotos"
       ],
       "properties": {
         "desperdicio_s": {
@@ -63,13 +66,47 @@
             "number",
             "null"
           ]
+        },
+        "atualidade_gemeo_ms_p95": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "comando_remoto_ms_p95": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "reconciliacao_ms_max": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "comandos_vencidos_executados": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "efeitos_duplicados_remotos": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "comandos_remotos": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "divergencia_alem_prazo_s": {
+          "type": "number",
+          "minimum": 0
         }
       }
     },
     "invariantes": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^OR-0[1-6]$"
+        "pattern": "^OR-(0[1-9]|1[0-2])$"
       },
       "additionalProperties": {
         "type": "object",
@@ -94,6 +131,21 @@
       "type": "boolean"
     },
     "aprovado": {
+      "type": "boolean"
+    },
+    "modo_rede": {
+      "enum": [
+        "IDEAL",
+        "REALISTA"
+      ]
+    },
+    "versao_cenario": {
+      "enum": [
+        "v0",
+        "v0dt"
+      ]
+    },
+    "execucao_pareada": {
       "type": "boolean"
     }
   }

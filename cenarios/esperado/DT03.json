@@ -1,0 +1,85 @@
+{
+  "cenario": "DT03",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-03",
+    "RF-OPR-04",
+    "INV-07",
+    "CV04"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "sem resultado em 10 s (PS02)",
+      "quando": "o prazo vence",
+      "entao": {
+        "tipo": "comando",
+        "indice": 1,
+        "final": false,
+        "nivel": "DESCONHECIDO",
+        "latencia_max_ms": 11000
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "comando chega após validaAte",
+      "quando": "o hub o recebe",
+      "entao": {
+        "tipo": "comando",
+        "indice": 1,
+        "nivel": "EXPIRADA"
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "comando vencido",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "luz_constante",
+        "valor": "APAGADA",
+        "entre_ms": [
+          0,
+          180000
+        ]
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "comando vencido",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "comandos_vencidos_executados",
+        "igual": 0
+      }
+    },
+    {
+      "id": "A5",
+      "nivel": "REQUISITO",
+      "dado": "comando vencido",
+      "quando": "o hub o recebe",
+      "entao": {
+        "tipo": "evento",
+        "camada": "SISTEMA",
+        "evento": "COMANDO_REMOTO_RECEBIDO",
+        "campos": {
+          "decisao": "EXPIRADO"
+        }
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

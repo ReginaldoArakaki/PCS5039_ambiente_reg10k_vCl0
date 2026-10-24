@@ -1,7 +1,7 @@
 # V2 e V3 — Requisitos funcionais e não funcionais da plataforma Reg10k
 
-**Documento:** V2 e V3 requisitos funcionais e não funcionais plataforma reg10k-v02.md
-**Versão:** 02 | **Data:** 24/10/2026 (v01 de 22/10/2026)
+**Documento:** V2 e V3 requisitos funcionais e não funcionais plataforma reg10k-v03.md
+**Versão:** 03 | **Data:** 24/10/2026 (v01 de 22/10/2026; v02 de 24/10/2026)
 **Referencial:** RM-ODP adaptado [R08]. **V2 Informação** (modelo estático estrutural, invariantes e classificação de dados) e **V3 Computação** (objetos, interfaces e comportamento dinâmico).
 **Base:** V1 — Business Drivers da Plataforma Reg10k, v02 [R13], com 8 direcionadores (BD01–BD08), 4 macroprocessos (MP1–MP4) e a governança MT, 34 regras e 49 requisitos de negócio (RNP).
 **Situação:** modelagem para validação. Os requisitos derivam das RNP da V1. Metas numéricas são propostas, salvo quando herdadas de decisão aprovada. Nenhum valor é medição.
@@ -14,6 +14,7 @@
 |---|---|---|
 | 01 | 22/10/2026 | Primeira versão: 59 RF, 41 RNF, modelos estático e dinâmico, checklist |
 | 02 | 24/10/2026 | Alinhada à V1 v02. D09 decidida (A09, kit sem fiação): RF-KIT-01, RF-COM-04, RNF-USA-01 e RNF-LEG-04 reescritos, sem a marca de dependência; nova INV-16. D13 decidida: I01 e I02 viram A10 e A11. RN34 em RF-OPR-01 (A12). PS05 com 60 s em RF-OPR-01 e INV-09 (A13). Classe Passagem, enumeração TipoPassagem, RF-COM-05 e INV-15 para o SA vinculado à porta (A14). Contagens: 59 RF, 41 RNF, 42 classes, 16 invariantes, 22 enumerações |
+| 03 | 24/10/2026 | Entrega da v0dt do ambiente de simulação [R15]. Nova seção 3.6: requisitos de sincronização, comando remoto e configuração exercitados em 12 cenários; correspondência entre as invariantes OR-07 a OR-12 do oráculo e INV-07, INV-10, INV-14; seis refinamentos (RS-01 a RS-06). Nova pendência PD08 e novo encaminhamento para V4. Requisitos, classes e invariantes sem alteração de contagem |
 
 ---
 
@@ -1196,6 +1197,48 @@ stateDiagram-v2
 
 Os números referem-se ao sufixo do RNF (por exemplo, DES 04 = RNF-DES-04).
 
+### 3.6 Validação na simulação v0dt
+
+A v0dt do ambiente de simulação da disciplina PCS5039 (repositório ReginaldoArakaki/PCS5039_ambiente_reg10k_vCl0, tag `v0dt`) realiza, para uma sala com um morador e um cachorro de grande porte, os objetos OC-02, OC-04, OC-05, OC-10 e OC-11 e as interfaces I-EVT, I-CMD e I-CFG. Nenhum valor desta seção é medição de sistema real: são resultados de simulação determinística (semente 42, mais 30 sementes no canal realista) que verificam se o modelo é consistente e executável [R15].
+
+#### 3.6.1 Requisitos exercitados
+
+| Requisito | Como a v0dt o realiza | Cenários | Resultado (referência) |
+|---|---|---|---|
+| RF-SYN-01, RF-SYN-02 | O agente de sincronização publica cada evento com número de sequência e um resumo a cada 30 s | DT08, DT11 | Atualidade p95 de 100 ms no canal ideal; 342 ms de mediana e 3,3 s no pior caso entre 30 sementes no canal realista |
+| RF-SYN-03, RNF-CON-02 | Fila persistente no hub durante a queda; sobrevive ao reinício | DT05, DT07, DT10 | Fila máxima de 15 eventos; 0 evento não entregue |
+| RF-SYN-04, RNF-CON-06 | Espera exponencial de 1 s a 30 s; estado atual antes do histórico | DT05, DT07, DT10 | Reconciliação em 100 ms após a sessão voltar |
+| RF-SYN-05 | Divergência registrada e resolvida pela autoridade do hub (RN27) | DT05 | 1 divergência (ocupação) registrada e resolvida |
+| RF-SYN-06, RF-OPR-07, INV-14 | Versão de configuração pendente até a confirmação do hub; distribuída na reconexão | DT06 | Versão 2 aplicada 1 s após a reconexão; a luz passa a apagar em 120 s |
+| RF-OPR-03, RNF-DES-02 | Comando remoto com validade de 30 s, chave e recusa com motivo | DT01, DT02, DT09 | 850 ms do toque ao resultado; recusa imediata com o hub desconectado |
+| RF-OPR-04 | Classificação: efeito observado, rejeitada, expirada, desconhecido (PS02) | DT01, DT03, DT09 | Todos os níveis exercitados |
+| RF-OPR-05, RNF-CON-07, INV-10 | Chave de idempotência no hub; número de sequência na plataforma | DT04, DT08 | 0 efeito duplicado |
+| INV-07 | Comando que chega vencido é recusado no hub | DT03 | 0 comando vencido executado |
+| RF-ACO-01, RNF-USA-03 | O app mostra idade e o selo atual ou desatualizado | DT02, DT10, DT12 | O app nunca mostra "atual" sem sessão ou com mais de 60 s |
+| RNF-CON-01 | A casa funciona sem a plataforma | DT05, DT07 | Decisões locais idênticas às da execução sem a falha de rede |
+
+#### 3.6.2 Invariantes do oráculo e invariantes V2
+
+| Oráculo | Verificação | Invariante ou requisito V2/V3 |
+|---|---|---|
+| OR-07 | Nenhuma intenção remota aceita ou executada depois de validaAte | INV-07 |
+| OR-08 | O DTReg10k-R e o app nunca dizem "atual" sem sessão ou com estado de mais de 60 s | RNF-USA-03; PS06 |
+| OR-09 | Estado aplicado no DTReg10k-R só avança; histórico não substitui estado mais recente | RN12; INV-06 |
+| OR-10 | Versão aplicada no hub ≤ versão vigente; pendente termina resolvida | INV-14 |
+| OR-11 | Cada comando remoto produz no máximo uma intenção | INV-10 |
+| OR-12 | Com a rede ou a plataforma fora, as decisões locais são idênticas (execução pareada) | RNF-CON-01 |
+
+#### 3.6.3 Refinamentos que a simulação trouxe
+
+| ID | Achado | Efeito no modelo | Marca |
+|---|---|---|---|
+| RS-01 | A idade no DTReg10k-R precisa ser medida pela recepção, no relógio da plataforma: com o relógio do hub saltando (DT11), a idade calculada pela origem regride | RF-ACO-01 e RepresentacaoRemota.atualidade: idade = agora − recepção do último estado | N |
+| RS-02 | Depois de uma queda de sessão, um estado ainda "jovem" (menos de 60 s) não pode voltar a ser "atual" antes de chegar o estado novo do hub (DT10) | RF-SYN-04: a atualidade só é restabelecida por um estado recebido depois da reconexão | N |
+| RS-03 | A queda da sessão marca o DTReg10k-R como desatualizado na hora, sem esperar os 60 s de PS06 | RNF-USA-03: "desatualizado" quando a sessão cai ou a idade passa de PS06 | N |
+| RS-04 | O comando remoto precisa de lugar explícito na precedência [R10 §7.2]: abaixo da intervenção manual e acima da rotina de ocupação, por PS03 (15 min) | RF-OPR-03; proposta de regra para a V1 (RN-DT-09 na simulação) | P |
+| RS-05 | Com 1% de perda, a atualidade p95 depende do temporizador de reenvio (3 s na simulação): em 2 de 30 sementes ficou perto de 3,3 s | Encaminhamento para V4: reenvio menor que PS11 menos a latência do canal | P |
+| RS-06 | A divergência L × R é inevitável durante a propagação; o critério verificável é "nenhuma divergência além do prazo de sincronização (PS11)" | Critério de aceite de RNF-DES-01 | N |
+
 ---
 
 ## 4. Checklist de qualidade da modelagem de requisitos
@@ -1280,6 +1323,7 @@ Critérios baseados na ISO/IEC/IEEE 29148:2018 (qualidade de requisitos individu
 | PD05 | Aceite dos RNF novos (RNF-DES-03, RNF-CON-04, RNF-USA-05, RNF-CMP-01) | Ainda não existem na V1 | SER |
 | PD06 | Cenários para CV17, CV26 e CV31 | Q21 parcial | Arquiteto |
 | PD07 | Validação com partes interessadas | Q13 pendente | Responsável pelo projeto |
+| PD08 | Levar à V1 a precedência do comando remoto (RS-04) e os critérios RS-01 a RS-03 e RS-06 | RF-OPR-03, RF-ACO-01, RF-SYN-04, RNF-USA-03, RNF-DES-01 | Responsável pelo projeto |
 
 ### 5.2 Encaminhamentos para V4 e V5
 
@@ -1288,6 +1332,7 @@ Critérios baseados na ISO/IEC/IEEE 29148:2018 (qualidade de requisitos individu
 | V4 Engenharia | Distribuição de OC-01 a OC-05 no hub e de OC-06 a OC-16 na plataforma; canais com entrega pelo menos uma vez | §3.1; RNF-CON-07 |
 | V4 Engenharia | Dimensionamento para RNF-DES-04 a RNF-DES-07 e RNF-CON-06, com ensaio 5× | §1.2 |
 | V4 Engenharia | Replicação e recuperação para RNF-CON-03 e RNF-CON-05 | §1.2 |
+| V4 Engenharia | Temporizador de reenvio compatível com PS11 sob perda de mensagens | RS-05; §3.6 |
 | V4 Engenharia | Segregação por residência na persistência e chaves de cifragem | RNF-SEG-02, RNF-SEG-04 |
 | V5 Tecnologia | Protocolo hub–plataforma com expiração de mensagem e sessão persistente | I-EVT, I-CMD |
 | V5 Tecnologia | Mecanismo de registro imutável e reconstrução de projeções | RF-GOV-05, RF-SYN-07 |
@@ -1304,6 +1349,7 @@ Critérios baseados na ISO/IEC/IEEE 29148:2018 (qualidade de requisitos individu
 | R10 | Modelo de negócio da plataforma de casas, v01, 16/10/2026 |
 | R11 | Arquitetura nas cinco visões, v02, 18/10/2026 |
 | R13 | V1 — Business Drivers da Plataforma Reg10k, v02, 24/10/2026 |
+| R15 | Plano do ambiente de simulação — v0dt (gêmeo digital integrado), entregue em 24/10/2026; repositório ReginaldoArakaki/PCS5039_ambiente_reg10k_vCl0, tag v0dt |
 | — | ISO/IEC/IEEE 29148:2018 — Requirements engineering |
 | — | ISO/IEC 25010:2023 — Product quality model |
 | — | ITU-T X.901–X.904 / ISO/IEC 10746 — RM-ODP |

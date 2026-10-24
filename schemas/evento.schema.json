@@ -29,7 +29,9 @@
         "DECISAO",
         "ATUACAO",
         "ESTADO",
-        "SISTEMA"
+        "SISTEMA",
+        "REDE",
+        "PLATAFORMA"
       ]
     },
     "tipo": {
@@ -48,7 +50,11 @@
         "properties": {
           "camada": {
             "not": {
-              "const": "VERDADE"
+              "enum": [
+                "VERDADE",
+                "REDE",
+                "PLATAFORMA"
+              ]
             }
           }
         }
@@ -86,7 +92,8 @@
           "precedencia": {
             "enum": [
               "AUTOMATICA",
-              "MANUAL"
+              "MANUAL",
+              "REMOTA"
             ]
           }
         }
@@ -148,6 +155,75 @@
               "ACESA_AUTO",
               "ACESA_MANUAL",
               "APAGADA_MANUAL"
+            ]
+          },
+          "precedencia": {
+            "enum": [
+              "AUTOMATICA",
+              "MANUAL",
+              "REMOTA"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "camada": {
+            "const": "PLATAFORMA"
+          },
+          "tipo": {
+            "const": "ESTADO_REMOTO"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "atualidade",
+          "conexao"
+        ],
+        "properties": {
+          "atualidade": {
+            "enum": [
+              "ATUAL",
+              "DESATUALIZADO",
+              "SEM_EVIDENCIA"
+            ]
+          },
+          "conexao": {
+            "enum": [
+              "CONECTADO",
+              "DESCONECTADO"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tipo": {
+            "const": "APP_RESULTADO"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "chave",
+          "nivel",
+          "final",
+          "latencia_ms"
+        ],
+        "properties": {
+          "nivel": {
+            "enum": [
+              "EFEITO_OBSERVADO",
+              "EXECUCAO_RELATADA",
+              "DESCONHECIDO",
+              "SUBSTITUIDA",
+              "REJEITADA",
+              "EXPIRADA"
             ]
           }
         }

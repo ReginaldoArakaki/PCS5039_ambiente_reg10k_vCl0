@@ -10,6 +10,14 @@ flowchart LR
     SIS --- UC4((Controlar a iluminação automaticamente))
     SIS --- UC5((Monitorar a saúde dos dispositivos))
     SIS --- UC6((Registrar eventos e decisões))
+    TIT([Titular pelo app]) --- UC9((Consultar a casa a distância))
+    TIT --- UC10((Comandar a luz a distância))
+    TIT --- UC11((Mudar a preferência de apagamento))
+    UC9 -.-> PLT[[Plataforma e gêmeo remoto]]
+    UC10 -.-> PLT
+    UC11 -.-> PLT
+    PLT --- UC12((Sincronizar com o hub))
+    UC12 -.-> SIS
     PROF([Professor e alunos]) --- UC7((Executar e avaliar cenários))
     PROF --- UC8((Navegar modelo, cenários e animação))
     UC7 -.-> UC6

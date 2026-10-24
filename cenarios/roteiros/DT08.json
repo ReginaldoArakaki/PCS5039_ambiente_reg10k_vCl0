@@ -1,0 +1,94 @@
+{
+  "id": "DT08",
+  "versao": "v0dt",
+  "titulo": "Canal realista por 30 min",
+  "tipo": "GEMEO_DIGITAL",
+  "modo": "IDEAL",
+  "duracao_ms": 1800000,
+  "descricao": "Dispositivos ideais e canal realista (latência de 50 a 400 ms, 1% de perda, 0,5% de duplicação). Morador e Rex entram e saem.",
+  "comportamento_ideal": "Atualidade do gêmeo p95 ≤ 5 s; nenhuma divergência além do prazo; nada fica na fila.",
+  "comportamento_referencia": "Perdas são cobertas pelo reenvio do agente; duplicatas são descartadas pelo número de sequência.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 580000
+    },
+    {
+      "t_ms": 600000,
+      "ocupante": "morador",
+      "acao": "SAIR"
+    },
+    {
+      "t_ms": 900000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 905000,
+      "ocupante": "rex",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 905000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 590000
+    },
+    {
+      "t_ms": 905000,
+      "ocupante": "rex",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 400000
+    },
+    {
+      "t_ms": 1310000,
+      "ocupante": "rex",
+      "acao": "SAIR"
+    },
+    {
+      "t_ms": 1500000,
+      "ocupante": "morador",
+      "acao": "SAIR"
+    },
+    {
+      "t_ms": 300000,
+      "ocupante": "app",
+      "acao": "APP_CONSULTA"
+    },
+    {
+      "t_ms": 1000000,
+      "ocupante": "app",
+      "acao": "APP_CONSULTA"
+    },
+    {
+      "t_ms": 1700000,
+      "ocupante": "app",
+      "acao": "APP_CONSULTA"
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RNF-DES-01",
+    "RF-SYN-01",
+    "RF-SYN-02",
+    "PS11"
+  ],
+  "regras": [
+    "RN-DT-02",
+    "RN-DT-04"
+  ],
+  "rede": {
+    "modo": "REALISTA"
+  }
+}

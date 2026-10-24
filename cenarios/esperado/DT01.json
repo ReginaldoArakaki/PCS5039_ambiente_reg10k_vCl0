@@ -1,0 +1,87 @@
+{
+  "cenario": "DT01",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-03",
+    "RF-OPR-04",
+    "RNF-DES-02",
+    "CF04"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "sessão ativa e hub ligado",
+      "quando": "o titular toca em Acender em t=70 s",
+      "entao": {
+        "tipo": "comando",
+        "indice": 1,
+        "nivel": "EFEITO_OBSERVADO",
+        "latencia_max_ms": 3000
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "comando aceito",
+      "quando": "o atuador executa",
+      "entao": {
+        "tipo": "luz",
+        "valor": "ACESA",
+        "desde_ms": 70000,
+        "ate_ms": 73000
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "comando executado",
+      "quando": "o titular consulta o app em t=75 s",
+      "entao": {
+        "tipo": "app_consulta",
+        "indice": 1,
+        "campos": {
+          "atualidade": "ATUAL",
+          "conexao": "CONECTADO"
+        }
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "todos os comandos do cenário",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "comando_remoto_ms_p95",
+        "max": 3000
+      }
+    },
+    {
+      "id": "A5",
+      "nivel": "CARACTERIZACAO",
+      "dado": "comando ACENDER válido",
+      "quando": "o controlador decide",
+      "entao": {
+        "tipo": "intencao",
+        "acao": "ACENDER",
+        "causa": "COMANDO_REMOTO",
+        "precedencia": "REMOTA",
+        "entre_ms": [
+          70000,
+          72000
+        ]
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

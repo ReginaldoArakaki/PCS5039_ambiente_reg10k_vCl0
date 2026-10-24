@@ -18,7 +18,7 @@ jobs:
         run: pip install -r requirements.txt
       - name: Testes
         run: python -m pytest -q
-      - name: Catálogo completo (referência + alunos/, 30 sementes no modo realista)
+      - name: Catálogo completo (referência + alunos/, 30 sementes no modo realista e no canal realista)
         run: python -m catalogo --sementes 30
       - name: Validação dos JSON gerados
         run: python -m catalogo.validar

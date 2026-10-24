@@ -1,0 +1,49 @@
+{
+  "id": "DT09",
+  "versao": "v0dt",
+  "titulo": "Comando remoto durante a precedência manual",
+  "tipo": "GEMEO_DIGITAL",
+  "modo": "IDEAL",
+  "duracao_ms": 150000,
+  "descricao": "O morador entra em t=10 s e apaga a luz no interruptor em t=30 s. Em t=60 s o titular toca em Acender no app.",
+  "comportamento_ideal": "O comando é recusado por precedência (o interruptor vale mais que o app) e o app mostra o motivo.",
+  "comportamento_referencia": "A referência devolve lista vazia; o hub classifica a recusa como PRECEDENCIA_MANUAL.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 130000
+    },
+    {
+      "t_ms": 30000,
+      "ocupante": "morador",
+      "acao": "INTERRUPTOR"
+    },
+    {
+      "t_ms": 60000,
+      "ocupante": "app",
+      "acao": "APP_COMANDO",
+      "comando": "ACENDER"
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-03",
+    "RN07",
+    "RNP-MP3-03"
+  ],
+  "regras": [
+    "RN-DT-09",
+    "RN-I0-05"
+  ]
+}
