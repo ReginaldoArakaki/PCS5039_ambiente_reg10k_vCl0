@@ -1,0 +1,9 @@
+stateDiagram-v2
+    [*] --> Desconhecida : início ou reinício do hub
+    Desconhecida --> Ocupada : detecção válida (SA ou SP)
+    Desconhecida --> Vazia : 60 s sem detecção com SP saudável
+    Vazia --> Ocupada : detecção válida
+    Ocupada --> Ocupada : nova detecção (reinicia o contador)
+    Ocupada --> Vazia : 60 s sem detecção
+    Ocupada --> Desconhecida : SP sem heartbeat por 30 s
+    Vazia --> Desconhecida : SP sem heartbeat por 30 s

@@ -1,0 +1,64 @@
+{
+  "id": "N04",
+  "titulo": "Interruptor: apagar para ver um filme, acender manualmente e sair",
+  "tipo": "NORMAL",
+  "modo": "IDEAL",
+  "duracao_ms": 2000000,
+  "descricao": "Aos 20 s o morador apaga a luz (filme). Aos 1000 s apaga de novo e aos 1010 s acende manualmente; sai aos 1120 s.",
+  "comportamento_ideal": "Respeita a vontade do morador.",
+  "comportamento_referencia": "Não reacende por 15 min após apagar manualmente; reacende aos 920 s; mantém acesa por 15 min após acender manualmente, mesmo com a sala vazia, e apaga aos 1910 s.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 1100000
+    },
+    {
+      "t_ms": 20000,
+      "ocupante": "morador",
+      "acao": "INTERRUPTOR"
+    },
+    {
+      "t_ms": 1000000,
+      "ocupante": "morador",
+      "acao": "INTERRUPTOR"
+    },
+    {
+      "t_ms": 1010000,
+      "ocupante": "morador",
+      "acao": "INTERRUPTOR"
+    },
+    {
+      "t_ms": 1115000,
+      "ocupante": "morador",
+      "acao": "ANDAR",
+      "ate": [
+        0.95,
+        0.4
+      ]
+    },
+    {
+      "t_ms": 1120000,
+      "ocupante": "morador",
+      "acao": "SAIR"
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-02",
+    "CV08"
+  ],
+  "regras": [
+    "RN-I0-05"
+  ]
+}

@@ -1,0 +1,17 @@
+sequenceDiagram
+    autonumber
+    participant V as Simulador (verdade)
+    participant SP as SP (PIR)
+    participant C as Controlador
+    participant A as Atuador
+    participant R as Registro JSON
+    V->>R: VERDADE morador senta e lê (t = 30 s)
+    Note over V,SP: Pessoa parada: o PIR não detecta (modo ideal: p_parado = 0)
+    C->>C: 60 s sem detecção → ocupação Vazia (t = 90 s)
+    C->>A: Intenção APAGAR
+    C->>R: Decisão APAGAR (causa: ausência de 60 s)
+    V->>R: VERDADE morador presente com a luz apagada
+    Note over V,R: Oráculo: apagamento indevido · tempo no escuro com ocupante
+    V->>SP: Morador acena (t = 95 s)
+    SP->>C: Evidência MOVIMENTO
+    C->>A: Intenção ACENDER

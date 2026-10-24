@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ReginaldoArakaki/PCS5039_ambiente_reg10k_vCl0/schemas/roteiro.schema.json",
+  "title": "Roteiro de cenário (entrada da simulação)",
+  "type": "object",
+  "required": [
+    "id",
+    "titulo",
+    "tipo",
+    "modo",
+    "duracao_ms",
+    "estado_inicial",
+    "acoes",
+    "falhas",
+    "requisitos"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Z]{1,2}[0-9]{2}[A-Za-z0-9_-]*$"
+    },
+    "titulo": {
+      "type": "string"
+    },
+    "tipo": {
+      "enum": [
+        "NORMAL",
+        "FALSO_POSITIVO",
+        "FALSO_NEGATIVO",
+        "FALHA"
+      ]
+    },
+    "modo": {
+      "enum": [
+        "IDEAL",
+        "REALISTA"
+      ]
+    },
+    "duracao_ms": {
+      "type": "integer",
+      "minimum": 1000
+    },
+    "descricao": {
+      "type": "string"
+    },
+    "comportamento_ideal": {
+      "type": "string"
+    },
+    "comportamento_referencia": {
+      "type": "string"
+    },
+    "estado_inicial": {
+      "type": "object",
+      "properties": {
+        "ocupantes_na_sala": {
+          "type": "array"
+        },
+        "luz": {
+          "enum": [
+            "APAGADA"
+          ]
+        }
+      }
+    },
+    "acoes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "t_ms",
+          "ocupante",
+          "acao"
+        ],
+        "properties": {
+          "t_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "ocupante": {
+            "type": "string"
+          },
+          "acao": {
+            "enum": [
+              "ENTRAR",
+              "SAIR",
+              "ANDAR",
+              "ANDAR_ALEATORIO",
+              "PARADO",
+              "MICROGESTOS",
+              "GESTO",
+              "PASSAR_PORTA_SEM_ENTRAR",
+              "INTERRUPTOR"
+            ]
+          },
+          "ate": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "vel_m_s": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "duracao_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "area": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 4,
+            "maxItems": 4
+          },
+          "intervalo_min_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "intervalo_max_ms": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "acao": {
+                  "const": "ANDAR"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "ate"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "acao": {
+                  "const": "ANDAR_ALEATORIO"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "duracao_ms"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "falhas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "t_ms",
+          "tipo"
+        ],
+        "properties": {
+          "t_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "tipo": {
+            "enum": [
+              "SP_SEM_RESPOSTA",
+              "BATERIA_BAIXA",
+              "SP_FALSO_DISPARO",
+              "SA_ESPURIO",
+              "SA_PERDE_PROXIMA",
+              "LAMPADA_QUEIMADA",
+              "ATUADOR_TRAVADO",
+              "HUB_REINICIO",
+              "RELOGIO_SALTO"
+            ]
+          },
+          "duracao_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "nivel": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "delta_ms": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "requisitos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "regras": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^RN-I0-0[1-8]$"
+      }
+    },
+    "controle": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "N05",
+  "titulo": "Cachorro entra sozinho e anda",
+  "tipo": "NORMAL",
+  "modo": "IDEAL",
+  "duracao_ms": 180000,
+  "descricao": "Rex (grande porte) é ocupante: a automação o atende.",
+  "comportamento_ideal": "Acende (ocupante).",
+  "comportamento_referencia": "Acende em até 1 s.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "rex",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "rex",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 165000
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-01"
+  ],
+  "regras": [
+    "RN-I0-01",
+    "RN-I0-02"
+  ]
+}

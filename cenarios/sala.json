@@ -1,0 +1,46 @@
+{
+  "id": "SALA-01",
+  "descricao": "Sala de 5 x 4 m com uma porta para o exterior (Incremento 0)",
+  "largura_m": 5.0,
+  "profundidade_m": 4.0,
+  "passo_ms": 100,
+  "porta": {"id": "PORTA-01", "x_inicio": 0.5, "x_fim": 1.4, "y": 0.0},
+  "zonas_cegas": [{"id": "Z1", "x0": 4.0, "y0": 0.0, "x1": 5.0, "y1": 2.0}],
+  "lampada": {"id": "LAMP-01", "x": 2.5, "y": 2.0},
+  "interruptor": {"id": "INT-01", "x": 1.6, "y": 0.0},
+  "ocupantes": [
+    {"id": "morador", "tipo": "PESSOA", "nome": "Morador"},
+    {"id": "rex", "tipo": "CACHORRO", "nome": "Rex", "porte": "GRANDE"}
+  ],
+  "dispositivos": {
+    "SA-01": {
+      "tipo": "SENSOR_PASSAGEM", "descricao": "Feixe no batente da porta; sem direção",
+      "ideal":    {"p_deteccao": 1.0,  "p_deteccao_rapida": 1.0,  "rearme_ms": 2000, "latencia_ms": [50, 50],  "espurio_por_hora": 0},
+      "realista": {"p_deteccao": 0.98, "p_deteccao_rapida": 0.85, "rearme_ms": 2000, "latencia_ms": [50, 150], "espurio_por_hora": 0.25}
+    },
+    "SP-01": {
+      "tipo": "SENSOR_PRESENCA_PIR", "descricao": "PIR no canto nordeste, aponta para sudoeste",
+      "x": 5.0, "y": 4.0, "alcance_m": 6.5, "abertura_graus": 90,
+      "ideal":    {"p_movimento": 1.0,  "p_parado": 0.0,  "p_microgesto": 0.0, "retencao_ms": 5000, "latencia_ms": [500, 500],
+                   "falso_disparo_por_hora": 0, "heartbeat_ms": 10000, "fator_bateria_baixa": 0.6, "fator_cachorro": 1.0},
+      "realista": {"p_movimento": 0.95, "p_parado": 0.01, "p_microgesto": 0.3, "retencao_ms": 5000, "latencia_ms": [500, 1500],
+                   "falso_disparo_por_hora": 0.1667, "heartbeat_ms": 10000, "fator_bateria_baixa": 0.6, "fator_cachorro": 1.0}
+    },
+    "ATU-01": {
+      "tipo": "ATUADOR", "descricao": "Relé da lâmpada",
+      "ideal": {"latencia_ms": [100, 100]}, "realista": {"latencia_ms": [100, 300]}
+    },
+    "LAMP-01": {
+      "tipo": "LAMPADA", "descricao": "Lâmpada com sensor de efeito (fotodiodo)", "capacidade": "EFEITO_OBSERVADO",
+      "ideal": {"latencia_ms": [200, 200]}, "realista": {"latencia_ms": [200, 600]}
+    },
+    "INT-01": {
+      "tipo": "INTERRUPTOR", "descricao": "Interruptor ao lado da porta",
+      "ideal": {"latencia_ms": [50, 50]}, "realista": {"latencia_ms": [50, 100]}
+    }
+  },
+  "controle": {
+    "t_apagamento_ms": 60000, "t_manual_ms": 900000, "t_heartbeat_falha_ms": 30000,
+    "t_confirmacao_ms": 10000, "t_retentativa_ms": 2000, "validade_evidencia_ms": 10000
+  }
+}

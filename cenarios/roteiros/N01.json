@@ -1,0 +1,46 @@
+{
+  "id": "N01",
+  "titulo": "Morador entra na sala vazia",
+  "tipo": "NORMAL",
+  "modo": "IDEAL",
+  "duracao_ms": 120000,
+  "descricao": "Sala vazia e luz apagada; o morador entra e anda pela sala.",
+  "comportamento_ideal": "Acende ao entrar.",
+  "comportamento_referencia": "Acende em até 1 s após o cruzamento da porta.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 6000,
+      "ocupante": "morador",
+      "acao": "ANDAR",
+      "ate": [
+        2.5,
+        2.0
+      ]
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 105000
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-01",
+    "RNF-DES-03",
+    "CV02",
+    "CF05"
+  ],
+  "regras": [
+    "RN-I0-02"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "id": "FN01",
+  "titulo": "Morador lê parado",
+  "tipo": "FALSO_NEGATIVO",
+  "modo": "IDEAL",
+  "duracao_ms": 900000,
+  "descricao": "O morador senta e lê sem se mexer; aos 600 s acena.",
+  "comportamento_ideal": "Mantém acesa.",
+  "comportamento_referencia": "Apaga cerca de 60 s após o último movimento e reacende ao aceno (limitação do PIR).",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 6000,
+      "ocupante": "morador",
+      "acao": "ANDAR",
+      "ate": [
+        2.0,
+        3.0
+      ]
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "PARADO"
+    },
+    {
+      "t_ms": 600000,
+      "ocupante": "morador",
+      "acao": "GESTO"
+    },
+    {
+      "t_ms": 601000,
+      "ocupante": "morador",
+      "acao": "PARADO"
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-01",
+    "CF05"
+  ],
+  "regras": [
+    "RN-I0-03"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "id": "F01",
+  "titulo": "SP deixa de responder",
+  "tipo": "FALHA",
+  "modo": "IDEAL",
+  "duracao_ms": 300000,
+  "descricao": "O PIR para de responder aos 60 s com o morador na sala.",
+  "comportamento_ideal": "Mantém e avisa.",
+  "comportamento_referencia": "Após 30 s sem heartbeat, ocupação desconhecida, alerta e luz mantida.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 285000
+    }
+  ],
+  "falhas": [
+    {
+      "t_ms": 60000,
+      "tipo": "SP_SEM_RESPOSTA"
+    }
+  ],
+  "requisitos": [
+    "RF-OPR-09",
+    "CV03",
+    "CF05"
+  ],
+  "regras": [
+    "RN-I0-04"
+  ]
+}

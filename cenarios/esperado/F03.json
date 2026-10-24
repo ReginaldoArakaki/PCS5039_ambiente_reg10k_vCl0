@@ -1,0 +1,52 @@
+{
+  "cenario": "F03",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-04",
+    "CV04"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "lâmpada queimada",
+      "quando": "o controlador manda acender",
+      "entao": {
+        "tipo": "resultado",
+        "nivel": "EXECUCAO_RELATADA",
+        "divergencia": true
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "execução relatada sem efeito",
+      "quando": "o resultado é classificado",
+      "entao": {
+        "tipo": "alerta",
+        "alerta": "DIVERGENCIA_EFEITO"
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "lâmpada queimada",
+      "quando": "t = 100 s",
+      "entao": {
+        "tipo": "luz",
+        "valor": "APAGADA",
+        "em_ms": 100000
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

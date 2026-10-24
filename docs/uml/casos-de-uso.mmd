@@ -1,0 +1,15 @@
+flowchart LR
+    MOR([Morador]) --- UC1((Entrar e sair da sala))
+    CAO([Cachorro]) --- UC1
+    MOR --- UC2((Usar o interruptor))
+    MOR --- UC3((Permanecer na sala))
+    CAO --- UC3
+    UC1 -.-> SIS[[Sistema de iluminação]]
+    UC2 -.-> SIS
+    UC3 -.-> SIS
+    SIS --- UC4((Controlar a iluminação automaticamente))
+    SIS --- UC5((Monitorar a saúde dos dispositivos))
+    SIS --- UC6((Registrar eventos e decisões))
+    PROF([Professor e alunos]) --- UC7((Executar e avaliar cenários))
+    PROF --- UC8((Navegar modelo, cenários e animação))
+    UC7 -.-> UC6

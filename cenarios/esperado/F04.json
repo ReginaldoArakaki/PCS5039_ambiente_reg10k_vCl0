@@ -1,0 +1,52 @@
+{
+  "cenario": "F04",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-04",
+    "RF-OPR-05",
+    "CV04"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "atuador travado",
+      "quando": "passam 2 s sem confirmação",
+      "entao": {
+        "tipo": "evento",
+        "camada": "SISTEMA",
+        "evento": "RETENTATIVA"
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "nenhuma confirmação em 10 s",
+      "quando": "o resultado é classificado",
+      "entao": {
+        "tipo": "resultado",
+        "nivel": "DESCONHECIDO"
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "resultado desconhecido",
+      "quando": "o controlador é informado",
+      "entao": {
+        "tipo": "alerta",
+        "alerta": "FALHA_ATUADOR"
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

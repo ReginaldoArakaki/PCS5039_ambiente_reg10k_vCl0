@@ -1,0 +1,42 @@
+{
+  "id": "F04",
+  "titulo": "Atuador não confirma (relé travado)",
+  "tipo": "FALHA",
+  "modo": "IDEAL",
+  "duracao_ms": 180000,
+  "descricao": "O relé não responde.",
+  "comportamento_ideal": "Tenta de novo e avisa.",
+  "comportamento_referencia": "Uma nova tentativa com a mesma chave após 2 s; resultado DESCONHECIDO aos 10 s e alerta.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 165000
+    }
+  ],
+  "falhas": [
+    {
+      "t_ms": 0,
+      "tipo": "ATUADOR_TRAVADO"
+    }
+  ],
+  "requisitos": [
+    "RF-OPR-04",
+    "RF-OPR-05",
+    "CV04"
+  ],
+  "regras": [
+    "RN-I0-06",
+    "RN-I0-07"
+  ]
+}

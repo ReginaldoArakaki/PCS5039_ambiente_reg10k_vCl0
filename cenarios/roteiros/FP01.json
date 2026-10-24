@@ -1,0 +1,29 @@
+{
+  "id": "FP01",
+  "titulo": "Morador passa pela porta sem entrar",
+  "tipo": "FALSO_POSITIVO",
+  "modo": "IDEAL",
+  "duracao_ms": 180000,
+  "descricao": "O morador estica o braço pela porta para pegar algo e volta. O SA dispara; ninguém entra.",
+  "comportamento_ideal": "Não acende.",
+  "comportamento_referencia": "Acende e apaga 60 s depois (limitação conhecida: o SA não sabe a direção).",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "PASSAR_PORTA_SEM_ENTRAR"
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-01"
+  ],
+  "regras": [
+    "RN-I0-02",
+    "RN-I0-03"
+  ]
+}

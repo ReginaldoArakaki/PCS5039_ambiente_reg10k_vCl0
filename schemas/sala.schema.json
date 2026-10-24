@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ReginaldoArakaki/PCS5039_ambiente_reg10k_vCl0/schemas/sala.schema.json",
+  "title": "Estrutura da sala (incremento 0)",
+  "type": "object",
+  "required": [
+    "id",
+    "largura_m",
+    "profundidade_m",
+    "passo_ms",
+    "porta",
+    "zonas_cegas",
+    "ocupantes",
+    "dispositivos",
+    "controle"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "descricao": {
+      "type": "string"
+    },
+    "largura_m": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "profundidade_m": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "passo_ms": {
+      "type": "integer",
+      "enum": [
+        100
+      ]
+    },
+    "porta": {
+      "type": "object",
+      "required": [
+        "id",
+        "x_inicio",
+        "x_fim",
+        "y"
+      ]
+    },
+    "zonas_cegas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "x0",
+          "y0",
+          "x1",
+          "y1"
+        ]
+      }
+    },
+    "lampada": {
+      "type": "object"
+    },
+    "interruptor": {
+      "type": "object"
+    },
+    "ocupantes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "tipo"
+        ],
+        "properties": {
+          "tipo": {
+            "enum": [
+              "PESSOA",
+              "CACHORRO"
+            ]
+          }
+        }
+      }
+    },
+    "dispositivos": {
+      "type": "object",
+      "required": [
+        "SA-01",
+        "SP-01",
+        "ATU-01",
+        "LAMP-01",
+        "INT-01"
+      ],
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "tipo",
+          "ideal",
+          "realista"
+        ],
+        "properties": {
+          "ideal": {
+            "type": "object",
+            "properties": {
+              "latencia_ms": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            },
+            "required": [
+              "latencia_ms"
+            ]
+          },
+          "realista": {
+            "type": "object",
+            "properties": {
+              "latencia_ms": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            },
+            "required": [
+              "latencia_ms"
+            ]
+          }
+        }
+      }
+    },
+    "controle": {
+      "type": "object",
+      "required": [
+        "t_apagamento_ms",
+        "t_manual_ms",
+        "t_heartbeat_falha_ms",
+        "t_confirmacao_ms",
+        "t_retentativa_ms"
+      ],
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "cenario": "F01",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-09",
+    "CV03",
+    "CF05"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "o SP para de responder em t=60 s",
+      "quando": "passam 30 s sem heartbeat",
+      "entao": {
+        "tipo": "alerta",
+        "alerta": "SP_SEM_RESPOSTA",
+        "entre_ms": [
+          70000,
+          95000
+        ]
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "SP sem resposta",
+      "quando": "t = 120 s",
+      "entao": {
+        "tipo": "ocupacao",
+        "valor": "DESCONHECIDA",
+        "em_ms": 120000
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "ocupação desconhecida (RN01)",
+      "quando": "o cenário segue",
+      "entao": {
+        "tipo": "sem_intencao",
+        "acao": "APAGAR",
+        "entre_ms": [
+          60000,
+          300000
+        ]
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "morador presente",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "luz_constante",
+        "valor": "ACESA",
+        "entre_ms": [
+          6000,
+          300000
+        ]
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

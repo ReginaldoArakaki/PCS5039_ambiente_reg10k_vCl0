@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ReginaldoArakaki/PCS5039_ambiente_reg10k_vCl0/schemas/esperado.schema.json",
+  "title": "Asserções esperadas (oráculo)",
+  "type": "object",
+  "required": [
+    "cenario",
+    "modo",
+    "assercoes"
+  ],
+  "properties": {
+    "cenario": {
+      "type": "string"
+    },
+    "modo": {
+      "enum": [
+        "IDEAL",
+        "REALISTA"
+      ]
+    },
+    "semente_referencia": {
+      "type": "integer"
+    },
+    "requisitos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assercoes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "nivel",
+          "dado",
+          "quando",
+          "entao"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "nivel": {
+            "enum": [
+              "REQUISITO",
+              "CARACTERIZACAO"
+            ]
+          },
+          "dado": {
+            "type": "string"
+          },
+          "quando": {
+            "type": "string"
+          },
+          "entao": {
+            "type": "object",
+            "required": [
+              "tipo"
+            ],
+            "properties": {
+              "tipo": {
+                "enum": [
+                  "metrica",
+                  "luz",
+                  "luz_constante",
+                  "intencao",
+                  "sem_intencao",
+                  "ocupacao",
+                  "alerta",
+                  "resultado",
+                  "evento",
+                  "relogio_nao_confiavel",
+                  "invariantes"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

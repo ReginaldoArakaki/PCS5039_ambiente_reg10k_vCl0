@@ -1,0 +1,21 @@
+flowchart LR
+    subgraph SIM["Simulador do ambiente"]
+        ROT[Executor de roteiro] --> MUN[Mundo: sala e ocupantes]
+        MUN --> DSP[Dispositivos simulados: SA, SP, atuador, lâmpada, interruptor]
+        FAL[Injetor de falhas] --> DSP
+    end
+    subgraph HUB["Hub simulado"]
+        BAR[Barramento de eventos] --> CTL{{Controlador plugável}}
+        CTL --> BAR
+        BAR --> REG[(Registrador JSON Lines)]
+    end
+    subgraph AVA["Avaliação"]
+        ORA[Oráculo e métricas]
+        CAT[Gerador de catálogo]
+    end
+    DSP -->|I-EVT: evidências| BAR
+    BAR -->|I-CMD: intenções| DSP
+    MUN -->|camada VERDADE| REG
+    REG --> ORA
+    ORA --> CAT
+    CAT --> WEB[Página de navegação: arquivo HTML único]

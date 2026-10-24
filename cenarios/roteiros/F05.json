@@ -1,0 +1,40 @@
+{
+  "id": "F05",
+  "titulo": "Hub reinicia no meio do cenário",
+  "tipo": "FALHA",
+  "modo": "IDEAL",
+  "duracao_ms": 300000,
+  "descricao": "O hub fica 25 s fora; o morador continua andando.",
+  "comportamento_ideal": "Retoma sem perder o controle.",
+  "comportamento_referencia": "Lacuna registrada; reinicia em ocupação desconhecida, lê a lâmpada e retoma pelo heartbeat do SP.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 285000
+    }
+  ],
+  "falhas": [
+    {
+      "t_ms": 100000,
+      "tipo": "HUB_REINICIO",
+      "duracao_ms": 25000
+    }
+  ],
+  "requisitos": [
+    "RF-SYN-01"
+  ],
+  "regras": [
+    "RN-I0-08"
+  ]
+}

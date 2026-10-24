@@ -1,0 +1,41 @@
+{
+  "id": "FN04",
+  "titulo": "Entrada rápida com o SA falhando",
+  "tipo": "FALSO_NEGATIVO",
+  "modo": "REALISTA",
+  "duracao_ms": 120000,
+  "descricao": "O morador entra correndo e o feixe não registra; só o PIR, com latência, percebe.",
+  "comportamento_ideal": "Acende ao entrar.",
+  "comportamento_referencia": "Acende pelo SP, com atraso de 0,5 a 1,5 s.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR",
+      "vel_m_s": 2.5
+    },
+    {
+      "t_ms": 6000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 100000
+    }
+  ],
+  "falhas": [
+    {
+      "t_ms": 1000,
+      "tipo": "SA_PERDE_PROXIMA"
+    }
+  ],
+  "requisitos": [
+    "RF-OPR-01",
+    "RNF-DES-03"
+  ],
+  "regras": [
+    "RN-I0-02"
+  ]
+}

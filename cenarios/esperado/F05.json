@@ -1,0 +1,66 @@
+{
+  "cenario": "F05",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-SYN-01"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "o hub desliga em t=100 s por 25 s",
+      "quando": "o hub volta",
+      "entao": {
+        "tipo": "evento",
+        "camada": "SISTEMA",
+        "evento": "LACUNA"
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "hub recém-ligado",
+      "quando": "t = 125,5 s",
+      "entao": {
+        "tipo": "ocupacao",
+        "valor": "DESCONHECIDA",
+        "em_ms": 125500
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "o hub lê a lâmpada e o heartbeat do SP",
+      "quando": "o controle retoma",
+      "entao": {
+        "tipo": "luz_constante",
+        "valor": "ACESA",
+        "entre_ms": [
+          6000,
+          300000
+        ]
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "morador sempre presente",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "apagamentos_indevidos",
+        "igual": 0
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

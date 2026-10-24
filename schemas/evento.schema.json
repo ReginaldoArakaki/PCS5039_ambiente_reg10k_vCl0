@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ReginaldoArakaki/PCS5039_ambiente_reg10k_vCl0/schemas/evento.schema.json",
+  "title": "Linha de eventos.jsonl",
+  "type": "object",
+  "required": [
+    "id",
+    "t_ms",
+    "seq",
+    "camada",
+    "tipo"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "t_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "camada": {
+      "enum": [
+        "VERDADE",
+        "PERCEPCAO",
+        "DECISAO",
+        "ATUACAO",
+        "ESTADO",
+        "SISTEMA"
+      ]
+    },
+    "tipo": {
+      "type": "string"
+    },
+    "relogio_hub_ms": {
+      "type": "integer"
+    },
+    "relogio_confiavel": {
+      "type": "boolean"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "camada": {
+            "not": {
+              "const": "VERDADE"
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "relogio_hub_ms",
+          "relogio_confiavel"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tipo": {
+            "const": "INTENCAO"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "acao",
+          "causa",
+          "regra",
+          "precedencia",
+          "chave"
+        ],
+        "properties": {
+          "acao": {
+            "enum": [
+              "ACENDER",
+              "APAGAR"
+            ]
+          },
+          "precedencia": {
+            "enum": [
+              "AUTOMATICA",
+              "MANUAL"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tipo": {
+            "const": "RESULTADO"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "chave",
+          "acao",
+          "nivel",
+          "divergencia"
+        ],
+        "properties": {
+          "nivel": {
+            "enum": [
+              "EFEITO_OBSERVADO",
+              "EXECUCAO_RELATADA",
+              "DESCONHECIDO",
+              "SUBSTITUIDA"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "camada": {
+            "const": "ESTADO"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "ocupacao",
+          "luz",
+          "precedencia",
+          "alertas"
+        ],
+        "properties": {
+          "ocupacao": {
+            "enum": [
+              "OCUPADA",
+              "VAZIA",
+              "DESCONHECIDA"
+            ]
+          },
+          "luz": {
+            "enum": [
+              "APAGADA",
+              "ACESA_AUTO",
+              "ACESA_MANUAL",
+              "APAGADA_MANUAL"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

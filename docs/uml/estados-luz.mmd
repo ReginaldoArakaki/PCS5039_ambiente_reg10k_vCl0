@@ -1,0 +1,12 @@
+stateDiagram-v2
+    [*] --> Apagada
+    Apagada --> AcesaAuto : ocupação Ocupada e sem precedência manual
+    AcesaAuto --> Apagada : ocupação Vazia
+    Apagada --> AcesaManual : interruptor
+    AcesaAuto --> ApagadaManual : interruptor
+    AcesaManual --> ApagadaManual : interruptor
+    ApagadaManual --> AcesaManual : interruptor
+    AcesaManual --> AcesaAuto : 15 min e ocupação Ocupada
+    AcesaManual --> Apagada : 15 min e ocupação Vazia
+    ApagadaManual --> Apagada : 15 min
+    note right of AcesaAuto : ocupação Desconhecida mantém o estado (RN-I0-04)

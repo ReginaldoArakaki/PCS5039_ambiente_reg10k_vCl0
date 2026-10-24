@@ -1,0 +1,60 @@
+{
+  "id": "N06",
+  "titulo": "Morador sai e o cachorro fica",
+  "tipo": "NORMAL",
+  "modo": "IDEAL",
+  "duracao_ms": 300000,
+  "descricao": "Os dois entram; o morador sai aos 60 s e Rex continua andando.",
+  "comportamento_ideal": "Mantém acesa.",
+  "comportamento_referencia": "Nenhum apagamento indevido.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 8000,
+      "ocupante": "rex",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 45000
+    },
+    {
+      "t_ms": 12000,
+      "ocupante": "rex",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 285000
+    },
+    {
+      "t_ms": 55000,
+      "ocupante": "morador",
+      "acao": "ANDAR",
+      "ate": [
+        0.95,
+        0.4
+      ]
+    },
+    {
+      "t_ms": 60000,
+      "ocupante": "morador",
+      "acao": "SAIR"
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-01"
+  ],
+  "regras": [
+    "RN-I0-01",
+    "RN-I0-03"
+  ]
+}

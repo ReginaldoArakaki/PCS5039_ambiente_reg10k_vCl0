@@ -1,0 +1,117 @@
+{
+  "cenario": "N04",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-02",
+    "CV08"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "luz acesa automaticamente",
+      "quando": "o morador aciona o interruptor em t=20 s",
+      "entao": {
+        "tipo": "intencao",
+        "acao": "APAGAR",
+        "precedencia": "MANUAL",
+        "entre_ms": [
+          20000,
+          20500
+        ]
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "precedência manual de apagar (15 min)",
+      "quando": "o morador continua andando",
+      "entao": {
+        "tipo": "sem_intencao",
+        "acao": "ACENDER",
+        "entre_ms": [
+          20500,
+          919000
+        ]
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "fim da precedência com ocupante",
+      "quando": "t = 20 s + 15 min",
+      "entao": {
+        "tipo": "intencao",
+        "acao": "ACENDER",
+        "entre_ms": [
+          919000,
+          922000
+        ]
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "luz apagada manualmente em t=1000 s",
+      "quando": "o morador acende no interruptor em t=1010 s",
+      "entao": {
+        "tipo": "intencao",
+        "acao": "ACENDER",
+        "precedencia": "MANUAL",
+        "entre_ms": [
+          1010000,
+          1010500
+        ]
+      }
+    },
+    {
+      "id": "A5",
+      "nivel": "REQUISITO",
+      "dado": "precedência manual de acender (15 min)",
+      "quando": "o morador sai em t=1120 s",
+      "entao": {
+        "tipo": "sem_intencao",
+        "acao": "APAGAR",
+        "entre_ms": [
+          1010500,
+          1909000
+        ]
+      }
+    },
+    {
+      "id": "A6",
+      "nivel": "REQUISITO",
+      "dado": "fim da precedência com a sala vazia",
+      "quando": "t = 1010 s + 15 min",
+      "entao": {
+        "tipo": "intencao",
+        "acao": "APAGAR",
+        "entre_ms": [
+          1909000,
+          1912000
+        ]
+      }
+    },
+    {
+      "id": "A7",
+      "nivel": "REQUISITO",
+      "dado": "ocupação real",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "apagamentos_indevidos",
+        "igual": 0
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "cenario": "F06",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-SYN-01"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "o relógio do hub salta −5 min em t=50 s",
+      "quando": "eventos posteriores são registrados",
+      "entao": {
+        "tipo": "relogio_nao_confiavel",
+        "apos_ms": 50000
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "CARACTERIZACAO",
+      "dado": "o morador sai em t=100 s",
+      "quando": "passam 60 s pelo tempo monotônico",
+      "entao": {
+        "tipo": "intencao",
+        "acao": "APAGAR",
+        "causa": "AUSENCIA",
+        "entre_ms": [
+          160000,
+          163000
+        ]
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "a sala fica vazia",
+      "quando": "a luz apaga",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "desperdicio_por_saida_s_max",
+        "max": 90
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

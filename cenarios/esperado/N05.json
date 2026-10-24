@@ -1,0 +1,53 @@
+{
+  "cenario": "N05",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-01"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "sala vazia e luz apagada",
+      "quando": "o cachorro entra sozinho em t=5 s",
+      "entao": {
+        "tipo": "luz",
+        "valor": "ACESA",
+        "desde_ms": 5000,
+        "ate_ms": 6000
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "entrada em sala escura",
+      "quando": "a lâmpada acende",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "atraso_percebido_ms_max",
+        "max": 1000
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "cachorro andando (ocupante, RN-I0-01)",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "apagamentos_indevidos",
+        "igual": 0
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

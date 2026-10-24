@@ -1,0 +1,58 @@
+{
+  "cenario": "FN04",
+  "modo": "REALISTA",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-01",
+    "RNF-DES-03"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "CARACTERIZACAO",
+      "dado": "entrada rápida (2,5 m/s) e o SA falha",
+      "quando": "o morador cruza a porta",
+      "entao": {
+        "tipo": "sem_intencao",
+        "acao": "ACENDER",
+        "causa": "PASSAGEM_SA"
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "CARACTERIZACAO",
+      "dado": "o PIR detecta o movimento",
+      "quando": "depois da latência do SP",
+      "entao": {
+        "tipo": "intencao",
+        "acao": "ACENDER",
+        "causa": "MOVIMENTO_SP",
+        "entre_ms": [
+          5000,
+          7000
+        ]
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "CARACTERIZACAO",
+      "dado": "limitação conhecida",
+      "quando": "a luz acende",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "atraso_percebido_ms_max",
+        "min": 500,
+        "max": 2500
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

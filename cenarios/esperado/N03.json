@@ -1,0 +1,55 @@
+{
+  "cenario": "N03",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-01"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "morador andando por 10 min",
+      "quando": "o cenário avança",
+      "entao": {
+        "tipo": "luz_constante",
+        "valor": "ACESA",
+        "entre_ms": [
+          6000,
+          630000
+        ]
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "ocupação real",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "apagamentos_indevidos",
+        "igual": 0
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "o morador sai em t=630 s",
+      "quando": "a luz apaga",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "desperdicio_por_saida_s_max",
+        "max": 90
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

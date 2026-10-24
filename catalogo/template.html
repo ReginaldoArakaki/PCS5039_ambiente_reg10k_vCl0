@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulação Reg10k — Incremento 0</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#1d2330; --ink2:#566070; --line:#dfe3ea; --accent:#1f4e8c;
+  --ok:#1a7f4b; --okbg:#e3f4ea; --bad:#b42318; --badbg:#fde8e7; --warn:#a15c00; --warnbg:#fff3dc;
+  --neutral:#eef1f5; --lit:#ffd84d; --dark:#2c3240; --person:#2563eb; --dog:#9a5b13;
+  --fp:#c2410c; --fn:#7c3aed; --fa:#b42318; --no:#1a7f4b;
+}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+header{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+header h1{font-size:18px;margin:0}
+header .sub{color:var(--ink2);font-size:12.5px}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill.ok{background:var(--okbg);color:var(--ok)} .pill.bad{background:var(--badbg);color:var(--bad)}
+.pill.warn{background:var(--warnbg);color:var(--warn)} .pill.n{background:var(--neutral);color:var(--ink2)}
+nav.tabs{display:flex;gap:4px;padding:0 20px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+nav.tabs button{border:0;background:none;padding:10px 14px;font:inherit;font-weight:600;color:var(--ink2);border-bottom:3px solid transparent;cursor:pointer}
+nav.tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 20px;background:#fbfcfd;border-bottom:1px solid var(--line)}
+.toolbar label{font-size:12.5px;color:var(--ink2)}
+select,input,button{font:inherit}
+select,input[type=text],input[type=number]{padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#fff}
+button.b{padding:5px 11px;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:pointer}
+button.b:hover{border-color:var(--accent)} button.b.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
+main{padding:16px 20px 40px}
+section.tab{display:none} section.tab.on{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.card h2{font-size:15.5px;margin:0 0 10px} .card h3{font-size:14px;margin:14px 0 8px}
+.muted{color:var(--ink2)} .small{font-size:12.5px} .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+table{border-collapse:collapse;width:100%}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--ink2);font-weight:600;background:#fafbfc;position:sticky;top:0}
+tr.click{cursor:pointer} tr.click:hover td{background:#f3f6fb} tr.sel td{background:#e9f0fb}
+.chip{display:inline-block;padding:1px 7px;margin:1px 2px;border:1px solid var(--line);border-radius:5px;font-size:11.5px;background:#fff;cursor:pointer;white-space:nowrap}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.t-NORMAL{color:var(--no)} .t-FALSO_POSITIVO{color:var(--fp)} .t-FALSO_NEGATIVO{color:var(--fn)} .t-FALHA{color:var(--fa)}
+.tipo{font-size:11px;font-weight:700;letter-spacing:.02em}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.layout-model{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px}
+.side a{display:block;padding:6px 10px;border-radius:6px;color:var(--ink);text-decoration:none;cursor:pointer}
+.side a.on{background:#e9f0fb;color:var(--accent);font-weight:600}
+.diag{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.diag figure{margin:0;border:1px solid var(--line);border-radius:8px;padding:8px;background:#fff;cursor:zoom-in}
+.diag img{width:100%;height:220px;object-fit:contain}
+.diag figcaption{font-size:12.5px;margin-top:6px}
+.lightbox{position:fixed;inset:0;background:rgba(10,15,25,.75);display:none;align-items:center;justify-content:center;z-index:50;padding:24px}
+.lightbox.on{display:flex} .lightbox img{max-width:96vw;max-height:90vh;background:#fff;border-radius:8px;padding:10px}
+.anim{display:grid;grid-template-columns:minmax(0,600px) minmax(280px,1fr);gap:16px;align-items:start}
+.anim svg{width:100%;height:auto;background:#fff;border:1px solid var(--line);border-radius:10px}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.controls input[type=range]{flex:1;min-width:200px}
+.kv{display:grid;grid-template-columns:120px 1fr;gap:4px 10px;font-size:13px}
+.kv div:nth-child(odd){color:var(--ink2)}
+.ticker{max-height:230px;overflow:auto;font-size:12.5px}
+.ticker div{padding:3px 0;border-bottom:1px dashed var(--line)}
+.cam{display:inline-block;width:76px;font-size:10.5px;font-weight:700;color:#fff;border-radius:4px;text-align:center;padding:0 3px;margin-right:6px}
+.c-VERDADE{background:#475569}.c-PERCEPCAO{background:#0e7490}.c-DECISAO{background:#1f4e8c}.c-ATUACAO{background:#a16207}.c-ESTADO{background:#6d28d9}.c-SISTEMA{background:#b42318}
+.metrics{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.metric{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff}
+.metric .v{font-size:20px;font-weight:700} .metric .n{font-size:12px;color:var(--ink2)} .metric.ok{border-color:#9bd3b4} .metric.bad{border-color:#f0a19b;background:#fff8f7}
+.tl-wrap{overflow:hidden;border:1px solid var(--line);border-radius:10px;background:#fff}
+.tablebox{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.legend span{display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:12px;color:var(--ink2)}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:2px}
+.editor-row{display:grid;grid-template-columns:90px 110px 200px 1fr 30px;gap:6px;margin-bottom:6px}
+.err{color:var(--bad)}
+@media (max-width:900px){.anim,.grid2,.layout-model{grid-template-columns:1fr}}
+@media print{
+  header .acts,nav.tabs,.toolbar,.controls,.noprint{display:none!important}
+  body{background:#fff} .card{break-inside:avoid;border-color:#ccc} .tablebox{max-height:none;overflow:visible}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Simulação Reg10k — Incremento 0</h1>
+    <div class="sub" id="sub"></div>
+  </div>
+  <div style="flex:1"></div>
+  <div class="acts" id="status"></div>
+</header>
+<nav class="tabs" id="tabs">
+  <button data-t="modelo">Modelo</button>
+  <button data-t="cenarios">Cenários</button>
+  <button data-t="animacao">Animação</button>
+  <button data-t="painel">Painel</button>
+</nav>
+<div class="toolbar" id="selbar">
+  <label>Cenário <select id="selCen"></select></label>
+  <label>Controlador <select id="selCtrl"></select></label>
+  <span id="selInfo" class="small muted"></span>
+</div>
+<main>
+  <section class="tab" id="tab-modelo"></section>
+  <section class="tab" id="tab-cenarios"></section>
+  <section class="tab" id="tab-animacao"></section>
+  <section class="tab" id="tab-painel"></section>
+</main>
+<div class="lightbox" id="lb"><img alt=""></div>
+
+<script>
+const D = /*__DADOS__*/null;
+// ------------------------------------------------------------------ utilidades
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmtT = ms => { if (ms == null) return "—"; const s = ms / 1000, m = Math.floor(s / 60); return `${m}:${(s - m * 60).toFixed(1).padStart(4, "0")}`; };
+const fmtN = v => v == null ? "—" : (typeof v === "number" ? (Number.isInteger(v) ? v.toLocaleString("pt-BR") : v.toLocaleString("pt-BR", {maximumFractionDigits: 1})) : esc(v));
+const TIPO_NOME = {NORMAL: "Normal", FALSO_POSITIVO: "Falso positivo", FALSO_NEGATIVO: "Falso negativo", FALHA: "Falha"};
+const NOMES = Object.fromEntries(D.sala.ocupantes.map(o => [o.id, o.nome || o.id]));
+const CTRLS = D.meta.controladores;
+const CEN = Object.fromEntries(D.cenarios.map(c => [c.id, c]));
+const LIMITES = {latencia_reacao_ms_p95: ["max", 500], atraso_percebido_ms_max: ["max", 1000], desperdicio_por_saida_s_max: ["max", 90], apagamentos_indevidos: ["max", 0]};
+
+const S = {tab: "cenarios", cen: D.cenarios[0].id, ctrl: CTRLS[0], t: 0, playing: false, speed: 20,
+           modelSec: "geral", filtroTipo: "", busca: "", cmpA: CTRLS[0], cmpB: CTRLS[1] || CTRLS[0],
+           zoom: 1, camadas: new Set(["VERDADE","PERCEPCAO","DECISAO","ATUACAO","ESTADO","SISTEMA"]), hb: false, buscaEv: ""};
+
+function ex(cen = S.cen, ctrl = S.ctrl) { return D.execucoes[`${cen}|${ctrl}`]; }
+function lerHash() {
+  const [tab, cen, ctrl] = location.hash.replace(/^#/, "").split("/");
+  if (["modelo","cenarios","animacao","painel"].includes(tab)) S.tab = tab;
+  if (cen && CEN[cen]) S.cen = cen;
+  if (ctrl && CTRLS.includes(ctrl)) S.ctrl = ctrl;
+}
+// Em visualizadores embutidos (iframe srcdoc, sandbox) o navegador proíbe mexer no endereço:
+// a página continua funcionando, só não guarda a seleção na URL.
+function gravarHash() {
+  if (location.protocol === "about:") return;
+  try { history.replaceState(null, "", `#${S.tab}/${S.cen}/${S.ctrl}`); } catch (e) { /* endereço indisponível */ }
+}
+
+// Série em degraus
+class Degraus {
+  constructor(v0) { this.ts = [0]; this.vs = [v0]; }
+  set(t, v) { if (t === this.ts[this.ts.length - 1]) this.vs[this.vs.length - 1] = v; else if (v !== this.vs[this.vs.length - 1]) { this.ts.push(t); this.vs.push(v); } }
+  at(t) { let lo = 0, hi = this.ts.length - 1; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (this.ts[m] <= t) lo = m; else hi = m - 1; } return this.vs[lo]; }
+  segs(fim) { return this.ts.map((t, i) => [t, i + 1 < this.ts.length ? this.ts[i + 1] : fim, this.vs[i]]).filter(s => s[1] > s[0]); }
+}
+
+// ---------------------------------------------------------- derivação por execução
+const CACHE = {};
+function derivar(cen, ctrl) {
+  const k = `${cen}|${ctrl}`; if (CACHE[k]) return CACHE[k];
+  const e = ex(cen, ctrl), c = CEN[cen], fim = c.duracao_ms;
+  const r = {fim, luz: new Degraus(false), presentes: new Degraus(""), ocup: new Degraus("DESCONHECIDA"),
+    luzEst: new Degraus("APAGADA"), prec: new Degraus("AUTOMATICA"), alertas: new Degraus(""),
+    spAlto: new Degraus(false), passagens: [], intencoes: [], resultados: [], falhas: [], sistema: [], hbs: [],
+    hubOff: [], verdade: [], interruptores: [], spMudo: [], queimada: null};
+  let hubDesl = null, spMudoIni = null;
+  for (const v of e.eventos) {
+    const t = v.t_ms;
+    if (v.camada === "VERDADE") {
+      if (v.tipo === "LUZ_FISICA") r.luz.set(t, !!v.acesa);
+      else if (v.tipo === "OCUPANTES") r.presentes.set(t, (v.presentes || []).join(","));
+      else if (v.tipo === "FALHA_INJETADA") {
+        r.falhas.push(v);
+        if (v.falha === "SP_SEM_RESPOSTA") r.spMudo.push([t, v.duracao_ms ? t + v.duracao_ms : fim]);
+        if (v.falha === "LAMPADA_QUEIMADA") r.queimada = t;
+      }
+      else if (v.tipo !== "INICIO") r.verdade.push(v);
+    } else if (v.camada === "PERCEPCAO") {
+      if (v.tipo === "PASSAGEM") r.passagens.push(t);
+      else if (v.tipo === "MOVIMENTO") r.spAlto.set(t, true);
+      else if (v.tipo === "FIM_MOVIMENTO") r.spAlto.set(t, false);
+      else if (v.tipo === "HEARTBEAT") r.hbs.push(v);
+      else if (v.tipo === "INTERRUPTOR") r.interruptores.push(t);
+    } else if (v.camada === "DECISAO" && v.tipo === "INTENCAO") r.intencoes.push(v);
+    else if (v.camada === "ATUACAO" && v.tipo === "RESULTADO") r.resultados.push(v);
+    else if (v.camada === "ESTADO") { r.ocup.set(t, v.ocupacao); r.luzEst.set(t, v.luz); r.prec.set(t, v.precedencia); r.alertas.set(t, (v.alertas || []).join(", ")); }
+    else if (v.camada === "SISTEMA") {
+      if (v.tipo === "HUB_DESLIGADO") hubDesl = t;
+      if (v.tipo === "HUB_LIGADO" && hubDesl != null) { r.hubOff.push([hubDesl, t]); hubDesl = null; }
+      if (v.tipo !== "FIM") r.sistema.push(v);
+    }
+  }
+  if (hubDesl != null) r.hubOff.push([hubDesl, fim]);
+  return (CACHE[k] = r);
+}
+
+// Descrição legível de um evento
+function desc(v) {
+  const n = id => NOMES[id] || id;
+  switch (v.tipo) {
+    case "CRUZOU_PORTA": return `${n(v.ocupante)} cruza a porta (${v.sentido === "ENTRADA" ? "entrada" : "saída"}${v.vel_m_s > 1.5 ? `, ${v.vel_m_s} m/s` : ""})`;
+    case "OCUPANTES": return `Na sala: ${(v.presentes || []).map(n).join(", ") || "ninguém"}`;
+    case "LUZ_FISICA": return `Lâmpada ${v.acesa ? "emite luz" : "apagada"} (físico)`;
+    case "GESTO": return `${n(v.ocupante)} faz um gesto`;
+    case "INTERRUPTOR_ACIONADO": return `${n(v.ocupante)} aciona o interruptor`;
+    case "PASSOU_PORTA_SEM_ENTRAR": return `${n(v.ocupante)} passa pela porta sem entrar`;
+    case "FALHA_INJETADA": return `Falha injetada: ${v.falha}${v.duracao_ms ? ` por ${v.duracao_ms / 1000} s` : ""}`;
+    case "INICIO": return `Início (${v.modo}, semente ${v.semente})`;
+    case "PASSAGEM": return "SA detecta passagem (sem direção)";
+    case "MOVIMENTO": return "SP detecta movimento";
+    case "FIM_MOVIMENTO": return "SP volta ao repouso (fim da retenção)";
+    case "HEARTBEAT": return `SP heartbeat (bateria ${v.bateria}%${v.alto ? ", ativo" : ""})`;
+    case "INTERRUPTOR": return "Interruptor acionado";
+    case "EFEITO": return `Sensor da lâmpada: ${v.acesa ? "acesa" : "apagada"}`;
+    case "LEITURA_LAMPADA": return `Leitura da lâmpada após reinício: ${v.acesa ? "acesa" : "apagada"}`;
+    case "CONFIRMACAO": return `Atuador confirma ${v.chave}`;
+    case "INTENCAO": return `Intenção ${v.acao} — ${v.causa} (${v.regra}, ${v.precedencia.toLowerCase()})`;
+    case "COMUTACAO": return `Relé ${v.ligado ? "ligado" : "desligado"} (${v.chave})`;
+    case "RESULTADO": return `Resultado ${v.chave}: ${v.nivel}${v.divergencia ? " — divergência de efeito" : ""}`;
+    case "ESTADO_SALA": return `Estado: ocupação ${v.ocupacao}, luz ${v.luz}${v.precedencia === "MANUAL" ? " (manual)" : ""}`;
+    case "ALERTA": return `Alerta ${v.alerta} ${v.ativo ? "ativado" : "encerrado"}`;
+    case "HUB_DESLIGADO": return "Hub desligado";
+    case "HUB_LIGADO": return `Hub ligado (boot ${v.boot})`;
+    case "LACUNA": return `Lacuna no registro: ${fmtT(v.inicio_ms)} a ${fmtT(v.fim_ms)}`;
+    case "RETENTATIVA": return `Nova tentativa de ${v.acao} (${v.chave})`;
+    case "RELOGIO_SALTO": return `Relógio do hub salta ${v.delta_ms / 1000} s`;
+    case "FIM": return "Fim do cenário";
+    default: return v.tipo;
+  }
+}
+const cam = c => `<span class="cam c-${c}">${c}</span>`;
+const tipoTag = t => `<span class="tipo t-${t}">${(TIPO_NOME[t] || t).toUpperCase()}</span>`;
+function entaoTxt(e) {
+  const x = {...e}; const t = x.tipo; delete x.tipo;
+  const kv = Object.entries(x).map(([k, v]) => `${k}=${Array.isArray(v) ? `[${v.map(n => typeof n === "number" && n >= 1000 ? fmtT(n) : n).join(", ")}]` : (typeof v === "number" && k.endsWith("_ms") ? fmtT(v) : v)}`).join(", ");
+  return `${t}${kv ? ` (${kv})` : ""}`;
+}
+function baixar(nome, texto, tipo = "text/csv") {
+  try {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([(tipo === "text/csv" ? "﻿" : "") + texto],{type: tipo + ";charset=utf-8"}));
+    a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  } catch (e) {
+    alert("Este visualizador não permite baixar arquivos. Abra o index.html diretamente no navegador.");
+  }
+}
+const csv = rows => rows.map(r => r.map(c => { const s = String(c ?? ""); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }).join(";")).join("\n");
+
+// ------------------------------------------------------------------- cabeçalho
+function cabecalho() {
+  $("#sub").textContent = `Sala de 5 × 4 m · morador e cachorro · ${D.cenarios.length} cenários · controladores: ${CTRLS.join(", ")} · gerado em ${D.meta.gerado_em}`;
+  const p = D.meta.problemas;
+  $("#status").innerHTML = p.length ? `<span class="pill bad" title="${esc(p.join("\n"))}">${p.length} problema(s) no catálogo</span>`
+    : `<span class="pill ok">Catálogo sem problemas</span>`;
+  $("#selCen").innerHTML = D.cenarios.map(c => `<option value="${c.id}">${c.id} — ${esc(c.titulo)}</option>`).join("");
+  $("#selCtrl").innerHTML = CTRLS.map(c => `<option>${c}</option>`).join("");
+  $("#selCen").onchange = e => { S.cen = e.target.value; S.t = 0; trocar(); };
+  $("#selCtrl").onchange = e => { S.ctrl = e.target.value; trocar(); };
+  document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => irPara(b.dataset.t));
+}
+function irPara(tab, cen, ctrl) {
+  if (cen) { S.cen = cen; S.t = 0; } if (ctrl) S.ctrl = ctrl;
+  S.tab = tab; trocar();
+}
+function trocar() {
+  gravarHash();
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.t === S.tab));
+  document.querySelectorAll("section.tab").forEach(s => s.classList.toggle("on", s.id === `tab-${S.tab}`));
+  $("#selbar").style.display = (S.tab === "animacao" || S.tab === "painel") ? "flex" : "none";
+  $("#selCen").value = S.cen; $("#selCtrl").value = S.ctrl;
+  const e = ex(), c = CEN[S.cen];
+  $("#selInfo").innerHTML = `${tipoTag(c.tipo)} · ${c.modo.toLowerCase()} · ${fmtT(c.duracao_ms)} · requisitos ${e.requisitos.ok}/${e.requisitos.total} · ` +
+    (e.requisitos_ok ? '<span class="pill ok">aprovado</span>' : '<span class="pill bad">reprovado</span>');
+  if (S.tab === "modelo") renderModelo();
+  if (S.tab === "cenarios") renderCenarios();
+  if (S.tab === "animacao") montarAnimacao();
+  if (S.tab === "painel") renderPainel();
+}
+
+// ======================================================================= MODELO
+function cenariosQueUsam(id) { return D.cenarios.filter(c => (c.requisitos || []).includes(id) || (c.regras || []).includes(id)); }
+const chipsCen = l => l.map(c => `<span class="chip" data-go="${c.id}">${c.id}</span>`).join("") || '<span class="muted small">—</span>';
+function renderModelo() {
+  const M = D.modelo;
+  const secs = [["geral","Visão geral"],["diagramas","Diagramas UML"],["regras","Regras de negócio"],["parametros","Parâmetros"],
+                ["ambiente","Ambiente e dispositivos"],["rastreio","Rastreabilidade V1–V3"],["avaliacao","Métricas e invariantes"]];
+  let h = "";
+  if (S.modelSec === "geral") {
+    h = `<div class="card"><h2>Ambiente do incremento 0</h2>
+      <p>Uma sala de 5 × 4 m com uma porta para o exterior, dois moradores (uma pessoa e um cachorro de grande porte, que também é ocupante pela RN-I0-01),
+      um sensor de passagem (SA) no batente, um sensor de presença PIR (SP) no canto nordeste com uma zona cega de 10% da área, um atuador (relé),
+      uma lâmpada com sensor de efeito e um interruptor. O hub roda um <b>controlador plugável</b>: a referência ou o de um grupo de alunos.</p>
+      <p class="muted small">Toda execução registra seis camadas de eventos. A camada de verdade só é lida pelo oráculo; o controlador nunca a vê (OR-06).</p>
+      <table><tr><th>Camada</th><th>Quem gera</th><th>Classe V2</th></tr>${M.camadas.map(c => `<tr><td>${cam(c.id)}</td><td>${esc(c.quem)}</td><td>${esc(c.v2)}</td></tr>`).join("")}</table></div>
+      <div class="card"><h2>Trilha incremental</h2><table><tr><th>Inc.</th><th>Dias</th><th>Acrescenta</th></tr>
+      ${M.trilha.map(t => `<tr${t.inc === 0 ? ' class="sel"' : ""}><td>${t.inc}</td><td>${t.dias}</td><td>${esc(t.acrescenta)}</td></tr>`).join("")}</table></div>`;
+  } else if (S.modelSec === "diagramas") {
+    h = `<div class="card"><h2>Diagramas UML</h2><p class="muted small">Clique para ampliar. As fontes Mermaid estão em <span class="mono">docs/uml/</span>.</p>
+      <div class="diag">${M.diagramas.map(d => `<figure data-src="${d.src}"><img src="${d.src}" alt="${esc(d.titulo)}"><figcaption><b>${esc(d.titulo)}</b><br><span class="muted">${esc(d.descricao)}</span><br><span class="mono">${d.fonte}</span></figcaption></figure>`).join("")}</div></div>`;
+  } else if (S.modelSec === "regras") {
+    h = `<div class="card"><h2>Regras de negócio do incremento</h2><table><tr><th>ID</th><th>Regra</th><th>Origem</th><th>Cenários</th></tr>
+      ${M.regras.map(r => `<tr><td class="mono">${r.id}</td><td>${esc(r.texto)}</td><td class="small">${esc(r.origem)}</td><td>${chipsCen(cenariosQueUsam(r.id))}</td></tr>`).join("")}</table></div>`;
+  } else if (S.modelSec === "parametros") {
+    h = `<div class="card"><h2>Parâmetros de controle</h2><p class="muted small">Valores de <span class="mono">cenarios/sala.json</span> → <span class="mono">controle</span>; um roteiro pode sobrescrevê-los.</p>
+      <table><tr><th>Parâmetro</th><th>Plano</th><th>Chave</th><th>Valor na sala</th></tr>
+      ${M.parametros.map(p => `<tr><td>${esc(p.id)}</td><td>${esc(p.valor)}</td><td class="mono">${p.chave}</td><td class="mono">${fmtN(D.sala.controle[p.chave])} ms</td></tr>`).join("")}</table>
+      <p class="small muted">PS05 da V1 (duas leituras com 3 s de intervalo) foi substituído por T_apagamento = 60 s neste incremento (proposta RV-02).</p></div>`;
+  } else if (S.modelSec === "ambiente") {
+    const ds = D.sala.dispositivos;
+    const chaves = [...new Set(Object.values(ds).flatMap(d => [...Object.keys(d.ideal), ...Object.keys(d.realista)]))];
+    h = `<div class="card"><h2>Dispositivos e modos</h2><p class="muted small">Modo ideal valida a lógica; modo realista acrescenta ruído e falhas aleatórias. Fonte: <span class="mono">cenarios/sala.json</span>.</p>
+      <table><tr><th>Dispositivo</th><th>Parâmetro</th><th>Ideal</th><th>Realista</th></tr>
+      ${Object.entries(ds).map(([id, d]) => chaves.filter(k => k in d.ideal || k in d.realista).map((k, i) => `<tr><td>${i ? "" : `<b>${id}</b><br><span class="small muted">${esc(d.descricao)}</span>`}</td><td class="mono">${k}</td><td class="mono">${esc(JSON.stringify(d.ideal[k]))}</td><td class="mono">${esc(JSON.stringify(d.realista[k]))}</td></tr>`).join("")).join("")}
+      </table></div>`;
+  } else if (S.modelSec === "rastreio") {
+    h = `<div class="card"><h2>Rastreabilidade com V1–V3</h2><table><tr><th>ID</th><th>Descrição</th><th>Cenários que exercitam</th></tr>
+      ${Object.entries(M.requisitos).map(([id, t]) => `<tr><td class="mono">${id}</td><td>${esc(t)}</td><td>${chipsCen(cenariosQueUsam(id))}</td></tr>`).join("")}</table></div>`;
+  } else if (S.modelSec === "avaliacao") {
+    h = `<div class="card"><h2>Métricas</h2><table><tr><th>Métrica</th><th>Definição</th></tr>${M.metricas.map(m => `<tr><td><b>${esc(m.nome)}</b><br><span class="mono small">${m.id}</span></td><td>${esc(m.def)}</td></tr>`).join("")}</table>
+      <p class="small muted">Limites (cenários normais, modo ideal): latência p95 ≤ 500 ms, atraso percebido ≤ 1 s, desperdício por saída ≤ 90 s, 0 apagamentos indevidos.</p></div>
+      <div class="card"><h2>Invariantes verificadas em toda execução</h2><table><tr><th>ID</th><th>Verificação</th><th>Base</th></tr>${M.invariantes.map(i => `<tr><td class="mono">${i.id}</td><td>${esc(i.texto)}</td><td class="small">${esc(i.base)}</td></tr>`).join("")}</table></div>
+      <div class="card"><h2>Requisito × caracterização</h2><p>Cada asserção esperada tem um nível. <b>Requisito</b> vale para qualquer controlador (falhar reprova).
+      <b>Caracterização</b> descreve o comportamento da referência, inclusive suas limitações conhecidas; em outro controlador, "difere" é informação, não falha.</p></div>`;
+  }
+  $("#tab-modelo").innerHTML = `<div class="layout-model"><div class="card side">${secs.map(([k, t]) => `<a data-sec="${k}" class="${S.modelSec === k ? "on" : ""}">${t}</a>`).join("")}</div><div>${h}</div></div>`;
+  $("#tab-modelo").querySelectorAll("[data-sec]").forEach(a => a.onclick = () => { S.modelSec = a.dataset.sec; renderModelo(); });
+  $("#tab-modelo").querySelectorAll("[data-go]").forEach(a => a.onclick = () => { S.cen = a.dataset.go; irPara("cenarios"); });
+  $("#tab-modelo").querySelectorAll("figure[data-src]").forEach(f => f.onclick = () => { $("#lb img").src = f.dataset.src; $("#lb").classList.add("on"); });
+}
+$("#lb").onclick = () => $("#lb").classList.remove("on");
+
+// ===================================================================== CENÁRIOS
+function resultadoCel(cid, ctrl) {
+  const e = ex(cid, ctrl); if (!e) return "—";
+  const m = e.metricas;
+  const st = e.requisitos_ok ? '<span class="pill ok">ok</span>' : '<span class="pill bad">falha</span>';
+  return `${st} <span class="small">req ${e.requisitos.ok}/${e.requisitos.total}${e.caracterizacao.total ? ` · ref ${e.caracterizacao.igual_referencia}/${e.caracterizacao.total}` : ""}</span>
+    <div class="small muted">desp. ${fmtN(m.desperdicio_s)} s · escuro ${fmtN(m.escuro_com_ocupante_s)} s · indev. ${m.apagamentos_indevidos}</div>`;
+}
+function renderCenarios() {
+  const b = S.busca.toLowerCase();
+  const lista = D.cenarios.filter(c => (!S.filtroTipo || c.tipo === S.filtroTipo) &&
+    (!b || `${c.id} ${c.titulo} ${(c.requisitos || []).join(" ")} ${(c.regras || []).join(" ")}`.toLowerCase().includes(b)));
+  const c = CEN[S.cen];
+  const tipos = Object.keys(TIPO_NOME);
+  let h = `<div class="card"><div class="controls" style="margin-top:0">
+      <label class="small">Tipo <select id="fTipo"><option value="">todos</option>${tipos.map(t => `<option value="${t}"${S.filtroTipo === t ? " selected" : ""}>${TIPO_NOME[t]}</option>`).join("")}</select></label>
+      <input type="text" id="fBusca" placeholder="Buscar ID, título, requisito ou regra" value="${esc(S.busca)}" style="min-width:280px">
+      <span class="small muted">${lista.length} de ${D.cenarios.length} cenários · ${tipos.map(t => `${TIPO_NOME[t]}: ${D.cenarios.filter(x => x.tipo === t).length}`).join(" · ")}</span>
+      <span style="flex:1"></span><button class="b" id="csvCat">Exportar CSV</button></div>
+    <div class="tablebox" style="max-height:480px"><table><tr><th>ID</th><th>Tipo</th><th>Cenário</th><th>Modo</th><th>Duração</th>${CTRLS.map(k => `<th>${esc(k)}</th>`).join("")}</tr>
+    ${lista.map(x => `<tr class="click${x.id === S.cen ? " sel" : ""}" data-c="${x.id}"><td class="mono"><b>${x.id}</b></td><td>${tipoTag(x.tipo)}</td><td>${esc(x.titulo)}</td><td class="small">${x.modo.toLowerCase()}</td><td class="small">${fmtT(x.duracao_ms)}</td>${CTRLS.map(k => `<td>${resultadoCel(x.id, k)}</td>`).join("")}</tr>`).join("")}
+    </table></div></div>`;
+
+  // Detalhe do cenário selecionado
+  const asserts = (c.esperado?.assercoes || []);
+  h += `<div class="card"><h2>${c.id} — ${esc(c.titulo)} ${tipoTag(c.tipo)}</h2>
+    <div class="grid2"><div>
+      <p>${esc(c.descricao || "")}</p>
+      <div class="kv"><div>Ideal</div><div>${esc(c.comportamento_ideal || "")}</div><div>Referência</div><div>${esc(c.comportamento_referencia || "")}</div>
+      <div>Requisitos</div><div>${(c.requisitos || []).map(r => `<span class="chip" data-rq="${r}">${r}</span>`).join("")}</div>
+      <div>Regras</div><div>${(c.regras || []).map(r => `<span class="chip" data-rg="${r}">${r}</span>`).join("")}</div></div>
+      <div class="controls"><button class="b pri" data-goanim>▶ Ver animação</button><button class="b" data-gopainel>Ver painel</button><button class="b" data-edit>Abrir no editor</button></div>
+    </div><div>
+      <h3 style="margin-top:0">Roteiro</h3><div class="tablebox" style="max-height:220px"><table><tr><th>t</th><th>Quem</th><th>Ação ou falha</th></tr>
+      ${[...c.acoes.map(a => [a.t_ms, NOMES[a.ocupante] || a.ocupante, a.acao + (a.ate ? ` → (${a.ate.join(", ")})` : "") + (a.duracao_ms ? ` por ${a.duracao_ms / 1000} s` : "") + (a.vel_m_s ? ` a ${a.vel_m_s} m/s` : "")]),
+         ...c.falhas.map(f => [f.t_ms, "falha", `<b class="err">${f.tipo}</b>` + (f.duracao_ms ? ` por ${f.duracao_ms / 1000} s` : "")])]
+        .sort((a, b) => a[0] - b[0]).map(r => `<tr><td class="mono">${fmtT(r[0])}</td><td>${esc(r[1])}</td><td>${r[2].startsWith("<b") ? r[2] : esc(r[2])}</td></tr>`).join("")}
+      </table></div></div></div>
+    <h3>Asserções esperadas</h3><div class="tablebox"><table><tr><th>ID</th><th>Nível</th><th>Dado</th><th>Quando</th><th>Então</th>${CTRLS.map(k => `<th>${esc(k)}</th>`).join("")}</tr>
+    ${asserts.map(a => `<tr><td class="mono">${a.id}</td><td class="small">${a.nivel === "REQUISITO" ? "requisito" : "caracterização"}</td><td>${esc(a.dado)}</td><td>${esc(a.quando)}</td><td class="mono small">${esc(entaoTxt(a.entao))}</td>
+      ${CTRLS.map(k => { const r = ex(c.id, k).assercoes[a.id]; if (!r) return "<td>—</td>";
+        const cls = r.ok ? "ok" : (a.nivel === "REQUISITO" ? "bad" : "warn"); const txt = r.ok ? (a.nivel === "REQUISITO" ? "ok" : "= ref.") : (a.nivel === "REQUISITO" ? "falha" : "difere");
+        return `<td><span class="pill ${cls}">${txt}</span><div class="small muted">${esc(r.detalhe)}</div></td>`; }).join("")}</tr>`).join("")}
+    </table></div></div>`;
+
+  // Comparação de controladores
+  if (CTRLS.length > 1) {
+    const mets = [["desperdicio_s","Desperdício (s)"],["escuro_com_ocupante_s","Escuro c/ ocupante (s)"],["apagamentos_indevidos","Apag. indevidos"],["atraso_percebido_ms_max","Atraso percebido (ms)"],["acionamentos","Acionamentos"]];
+    h += `<div class="card"><h2>Comparação de controladores</h2>
+      <div class="controls" style="margin-top:0"><label class="small">A <select id="cmpA">${CTRLS.map(k => `<option${k === S.cmpA ? " selected" : ""}>${k}</option>`).join("")}</select></label>
+      <label class="small">B <select id="cmpB">${CTRLS.map(k => `<option${k === S.cmpB ? " selected" : ""}>${k}</option>`).join("")}</select></label>
+      <span class="small muted">Δ = B − A. Em todas estas métricas, menor é melhor (verde).</span><span style="flex:1"></span><button class="b" id="csvCmp">Exportar CSV</button></div>
+      <div class="tablebox"><table><tr><th>Cenário</th>${mets.map(m => `<th>${m[1]}<br><span class="muted">A → B (Δ)</span></th>`).join("")}</tr>
+      ${D.cenarios.map(x => { const A = ex(x.id, S.cmpA).metricas, B = ex(x.id, S.cmpB).metricas;
+        return `<tr class="click" data-c="${x.id}"><td><b class="mono">${x.id}</b> <span class="small">${tipoTag(x.tipo)}</span></td>${mets.map(([k]) => { const a = A[k], bb = B[k];
+          if (a == null && bb == null) return "<td>—</td>"; const d = (bb ?? 0) - (a ?? 0); const cor = d < 0 ? "var(--ok)" : d > 0 ? "var(--bad)" : "var(--ink2)";
+          return `<td class="small">${fmtN(a)} → ${fmtN(bb)} <b style="color:${cor}">${d === 0 ? "=" : (d > 0 ? "+" : "") + fmtN(Math.round(d * 10) / 10)}</b></td>`; }).join("")}</tr>`; }).join("")}
+      </table></div></div>`;
+  }
+  h += editorHTML();
+  $("#tab-cenarios").innerHTML = h;
+  const T = $("#tab-cenarios");
+  $("#fTipo").onchange = e => { S.filtroTipo = e.target.value; renderCenarios(); };
+  $("#fBusca").oninput = e => { S.busca = e.target.value; const pos = e.target.selectionStart; renderCenarios(); const i = $("#fBusca"); i.focus(); i.setSelectionRange(pos, pos); };
+  T.querySelectorAll("tr[data-c]").forEach(r => r.onclick = () => { S.cen = r.dataset.c; S.t = 0; renderCenarios(); gravarHash(); T.querySelector(".card:nth-child(2)").scrollIntoView({behavior: "smooth", block: "start"}); });
+  T.querySelectorAll("[data-rq],[data-rg]").forEach(ch => ch.onclick = () => { S.modelSec = ch.dataset.rq ? "rastreio" : "regras"; irPara("modelo"); });
+  T.querySelector("[data-goanim]").onclick = () => irPara("animacao");
+  T.querySelector("[data-gopainel]").onclick = () => irPara("painel");
+  T.querySelector("[data-edit]").onclick = () => { carregarNoEditor(CEN[S.cen]); $("#editor").scrollIntoView({behavior: "smooth"}); };
+  $("#csvCat").onclick = () => baixar("catalogo-resultados.csv", csv([["cenario","tipo","titulo","modo","controlador","requisitos_ok","req_ok","req_total","ref_iguais","ref_total",...D.modelo.metricas.map(m => m.id)],
+    ...D.cenarios.flatMap(x => CTRLS.map(k => { const e = ex(x.id, k); return [x.id, x.tipo, x.titulo, x.modo, k, e.requisitos_ok, e.requisitos.ok, e.requisitos.total, e.caracterizacao.igual_referencia, e.caracterizacao.total, ...D.modelo.metricas.map(m => e.metricas[m.id])]; }))]));
+  if (CTRLS.length > 1) {
+    $("#cmpA").onchange = e => { S.cmpA = e.target.value; renderCenarios(); };
+    $("#cmpB").onchange = e => { S.cmpB = e.target.value; renderCenarios(); };
+    $("#csvCmp").onclick = () => baixar(`comparacao-${S.cmpA}-${S.cmpB}.csv`, csv([["cenario","metrica",S.cmpA,S.cmpB],
+      ...D.cenarios.flatMap(x => D.modelo.metricas.map(m => [x.id, m.id, ex(x.id, S.cmpA).metricas[m.id], ex(x.id, S.cmpB).metricas[m.id]]))]));
+  }
+  ligarEditor();
+}
+
+// ------------------------------------------------------------- editor de roteiro
+const ACOES = ["ENTRAR","SAIR","ANDAR","ANDAR_ALEATORIO","PARADO","MICROGESTOS","GESTO","PASSAR_PORTA_SEM_ENTRAR","INTERRUPTOR"];
+const FALHAS = ["SP_SEM_RESPOSTA","BATERIA_BAIXA","SP_FALSO_DISPARO","SA_ESPURIO","SA_PERDE_PROXIMA","LAMPADA_QUEIMADA","ATUADOR_TRAVADO","HUB_REINICIO","RELOGIO_SALTO"];
+const ED = {id: "X01", titulo: "Novo cenário", tipo: "NORMAL", modo: "IDEAL", duracao_s: 180, descricao: "", requisitos: "", linhas: [
+  {t: 5, quem: "morador", o: "ENTRAR", p: ""}, {t: 10, quem: "morador", o: "ANDAR_ALEATORIO", p: '{"duracao_ms": 60000}'}, {t: 75, quem: "morador", o: "SAIR", p: ""}]};
+function carregarNoEditor(c) {
+  Object.assign(ED, {id: c.id + "b", titulo: c.titulo + " (variação)", tipo: c.tipo, modo: c.modo, duracao_s: c.duracao_ms / 1000,
+    descricao: c.descricao || "", requisitos: (c.requisitos || []).join(", "),
+    linhas: [...c.acoes.map(a => { const {t_ms, ocupante, acao, ...r} = a; return {t: t_ms / 1000, quem: ocupante, o: acao, p: Object.keys(r).length ? JSON.stringify(r) : ""}; }),
+             ...c.falhas.map(f => { const {t_ms, tipo, ...r} = f; return {t: t_ms / 1000, quem: "falha", o: tipo, p: Object.keys(r).length ? JSON.stringify(r) : ""}; })].sort((a, b) => a.t - b.t)});
+  renderCenarios();
+}
+function editorHTML() {
+  const quem = [...D.sala.ocupantes.map(o => o.id), "falha"];
+  return `<div class="card" id="editor"><h2>Editor de roteiro</h2>
+    <p class="small muted">Monte um cenário e baixe o JSON. Salve em <span class="mono">cenarios/roteiros/&lt;ID&gt;.json</span> e rode
+    <span class="mono">python -m sim --cenario &lt;ID&gt;</span> (ou <span class="mono">python -m catalogo</span> para incluí-lo na página). A página não executa a simulação: a lógica fica só no motor Python.</p>
+    <div class="controls"><label class="small">ID <input type="text" id="edId" value="${esc(ED.id)}" size="6"></label>
+      <label class="small">Título <input type="text" id="edTit" value="${esc(ED.titulo)}" size="34"></label>
+      <label class="small">Tipo <select id="edTipo">${Object.keys(TIPO_NOME).map(t => `<option${t === ED.tipo ? " selected" : ""}>${t}</option>`).join("")}</select></label>
+      <label class="small">Modo <select id="edModo">${["IDEAL","REALISTA"].map(t => `<option${t === ED.modo ? " selected" : ""}>${t}</option>`).join("")}</select></label>
+      <label class="small">Duração (s) <input type="number" id="edDur" value="${ED.duracao_s}" min="10" style="width:90px"></label></div>
+    <div class="controls"><label class="small" style="flex:1">Descrição <input type="text" id="edDesc" value="${esc(ED.descricao)}" style="width:100%"></label>
+      <label class="small">Requisitos <input type="text" id="edReq" value="${esc(ED.requisitos)}" placeholder="RF-OPR-01, CV02" size="22"></label></div>
+    <div class="small muted editor-row" style="font-weight:600"><span>t (s)</span><span>Quem</span><span>Ação ou falha</span><span>Parâmetros (JSON, opcional)</span><span></span></div>
+    <div id="edLinhas">${ED.linhas.map((l, i) => `<div class="editor-row" data-i="${i}">
+      <input type="number" step="0.1" value="${l.t}" data-k="t"><select data-k="quem">${quem.map(q => `<option${q === l.quem ? " selected" : ""}>${q}</option>`).join("")}</select>
+      <select data-k="o">${(l.quem === "falha" ? FALHAS : ACOES).map(o => `<option${o === l.o ? " selected" : ""}>${o}</option>`).join("")}</select>
+      <input type="text" value="${esc(l.p)}" data-k="p" placeholder='ex.: {"ate": [2.5, 2.0]}'><button class="b" data-del title="Remover">×</button></div>`).join("")}</div>
+    <div class="controls"><button class="b" id="edAdd">+ Linha</button><span style="flex:1"></span><span id="edMsg" class="small"></span>
+      <button class="b" id="edCopy">Copiar JSON</button><button class="b pri" id="edBaixar">Baixar JSON</button></div>
+    <details><summary class="small muted">Prévia do JSON</summary><pre class="mono" id="edPrev" style="white-space:pre-wrap;max-height:300px;overflow:auto"></pre></details></div>`;
+}
+function roteiroDoEditor() {
+  const erros = [], acoes = [], falhas = [];
+  ED.linhas.forEach((l, i) => {
+    let p = {}; if (l.p.trim()) { try { p = JSON.parse(l.p); } catch { erros.push(`linha ${i + 1}: parâmetros não são JSON válido`); } }
+    const t_ms = Math.round(Number(l.t) * 1000);
+    if (!(t_ms >= 0) || t_ms > ED.duracao_s * 1000) erros.push(`linha ${i + 1}: t fora da duração`);
+    if (l.quem === "falha") falhas.push({t_ms, tipo: l.o, ...p}); else {
+      if (l.o === "ANDAR" && !p.ate) erros.push(`linha ${i + 1}: ANDAR exige {"ate": [x, y]}`);
+      if (l.o === "ANDAR_ALEATORIO" && !p.duracao_ms) erros.push(`linha ${i + 1}: ANDAR_ALEATORIO exige {"duracao_ms": ...}`);
+      acoes.push({t_ms, ocupante: l.quem, acao: l.o, ...p}); }
+  });
+  if (!/^[A-Z]{1,2}[0-9]{2}[A-Za-z0-9_-]*$/.test(ED.id)) erros.push("ID deve seguir o padrão do catálogo (ex.: X01, FN06)");
+  const r = {id: ED.id, titulo: ED.titulo, tipo: ED.tipo, modo: ED.modo, duracao_ms: Math.round(ED.duracao_s * 1000), descricao: ED.descricao,
+    comportamento_ideal: "", comportamento_referencia: "", estado_inicial: {ocupantes_na_sala: [], luz: "APAGADA"},
+    acoes: acoes.sort((a, b) => a.t_ms - b.t_ms), falhas: falhas.sort((a, b) => a.t_ms - b.t_ms),
+    requisitos: ED.requisitos.split(",").map(s => s.trim()).filter(Boolean), regras: []};
+  return {r, erros};
+}
+function ligarEditor() {
+  const ler = () => { ED.id = $("#edId").value.trim(); ED.titulo = $("#edTit").value; ED.tipo = $("#edTipo").value; ED.modo = $("#edModo").value;
+    ED.duracao_s = Number($("#edDur").value); ED.descricao = $("#edDesc").value; ED.requisitos = $("#edReq").value;
+    document.querySelectorAll("#edLinhas .editor-row").forEach(row => { const l = ED.linhas[row.dataset.i]; row.querySelectorAll("[data-k]").forEach(inp => l[inp.dataset.k] = inp.value); }); };
+  const prev = () => { const {r, erros} = roteiroDoEditor(); $("#edPrev").textContent = JSON.stringify(r, null, 2);
+    $("#edMsg").innerHTML = erros.length ? `<span class="err">${esc(erros[0])}${erros.length > 1 ? ` (+${erros.length - 1})` : ""}</span>` : '<span style="color:var(--ok)">roteiro válido</span>'; return {r, erros}; };
+  $("#editor").addEventListener("input", () => { ler(); prev(); });
+  $("#editor").addEventListener("change", e => { ler(); if (e.target.dataset.k === "quem") renderCenarios(); else prev(); });
+  $("#edAdd").onclick = () => { ler(); const ult = ED.linhas[ED.linhas.length - 1]; ED.linhas.push({t: ult ? Number(ult.t) + 5 : 5, quem: "morador", o: "GESTO", p: ""}); renderCenarios(); $("#editor").scrollIntoView(); };
+  document.querySelectorAll("#edLinhas [data-del]").forEach(b => b.onclick = () => { ler(); ED.linhas.splice(Number(b.parentElement.dataset.i), 1); renderCenarios(); $("#editor").scrollIntoView(); });
+  $("#edBaixar").onclick = () => { ler(); const {r, erros} = prev(); if (erros.length) return; baixar(`${r.id}.json`, JSON.stringify(r, null, 2), "application/json"); };
+  $("#edCopy").onclick = () => { ler(); const {r} = prev();
+    Promise.resolve().then(() => navigator.clipboard.writeText(JSON.stringify(r, null, 2)))
+      .then(() => $("#edMsg").textContent = "JSON copiado")
+      .catch(() => { $("#edMsg").textContent = "Cópia bloqueada aqui: use a prévia abaixo"; document.querySelector("#editor details").open = true; }); };
+  prev();
+}
+
+// ===================================================================== ANIMAÇÃO
+const PX = 100, M0 = 40;
+const X = x => M0 + x * PX, Y = y => M0 + (D.sala.profundidade_m - y) * PX;
+let A = null; // elementos da animação
+function montarAnimacao() {
+  const s = D.sala, W = s.largura_m, H = s.profundidade_m, z = s.zonas_cegas[0], porta = s.porta, sp = s.dispositivos["SP-01"];
+  const largura = X(W) + M0, altura = Y(0) + 90;
+  const r = sp.alcance_m * PX, cx = X(sp.x), cy = Y(sp.y);
+  const arco = `M${cx},${cy} L${cx - r},${cy} A${r},${r} 0 0 0 ${cx},${cy + r} Z`;
+  const svg = `<svg viewBox="0 0 ${largura} ${altura}" id="cena" role="img" aria-label="Planta da sala">
+    <defs><radialGradient id="glow"><stop offset="0" stop-color="#ffe680" stop-opacity=".95"/><stop offset=".55" stop-color="#ffe680" stop-opacity=".35"/><stop offset="1" stop-color="#ffe680" stop-opacity="0"/></radialGradient>
+      <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="#94a3b8" stroke-width="3"/></pattern>
+      <clipPath id="room"><rect x="${X(0)}" y="${Y(H)}" width="${W * PX}" height="${H * PX}"/></clipPath></defs>
+    <rect id="piso" x="${X(0)}" y="${Y(H)}" width="${W * PX}" height="${H * PX}" fill="var(--dark)"/>
+    <circle id="brilho" cx="${X(s.lampada.x)}" cy="${Y(s.lampada.y)}" r="330" fill="url(#glow)" clip-path="url(#room)" opacity="0"/>
+    <path id="cone" d="${arco}" fill="#0e7490" opacity=".10" clip-path="url(#room)"/>
+    <rect x="${X(z.x0)}" y="${Y(z.y1)}" width="${(z.x1 - z.x0) * PX}" height="${(z.y1 - z.y0) * PX}" fill="url(#hatch)" opacity=".55"/>
+    <text x="${X((z.x0 + z.x1) / 2)}" y="${Y(z.y1) + 16}" text-anchor="middle" font-size="12" fill="#cbd5e1" id="zLabel">zona cega Z1</text>
+    <g stroke="#334155" stroke-width="6" fill="none" stroke-linecap="square">
+      <path d="M${X(porta.x_inicio)},${Y(0)} L${X(0)},${Y(0)} L${X(0)},${Y(H)} L${X(W)},${Y(H)} L${X(W)},${Y(0)} L${X(porta.x_fim)},${Y(0)}"/></g>
+    <line id="sa" x1="${X(porta.x_inicio)}" y1="${Y(0)}" x2="${X(porta.x_fim)}" y2="${Y(0)}" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6 5"/>
+    <rect x="${X(porta.x_inicio) - 7}" y="${Y(0) - 7}" width="10" height="14" fill="#0f172a"/><rect x="${X(porta.x_fim) - 3}" y="${Y(0) - 7}" width="10" height="14" fill="#0f172a"/>
+    <text x="${X((porta.x_inicio + porta.x_fim) / 2)}" y="${Y(0) + 20}" text-anchor="middle" font-size="12" fill="#334155">porta · SA</text>
+    <rect id="int" x="${X(s.interruptor.x) - 7}" y="${Y(0) - 16}" width="14" height="12" rx="2" fill="#e2e8f0" stroke="#334155"/>
+    <text x="${X(s.interruptor.x) + 12}" y="${Y(0) + 20}" font-size="12" fill="#334155">interruptor</text>
+    <g id="spIcon"><circle cx="${cx - 12}" cy="${cy + 12}" r="10" fill="#0e7490"/><text x="${cx - 12}" y="${cy + 16}" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">SP</text></g>
+    <text id="spX" x="${cx - 12}" y="${cy + 40}" text-anchor="middle" font-size="22" fill="#ef4444" font-weight="700" display="none">✕</text>
+    <g id="lamp"><circle cx="${X(s.lampada.x)}" cy="${Y(s.lampada.y)}" r="13" fill="#475569" stroke="#0f172a" stroke-width="2"/>
+      <text x="${X(s.lampada.x)}" y="${Y(s.lampada.y) + 30}" text-anchor="middle" font-size="12" id="lampTxt" fill="#cbd5e1">lâmpada</text></g>
+    <text x="${X(0)}" y="${Y(0) + 48}" font-size="12" fill="#64748b">EXTERIOR</text>
+    <g id="ocup">${D.sala.ocupantes.map(o => `<g id="o-${o.id}" display="none"><circle r="${o.tipo === "CACHORRO" ? 12 : 14}" fill="${o.tipo === "CACHORRO" ? "var(--dog)" : "var(--person)"}" stroke="#fff" stroke-width="2.5"/>
+      <circle class="mov" r="22" fill="none" stroke="${o.tipo === "CACHORRO" ? "var(--dog)" : "var(--person)"}" stroke-width="2" opacity=".6"/>
+      <text y="4" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${o.tipo === "CACHORRO" ? "R" : "M"}</text>
+      <text class="lbl" y="-20" text-anchor="middle" font-size="11.5" font-weight="600" stroke="#fff" stroke-width="3" paint-order="stroke" fill="#0f172a">${esc(o.nome || o.id)}</text></g>`).join("")}</g>
+    <text id="relogio" x="${X(W)}" y="${Y(H) - 14}" text-anchor="end" font-size="13" fill="#334155" class="mono"></text>
+  </svg>`;
+  const c = CEN[S.cen];
+  $("#tab-animacao").innerHTML = `<div class="anim"><div class="card" style="padding:10px">${svg}
+      <div class="controls"><button class="b pri" id="play">▶</button><button class="b" id="back" title="−1 s (←)">⟨ 1 s</button><button class="b" id="fwd" title="+1 s (→)">1 s ⟩</button>
+        <label class="small">Velocidade <select id="vel">${[1, 5, 20, 60, 120].map(v => `<option value="${v}"${v === S.speed ? " selected" : ""}>${v}×</option>`).join("")}</select></label>
+        <span class="mono small" id="tTxt"></span></div>
+      <div style="position:relative"><input type="range" id="tSlider" min="0" max="${c.duracao_ms}" step="100" style="width:100%"><svg id="marks" width="100%" height="12" style="display:block"></svg></div>
+      <div class="legend small"><span><i style="background:var(--person)"></i>Morador</span><span><i style="background:var(--dog)"></i>Rex (cachorro)</span><span><i style="background:#ffe680"></i>luz acesa</span><span><i style="background:#0e7490;opacity:.4"></i>cobertura do SP</span><span><i style="background:repeating-linear-gradient(45deg,#94a3b8 0 3px,transparent 3px 6px)"></i>zona cega</span></div>
+      <p class="small muted" style="margin:6px 0 0">Atalhos: espaço = tocar/pausar, ← → = 1 s (com Shift, 10 s). Marcas na régua: ▲ acender, ▼ apagar, ■ falha.</p></div>
+    <div><div class="card"><h2>${c.id} — ${esc(c.titulo)}</h2><div class="kv" id="estado"></div></div>
+      <div class="card"><h2>Eventos recentes</h2><div class="ticker" id="ticker"></div></div></div></div>`;
+  A = {cen: S.cen, ctrl: S.ctrl, d: derivar(S.cen, S.ctrl), pos: D.posicoes[S.cen]};
+  $("#play").onclick = () => tocar(!S.playing);
+  $("#back").onclick = () => passo(-1000); $("#fwd").onclick = () => passo(1000);
+  $("#vel").onchange = e => S.speed = Number(e.target.value);
+  $("#tSlider").oninput = e => { S.t = Number(e.target.value); quadro(); };
+  // marcas na régua
+  const d = A.d, w = 1000;
+  $("#marks").setAttribute("viewBox", `0 0 ${w} 12`); $("#marks").setAttribute("preserveAspectRatio", "none");
+  $("#marks").innerHTML = d.intencoes.map(i => `<text x="${i.t_ms / d.fim * w}" y="11" font-size="11" text-anchor="middle" fill="${i.acao === "ACENDER" ? "#a16207" : "#334155"}">${i.acao === "ACENDER" ? "▲" : "▼"}</text>`).join("") +
+    d.falhas.map(f => `<rect x="${f.t_ms / d.fim * w - 3}" y="2" width="6" height="8" fill="var(--bad)"/>`).join("");
+  quadro();
+}
+function posicao(oid, t) {
+  const p = A.pos, arr = p.o[oid]; if (!arr) return null;
+  const i = Math.min(Math.floor(t / 1000), arr.length - 1), a = arr[i], b = arr[i + 1];
+  if (!a) return null; if (!b) return a;
+  const f = (t - p.t[i]) / ((p.t[i + 1] - p.t[i]) || 1);
+  return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2]];
+}
+function quadro() {
+  if (!A || A.cen !== S.cen || A.ctrl !== S.ctrl) return;
+  const d = A.d, t = S.t, c = CEN[S.cen];
+  const acesa = d.luz.at(t);
+  $("#piso").setAttribute("fill", acesa ? "#fdf6dc" : "var(--dark)");
+  $("#brilho").setAttribute("opacity", acesa ? 1 : 0);
+  $("#lamp circle").setAttribute("fill", acesa ? "#facc15" : (d.queimada != null && t >= d.queimada ? "#7f1d1d" : "#475569"));
+  $("#lampTxt").textContent = d.queimada != null && t >= d.queimada ? "lâmpada queimada" : "lâmpada";
+  $("#lampTxt").setAttribute("fill", acesa ? "#334155" : "#cbd5e1"); $("#zLabel").setAttribute("fill", acesa ? "#475569" : "#cbd5e1");
+  const mudo = d.spMudo.some(([a, b]) => t >= a && t < b), alto = d.spAlto.at(t) && !mudo;
+  $("#cone").setAttribute("opacity", mudo ? 0.03 : alto ? 0.32 : 0.10); $("#spX").setAttribute("display", mudo ? "inline" : "none");
+  const passou = d.passagens.some(p => t >= p && t < p + 700);
+  $("#sa").setAttribute("stroke", passou ? "#ef4444" : "#94a3b8"); $("#sa").setAttribute("stroke-width", passou ? 7 : 3);
+  $("#int").setAttribute("fill", d.interruptores.some(p => t >= p && t < p + 800) ? "#facc15" : "#e2e8f0");
+  const fora = [];
+  for (const o of D.sala.ocupantes) {
+    const g = $(`#o-${o.id}`), p = posicao(o.id, t);
+    if (!p) { g.setAttribute("display", "none"); fora.push(o.nome || o.id); continue; }
+    g.setAttribute("display", "inline"); g.setAttribute("transform", `translate(${X(p[0])},${Y(p[1])})`);
+    g.querySelector(".mov").setAttribute("display", p[2] ? "inline" : "none");
+  }
+  $("#relogio").textContent = `t = ${fmtT(t)} / ${fmtT(c.duracao_ms)}`;
+  $("#tTxt").textContent = `${fmtT(t)} / ${fmtT(c.duracao_ms)}`;
+  $("#tSlider").value = t; $("#play").textContent = S.playing ? "❚❚" : "▶";
+  // painel de estado
+  const presentes = d.presentes.at(t).split(",").filter(Boolean);
+  const ocup = d.ocup.at(t), luzEst = d.luzEst.at(t), prec = d.prec.at(t), alertas = d.alertas.at(t);
+  const hubOff = d.hubOff.some(([a, b]) => t >= a && t < b);
+  const ultP = d.passagens.filter(p => p <= t).pop();
+  const hb = d.hbs.filter(h => h.t_ms <= t).pop();
+  const ultI = d.intencoes.filter(i => i.t_ms <= t).pop();
+  const res = ultI && d.resultados.find(r => r.chave === ultI.chave && r.t_ms <= t);
+  const pillOcup = {OCUPADA: "ok", VAZIA: "n", DESCONHECIDA: "warn"}[ocup];
+  const verdadeTxt = D.sala.ocupantes.map(o => { const p = posicao(o.id, t); return `${esc(o.nome || o.id)}: ${p ? (p[2] ? "na sala, em movimento" : "na sala, parado") : "fora"}`; }).join("<br>");
+  const real = presentes.length > 0, inferido = ocup === "OCUPADA";
+  const confere = ocup === "DESCONHECIDA" ? '<span class="pill warn">incerto</span>' : (real === inferido ? '<span class="pill ok">confere</span>' : '<span class="pill bad">diverge da verdade</span>');
+  $("#estado").innerHTML = `
+    <div><b>Verdade</b></div><div>${verdadeTxt}</div>
+    <div>SA (porta)</div><div>${ultP != null ? `última passagem há ${((t - ultP) / 1000).toFixed(1)} s` : "nenhuma passagem"}</div>
+    <div>SP (PIR)</div><div>${mudo ? '<span class="pill bad">sem resposta</span>' : alto ? '<span class="pill ok">detectando</span>' : '<span class="pill n">repouso</span>'}${hb ? ` <span class="small muted">bateria ${hb.bateria}%</span>` : ""}</div>
+    <div><b>Controle</b></div><div>${hubOff ? '<span class="pill bad">hub desligado</span>' : `<span class="pill ${pillOcup}">${ocup}</span> ${confere}`}</div>
+    <div>Luz (controle)</div><div class="mono">${hubOff ? "—" : luzEst}${prec === "MANUAL" ? ' <span class="pill warn">precedência manual</span>' : ""}</div>
+    <div>Lâmpada (física)</div><div>${acesa ? '<span class="pill" style="background:#fff3bf;color:#7a5b00">acesa</span>' : '<span class="pill n">apagada</span>'}</div>
+    <div>Alertas</div><div>${alertas ? alertas.split(", ").map(a => `<span class="pill bad">${a}</span>`).join(" ") : '<span class="muted">nenhum</span>'}</div>
+    <div>Última decisão</div><div class="small">${ultI ? `${fmtT(ultI.t_ms)} <b>${ultI.acao}</b> por ${ultI.causa} (${ultI.regra})${res ? ` → <span class="mono">${res.nivel}</span>` : ""}` : "—"}</div>`;
+  const evs = ex().eventos.filter(v => v.t_ms <= t && v.tipo !== "HEARTBEAT" && v.camada !== "ESTADO").slice(-9).reverse();
+  $("#ticker").innerHTML = evs.map(v => `<div><span class="mono">${fmtT(v.t_ms)}</span> ${cam(v.camada)}${esc(desc(v))}</div>`).join("");
+}
+function tocar(on) { S.playing = on; if (on && S.t >= CEN[S.cen].duracao_ms) S.t = 0; ultimoQuadro = performance.now(); quadro(); }
+function passo(dt) { S.playing = false; S.t = Math.max(0, Math.min(CEN[S.cen].duracao_ms, S.t + dt)); quadro(); if (S.tab === "painel") cursorPainel(); }
+let ultimoQuadro = performance.now();
+function loop(agora) {
+  const dt = agora - ultimoQuadro; ultimoQuadro = agora;
+  if (S.playing && S.tab === "animacao") {
+    S.t = Math.min(CEN[S.cen].duracao_ms, S.t + dt * S.speed);
+    if (S.t >= CEN[S.cen].duracao_ms) S.playing = false;
+    quadro();
+  }
+  requestAnimationFrame(loop);
+}
+document.addEventListener("keydown", e => {
+  if (!["animacao", "painel"].includes(S.tab) || /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  if (e.code === "Space") { e.preventDefault(); if (S.tab === "animacao") tocar(!S.playing); }
+  if (e.code === "ArrowRight") { e.preventDefault(); passo(e.shiftKey ? 10000 : 1000); }
+  if (e.code === "ArrowLeft") { e.preventDefault(); passo(e.shiftKey ? -10000 : -1000); }
+});
+
+// ======================================================================= PAINEL
+const CORES = {OCUPADA: "#22a06b", VAZIA: "#cbd5e1", DESCONHECIDA: "#f5a524", APAGADA: "#cbd5e1", ACESA_AUTO: "#facc15", ACESA_MANUAL: "#f59e0b", APAGADA_MANUAL: "#64748b"};
+function renderPainel() {
+  const c = CEN[S.cen], e = ex(), d = derivar(S.cen, S.ctrl), m = e.metricas, normal = c.tipo === "NORMAL";
+  const met = D.modelo.metricas.map(mm => {
+    const v = m[mm.id], lim = normal && c.modo === "IDEAL" ? LIMITES[mm.id] : null;
+    const ok = lim && v != null ? v <= lim[1] : null;
+    return `<div class="metric ${ok === true ? "ok" : ok === false ? "bad" : ""}" title="${esc(mm.def)}"><div class="n">${esc(mm.nome)}</div><div class="v">${fmtN(v)}</div>${!lim ? "" : v == null ? `<div class="small muted">limite ≤ ${lim[1]} · não se aplica</div>` : `<div class="small ${ok ? "" : "err"}">limite ≤ ${lim[1]} ${ok ? "✓" : "✗"}</div>`}</div>`;
+  }).join("");
+  const asserts = (c.esperado?.assercoes || []).map(a => { const r = e.assercoes[a.id]; const req = a.nivel === "REQUISITO";
+    const cls = r.ok ? "ok" : req ? "bad" : "warn"; const txt = r.ok ? (req ? "ok" : "= ref.") : (req ? "falha" : "difere");
+    return `<tr><td class="mono">${a.id}</td><td class="small">${req ? "requisito" : "caracterização"}</td><td>${esc(a.dado)} → ${esc(a.quando)}</td><td class="mono small">${esc(entaoTxt(a.entao))}</td><td><span class="pill ${cls}">${txt}</span> <span class="small muted">${esc(r.detalhe)}</span></td></tr>`; }).join("");
+  const inv = Object.entries(e.invariantes).map(([k, v]) => `<span class="pill ${v.ok ? "ok" : "bad"}" title="${esc(v.violacoes.join("\n"))}">${k} ${v.ok ? "✓" : "✗"}</span>`).join(" ");
+  const dist = e.distribuicao ? `<h3>Distribuição no modo realista (${Object.values(e.distribuicao)[0]?.n || 0} sementes)</h3><table><tr><th>Métrica</th><th>mín.</th><th>média</th><th>mediana</th><th>p95</th><th>máx.</th></tr>
+    ${Object.entries(e.distribuicao).map(([k, s]) => `<tr><td>${esc((D.modelo.metricas.find(x => x.id === k) || {nome: k}).nome)}</td>${["min","media","mediana","p95","max"].map(q => `<td>${fmtN(s[q])}</td>`).join("")}</tr>`).join("")}</table>` : "";
+  $("#tab-painel").innerHTML = `
+    <div class="card"><div class="controls" style="margin-top:0"><h2 style="margin:0">${c.id} — ${esc(c.titulo)}</h2><span class="small">${tipoTag(c.tipo)} · controlador <b>${esc(S.ctrl)}</b> · semente ${e.semente} · ${e.modo.toLowerCase()}</span>
+      <span style="flex:1"></span><label class="small noprint">Zoom <select id="zoom">${[1, 2, 4, 8, 16].map(z => `<option value="${z}"${z === S.zoom ? " selected" : ""}>${z}×</option>`).join("")}</select></label>
+      <button class="b noprint" id="pdf">Imprimir / PDF</button></div>
+      <div class="tl-wrap" id="tl"></div>
+      <div class="legend small" style="margin-top:6px"><span><i style="background:#22a06b"></i>ocupada</span><span><i style="background:#f5a524"></i>desconhecida</span><span><i style="background:#cbd5e1"></i>vazia / apagada</span>
+        <span><i style="background:#facc15"></i>acesa (auto)</span><span><i style="background:#f59e0b"></i>acesa (manual)</span><span><i style="background:#64748b"></i>apagada (manual)</span>
+        <span><i style="background:rgba(220,38,38,.25)"></i>desperdício</span><span><i style="background:rgba(124,58,237,.3)"></i>escuro com ocupante</span></div>
+      <p class="small muted noprint" style="margin:4px 0 0">Clique na linha do tempo para posicionar o cursor (compartilhado com a animação). ← → movem 1 s.</p></div>
+    <div class="card"><h2>Métricas</h2><div class="metrics">${met}</div>${dist}
+      <h3>Invariantes</h3><div>${inv}</div>
+      <h3>Asserções</h3><div class="tablebox"><table><tr><th>ID</th><th>Nível</th><th>Dado → quando</th><th>Então</th><th>Resultado</th></tr>${asserts}</table></div>
+      <p class="small muted">Hash do registro (semente ${e.semente}): <span class="mono">${e.hash_eventos.slice(0, 16)}…</span> · ${e.n_eventos.toLocaleString("pt-BR")} eventos ·
+        execução ${e.determinismo_ok ? "determinística ✓" : "não determinística ✗"} · arquivo <span class="mono">saida/${c.id}/${S.ctrl}/${e.semente}/eventos.jsonl</span></p></div>
+    <div class="card"><h2>Registro de eventos</h2>
+      <div class="controls noprint" style="margin-top:0">${["VERDADE","PERCEPCAO","DECISAO","ATUACAO","ESTADO","SISTEMA"].map(k => `<label class="small"><input type="checkbox" data-cam="${k}"${S.camadas.has(k) ? " checked" : ""}> ${cam(k)}</label>`).join("")}
+        <label class="small"><input type="checkbox" id="hb"${S.hb ? " checked" : ""}> heartbeats</label><input type="text" id="buscaEv" placeholder="filtrar texto" value="${esc(S.buscaEv)}">
+        <span style="flex:1"></span><span class="small muted" id="nEv"></span><button class="b" id="csvEv">Exportar CSV</button></div>
+      <div class="tablebox" id="evBox"></div></div>`;
+  desenharLinhaDoTempo(); tabelaEventos();
+  $("#zoom").onchange = ev => { S.zoom = Number(ev.target.value); desenharLinhaDoTempo(); };
+  $("#pdf").onclick = () => window.print();
+  document.querySelectorAll("[data-cam]").forEach(cb => cb.onchange = () => { cb.checked ? S.camadas.add(cb.dataset.cam) : S.camadas.delete(cb.dataset.cam); tabelaEventos(); });
+  $("#hb").onchange = ev => { S.hb = ev.target.checked; tabelaEventos(); };
+  $("#buscaEv").oninput = ev => { S.buscaEv = ev.target.value; tabelaEventos(); };
+  $("#csvEv").onclick = () => { const l = eventosFiltrados(); const ks = [...new Set(l.flatMap(Object.keys))];
+    baixar(`eventos-${S.cen}-${S.ctrl}.csv`, csv([["t","descricao",...ks], ...l.map(v => [fmtT(v.t_ms), desc(v), ...ks.map(k => typeof v[k] === "object" ? JSON.stringify(v[k]) : v[k])])])); };
+}
+function janela() {
+  const fim = CEN[S.cen].duracao_ms, w = fim / S.zoom;
+  let ini = Math.max(0, Math.min(fim - w, S.t - w / 2)); return [ini, ini + w];
+}
+function desenharLinhaDoTempo() {
+  const d = derivar(S.cen, S.ctrl), [w0, w1] = janela();
+  const W = Math.max(700, $("#tl").clientWidth || 1100), L = 150, R = 12, lane = 24, gap = 6;
+  const x = t => L + (Math.max(w0, Math.min(w1, t)) - w0) / (w1 - w0) * (W - L - R);
+  const lanes = ["Verdade · Morador", "Verdade · Rex", "SA (porta)", "SP (PIR)", "Ocupação inferida", "Decisões", "Luz (controle)", "Lâmpada (física)", "Sistema e falhas"];
+  const yl = i => 22 + i * (lane + gap);
+  let s = `<svg width="${W}" height="${yl(lanes.length) + 4}" id="tlsvg" style="display:block;cursor:crosshair">`;
+  // grade de tempo
+  const passoT = [1000, 5000, 10000, 30000, 60000, 120000, 300000, 600000].find(p => (w1 - w0) / p <= 12) || 600000;
+  for (let t = Math.ceil(w0 / passoT) * passoT; t <= w1; t += passoT) s += `<line x1="${x(t)}" x2="${x(t)}" y1="16" y2="${yl(lanes.length)}" stroke="#eef1f5"/><text x="${x(t)}" y="12" font-size="10.5" text-anchor="middle" fill="#64748b">${fmtT(t)}</text>`;
+  lanes.forEach((n, i) => s += `<text x="8" y="${yl(i) + 16}" font-size="12" fill="#334155">${n}</text><rect x="${L}" y="${yl(i)}" width="${W - L - R}" height="${lane}" fill="#fafbfc" stroke="#eef1f5"/>`);
+  const bar = (i, a, b, cor, tit, op = 1, h = lane) => b > w0 && a < w1 ? `<rect x="${x(a)}" y="${yl(i) + (lane - h) / 2}" width="${Math.max(1, x(b) - x(a))}" height="${h}" fill="${cor}" opacity="${op}"><title>${esc(tit)}</title></rect>` : "";
+  // verdade: presença por ocupante (das posições)
+  D.sala.ocupantes.forEach((o, k) => {
+    const arr = D.posicoes[S.cen].o[o.id] || [], ts = D.posicoes[S.cen].t; let ini = null, mov = null;
+    for (let j = 0; j <= arr.length; j++) {
+      const v = arr[j]; const tj = j < ts.length ? ts[j] : d.fim;
+      const dentro = !!v, mv = v ? v[2] : null;
+      if (ini == null && dentro) { ini = tj; mov = mv; }
+      else if (ini != null && (!dentro || mv !== mov)) { s += bar(k, ini, tj, o.tipo === "CACHORRO" ? "var(--dog)" : "var(--person)", `${o.nome}: ${mov ? "em movimento" : "parado"} ${fmtT(ini)}–${fmtT(tj)}`, mov ? 0.9 : 0.4); ini = dentro ? tj : null; mov = mv; }
+    }
+  });
+  d.passagens.forEach(p => s += bar(2, p, p + Math.max(300, (w1 - w0) / 400), "#ef4444", `Passagem ${fmtT(p)}`));
+  d.spAlto.segs(d.fim).filter(g => g[2]).forEach(([a, b]) => s += bar(3, a, b, "#0e7490", `SP ativo ${fmtT(a)}–${fmtT(b)}`, 0.85, 14));
+  d.spMudo.forEach(([a, b]) => s += bar(3, a, b, "url(#hatchR)", `SP sem resposta ${fmtT(a)}–${fmtT(b)}`));
+  d.hbs.forEach(h => s += h.t_ms >= w0 && h.t_ms <= w1 ? `<circle cx="${x(h.t_ms)}" cy="${yl(3) + lane - 3}" r="1.8" fill="#64748b"><title>heartbeat ${fmtT(h.t_ms)} · bateria ${h.bateria}%</title></circle>` : "");
+  d.ocup.segs(d.fim).forEach(([a, b, v]) => s += bar(4, a, b, CORES[v], `${v} ${fmtT(a)}–${fmtT(b)}`));
+  d.intencoes.forEach(i => { if (i.t_ms < w0 || i.t_ms > w1) return; const up = i.acao === "ACENDER", cx = x(i.t_ms), y0 = yl(5);
+    s += `<path d="${up ? `M${cx - 7},${y0 + 19} L${cx + 7},${y0 + 19} L${cx},${y0 + 5}Z` : `M${cx - 7},${y0 + 5} L${cx + 7},${y0 + 5} L${cx},${y0 + 19}Z`}" fill="${i.precedencia === "MANUAL" ? "#f59e0b" : up ? "#a16207" : "#334155"}"><title>${fmtT(i.t_ms)} ${i.acao} — ${i.causa} (${i.regra}, ${i.precedencia})</title></path>`; });
+  d.luzEst.segs(d.fim).forEach(([a, b, v]) => s += bar(6, a, b, CORES[v], `${v} ${fmtT(a)}–${fmtT(b)}`));
+  d.luz.segs(d.fim).forEach(([a, b, v]) => s += bar(7, a, b, v ? "#facc15" : "#cbd5e1", `${v ? "acesa" : "apagada"} ${fmtT(a)}–${fmtT(b)}`));
+  // destaques: desperdício e escuro com ocupante (verdade × lâmpada)
+  const pres = d.presentes, pts = [...new Set([...d.luz.ts, ...pres.ts, ...d.luzEst.ts, d.fim])].sort((a, b) => a - b);
+  for (let j = 0; j + 1 < pts.length; j++) { const a = pts[j], b = pts[j + 1]; const l = d.luz.at(a), o = !!pres.at(a), man = d.luzEst.at(a) === "APAGADA_MANUAL";
+    if (l && !o) s += bar(7, a, b, "rgba(220,38,38,.35)", `desperdício ${fmtT(a)}–${fmtT(b)}`, 1, 8);
+    if (!l && o && !man) s += bar(7, a, b, "rgba(124,58,237,.45)", `escuro com ocupante ${fmtT(a)}–${fmtT(b)}`, 1, 8); }
+  d.hubOff.forEach(([a, b]) => s += bar(8, a, b, "#fecaca", `hub desligado ${fmtT(a)}–${fmtT(b)}`));
+  d.falhas.forEach(f => s += f.t_ms >= w0 && f.t_ms <= w1 ? `<rect x="${x(f.t_ms) - 4}" y="${yl(8) + 6}" width="8" height="12" fill="var(--bad)"><title>${fmtT(f.t_ms)} falha ${f.falha}</title></rect>` : "");
+  d.sistema.filter(v => v.tipo === "ALERTA" && v.ativo || v.tipo === "RETENTATIVA" || v.tipo === "RELOGIO_SALTO").forEach(v => s += v.t_ms >= w0 && v.t_ms <= w1 ? `<circle cx="${x(v.t_ms)}" cy="${yl(8) + 12}" r="5" fill="#f59e0b" stroke="#fff"><title>${fmtT(v.t_ms)} ${esc(desc(v))}</title></circle>` : "");
+  s += `<defs><pattern id="hatchR" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#dc2626" stroke-width="2.5"/></pattern></defs>`;
+  s += `<line id="cursor" y1="16" y2="${yl(lanes.length)}" stroke="#1f4e8c" stroke-width="1.5"/></svg>`;
+  $("#tl").innerHTML = s;
+  const svg = $("#tlsvg");
+  svg.onclick = ev => { const r = svg.getBoundingClientRect(), px = ev.clientX - r.left; if (px < L) return;
+    S.t = Math.round(w0 + (px - L) / (W - L - R) * (w1 - w0)); if (S.zoom > 1) desenharLinhaDoTempo(); else cursorPainel(); quadro(); };
+  A_TL = {w0, w1, W, L, R}; cursorPainel();
+}
+let A_TL = null;
+function cursorPainel() {
+  if (!A_TL || !$("#cursor")) return; const {w0, w1, W, L, R} = A_TL;
+  if (S.t < w0 || S.t > w1) { desenharLinhaDoTempo(); return; }
+  const xx = L + (S.t - w0) / (w1 - w0) * (W - L - R); $("#cursor").setAttribute("x1", xx); $("#cursor").setAttribute("x2", xx);
+}
+function eventosFiltrados() {
+  const b = S.buscaEv.toLowerCase();
+  return ex().eventos.filter(v => S.camadas.has(v.camada) && (S.hb || v.tipo !== "HEARTBEAT") && (!b || (desc(v) + " " + v.tipo + " " + JSON.stringify(v)).toLowerCase().includes(b)));
+}
+function tabelaEventos() {
+  const l = eventosFiltrados(), LIM = 3000;
+  $("#nEv").textContent = `${l.length.toLocaleString("pt-BR")} evento(s)${l.length > LIM ? ` · mostrando ${LIM}` : ""}`;
+  $("#evBox").innerHTML = `<table><tr><th>t</th><th>seq</th><th>Camada</th><th>Tipo</th><th>Descrição</th><th>Relógio</th></tr>${l.slice(0, LIM).map(v =>
+    `<tr class="click" data-t="${v.t_ms}"><td class="mono">${fmtT(v.t_ms)}</td><td class="mono small">${v.seq}</td><td>${cam(v.camada)}</td><td class="mono small">${v.tipo}</td><td>${esc(desc(v))}</td><td class="small">${v.relogio_confiavel === false ? '<span class="err">não confiável</span>' : ""}</td></tr>`).join("")}</table>`;
+  $("#evBox").querySelectorAll("tr[data-t]").forEach(r => r.onclick = () => { S.t = Number(r.dataset.t); cursorPainel(); quadro(); });
+}
+window.addEventListener("resize", () => { if (S.tab === "painel") desenharLinhaDoTempo(); });
+
+// ------------------------------------------------------------------------ início
+window.addEventListener("hashchange", () => { S.playing = false; lerHash(); trocar(); });
+lerHash(); cabecalho(); trocar(); requestAnimationFrame(loop);
+</script>
+</body>
+</html>

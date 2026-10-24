@@ -1,0 +1,40 @@
+{
+  "id": "F03",
+  "titulo": "Lâmpada queimada",
+  "tipo": "FALHA",
+  "modo": "IDEAL",
+  "duracao_ms": 180000,
+  "descricao": "A lâmpada está queimada; o atuador obedece, mas não há luz.",
+  "comportamento_ideal": "Detecta a divergência.",
+  "comportamento_referencia": "Resultado EXECUCAO_RELATADA com divergência de efeito e alerta.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 165000
+    }
+  ],
+  "falhas": [
+    {
+      "t_ms": 0,
+      "tipo": "LAMPADA_QUEIMADA"
+    }
+  ],
+  "requisitos": [
+    "RF-OPR-04",
+    "CV04"
+  ],
+  "regras": [
+    "RN-I0-06"
+  ]
+}

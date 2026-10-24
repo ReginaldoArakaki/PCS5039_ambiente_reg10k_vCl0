@@ -1,0 +1,61 @@
+{
+  "cenario": "FP02",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-01"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "CARACTERIZACAO",
+      "dado": "sala vazia e luz apagada",
+      "quando": "o PIR dispara por corrente de ar em t=10 s",
+      "entao": {
+        "tipo": "intencao",
+        "acao": "ACENDER",
+        "causa": "MOVIMENTO_SP",
+        "entre_ms": [
+          10000,
+          11500
+        ]
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "CARACTERIZACAO",
+      "dado": "retenção de 5 s do PIR",
+      "quando": "passam 60 s após o fim da retenção",
+      "entao": {
+        "tipo": "intencao",
+        "acao": "APAGAR",
+        "causa": "AUSENCIA",
+        "entre_ms": [
+          74000,
+          77000
+        ]
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "CARACTERIZACAO",
+      "dado": "limitação conhecida",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "desperdicio_s",
+        "min": 60,
+        "max": 70
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

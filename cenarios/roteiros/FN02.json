@@ -1,0 +1,45 @@
+{
+  "id": "FN02",
+  "titulo": "Morador vê TV com microgestos",
+  "tipo": "FALSO_NEGATIVO",
+  "modo": "REALISTA",
+  "duracao_ms": 1800000,
+  "descricao": "Movimentos pequenos e esparsos; o PIR só os detecta às vezes.",
+  "comportamento_ideal": "Mantém acesa.",
+  "comportamento_referencia": "Ciclos de apagar e reacender.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 6000,
+      "ocupante": "morador",
+      "acao": "ANDAR",
+      "ate": [
+        2.5,
+        3.2
+      ]
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "MICROGESTOS",
+      "intervalo_min_ms": 60000,
+      "intervalo_max_ms": 180000
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-01",
+    "CV15"
+  ],
+  "regras": [
+    "RN-I0-03"
+  ]
+}

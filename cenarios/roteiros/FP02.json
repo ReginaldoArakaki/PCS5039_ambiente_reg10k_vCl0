@@ -1,0 +1,28 @@
+{
+  "id": "FP02",
+  "titulo": "Corrente de ar quente dispara o PIR",
+  "tipo": "FALSO_POSITIVO",
+  "modo": "IDEAL",
+  "duracao_ms": 180000,
+  "descricao": "Sala vazia; o PIR dispara por uma variação térmica.",
+  "comportamento_ideal": "Não acende.",
+  "comportamento_referencia": "Acende e apaga cerca de 65 s depois (retenção do PIR + 60 s).",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [],
+  "falhas": [
+    {
+      "t_ms": 10000,
+      "tipo": "SP_FALSO_DISPARO"
+    }
+  ],
+  "requisitos": [
+    "RF-OPR-01"
+  ],
+  "regras": [
+    "RN-I0-02",
+    "RN-I0-03"
+  ]
+}

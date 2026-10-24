@@ -1,0 +1,274 @@
+{
+  "regras": [
+    {
+      "id": "RN-I0-01",
+      "texto": "Ocupante é pessoa ou animal de grande porte. A automação atende a qualquer ocupante.",
+      "origem": "DI-10"
+    },
+    {
+      "id": "RN-I0-02",
+      "texto": "Com a luz apagada e sem precedência manual, qualquer detecção válida (SA ou SP) acende. Prioriza o conforto: o SA acende antes do SP confirmar.",
+      "origem": "RF-OPR-01"
+    },
+    {
+      "id": "RN-I0-03",
+      "texto": "A luz apaga após T_apagamento (60 s) sem nenhuma detecção, se não houver precedência manual e a ocupação não estiver desconhecida.",
+      "origem": "DI-12; PS05-I0"
+    },
+    {
+      "id": "RN-I0-04",
+      "texto": "Se o SP ficar sem heartbeat por 30 s, a ocupação passa a desconhecida: mantém o estado da luz, nunca apaga por silêncio e sinaliza.",
+      "origem": "DI-13; RN01"
+    },
+    {
+      "id": "RN-I0-05",
+      "texto": "O interruptor cria precedência manual por 15 min. Apagar manualmente suspende o acendimento automático; acender manualmente suspende o apagamento automático.",
+      "origem": "DI-08; RF-OPR-02"
+    },
+    {
+      "id": "RN-I0-06",
+      "texto": "Toda atuação é classificada: execução relatada (confirmação do atuador) e efeito observado (sensor da lâmpada) em até 10 s; sem confirmação, desconhecido.",
+      "origem": "RF-OPR-04; RN02"
+    },
+    {
+      "id": "RN-I0-07",
+      "texto": "Sem confirmação do atuador, uma nova tentativa após 2 s com a mesma chave. Persistindo, a falha é sinalizada.",
+      "origem": "RF-OPR-05"
+    },
+    {
+      "id": "RN-I0-08",
+      "texto": "Após um reinício, o hub começa com ocupação desconhecida, lê a lâmpada pelo sensor de efeito e registra uma lacuna.",
+      "origem": "RN12"
+    }
+  ],
+  "parametros": [
+    {
+      "id": "T_apagamento",
+      "valor": "60 s",
+      "chave": "t_apagamento_ms"
+    },
+    {
+      "id": "T_manual (PS03)",
+      "valor": "15 min",
+      "chave": "t_manual_ms"
+    },
+    {
+      "id": "T_heartbeat_falha",
+      "valor": "30 s",
+      "chave": "t_heartbeat_falha_ms"
+    },
+    {
+      "id": "T_confirmacao (PS02)",
+      "valor": "10 s",
+      "chave": "t_confirmacao_ms"
+    },
+    {
+      "id": "T_retentativa",
+      "valor": "2 s, uma vez",
+      "chave": "t_retentativa_ms"
+    },
+    {
+      "id": "Validade da evidência (PS04)",
+      "valor": "10 s",
+      "chave": "validade_evidencia_ms"
+    }
+  ],
+  "requisitos": {
+    "RF-OPR-01": "Decisão local de iluminação no hub (presença válida, precedência, ausência, contingência)",
+    "RF-OPR-02": "Intervenção manual local com precedência temporária",
+    "RF-OPR-04": "Classificação do resultado da atuação por nível de evidência",
+    "RF-OPR-05": "Efeito único por chave de intenção",
+    "RF-OPR-09": "Saúde de hub e dispositivos (sem resposta, bateria)",
+    "RF-SYN-01": "Publicação de evidências com ordem e indicação de relógio confiável",
+    "RF-GOV-05": "Registros imutáveis, somente acréscimo",
+    "RNF-DES-03": "Reação local: evidência → comando ao atuador, p95 ≤ 500 ms",
+    "RNF-CON-01": "Autonomia local: opera sem a plataforma",
+    "RNF-USA-03": "Transparência da incerteza: idade e nível de evidência visíveis",
+    "CV02": "V1 — presença válida acende",
+    "CV03": "V1 — SP sem resposta: ocupação desconhecida",
+    "CV04": "V1 — atuação sem confirmação: resultado desconhecido",
+    "CV08": "V1 — intervenção manual prevalece sobre a automação",
+    "CV15": "V1 — leituras alternantes não apagam antes da ausência estável",
+    "CF05": "V3 — decisão local com presença desconhecida",
+    "RN01": "V1 — falta de resposta nunca prova ausência",
+    "RN02": "V1 — intenção, execução relatada e efeito observado são distintos",
+    "RN09": "V1 — SA e SP não identificam pessoa, idade, direção ou contagem",
+    "RN12": "V1 — dados tardios não apagam conclusões históricas",
+    "RN-I0-01": "Incremento 0 — ocupante inclui animal de grande porte"
+  },
+  "metricas": [
+    {
+      "id": "desperdicio_s",
+      "nome": "Desperdício (s)",
+      "def": "Tempo com luz acesa e nenhum ocupante na sala (verdade × lâmpada)."
+    },
+    {
+      "id": "escuro_com_ocupante_s",
+      "nome": "Escuro com ocupante (s)",
+      "def": "Tempo com ocupante na sala e luz apagada, exceto quando apagada manualmente."
+    },
+    {
+      "id": "apagamentos_indevidos",
+      "nome": "Apagamentos indevidos",
+      "def": "Intenções automáticas de APAGAR com ocupante presente (verdade × decisão)."
+    },
+    {
+      "id": "acionamentos",
+      "nome": "Acionamentos",
+      "def": "Número de intenções emitidas (comparativo, sem limite)."
+    },
+    {
+      "id": "latencia_reacao_ms_p95",
+      "nome": "Latência de reação p95 (ms)",
+      "def": "Da evidência ao comando para o atuador. Limite: 500 ms (RNF-DES-03)."
+    },
+    {
+      "id": "atraso_percebido_ms_max",
+      "nome": "Atraso percebido máx. (ms)",
+      "def": "Do ocupante cruzar a porta (sala vazia e escura) até a luz acender de fato. Limite: 1 s."
+    },
+    {
+      "id": "desperdicio_por_saida_s_max",
+      "nome": "Desperdício por saída máx. (s)",
+      "def": "Da sala ficar vazia com luz acesa até a luz apagar. Limite: 90 s."
+    },
+    {
+      "id": "ocupacao_desconhecida_s",
+      "nome": "Ocupação desconhecida (s)",
+      "def": "Tempo em que o controlador declara ocupação desconhecida."
+    }
+  ],
+  "invariantes": [
+    {
+      "id": "OR-01",
+      "texto": "Nenhum evento é alterado ou removido; seq é 1..n contínuo e ids são únicos.",
+      "base": "INV-06"
+    },
+    {
+      "id": "OR-02",
+      "texto": "O nível do resultado é válido e nunca passa da capacidade da lâmpada.",
+      "base": "INV-08"
+    },
+    {
+      "id": "OR-03",
+      "texto": "Ocupação Vazia só depois de 60 s sem detecção.",
+      "base": "INV-09 ajustada"
+    },
+    {
+      "id": "OR-04",
+      "texto": "Nenhum apagamento automático com ocupação desconhecida.",
+      "base": "RN01"
+    },
+    {
+      "id": "OR-05",
+      "texto": "Cada chave de intenção produz no máximo um efeito.",
+      "base": "RF-OPR-05"
+    },
+    {
+      "id": "OR-06",
+      "texto": "O controlador nunca recebe eventos da camada de verdade.",
+      "base": "Contrato §7.2"
+    }
+  ],
+  "camadas": [
+    {
+      "id": "VERDADE",
+      "quem": "Simulador",
+      "v2": "— (exclusiva do oráculo)"
+    },
+    {
+      "id": "PERCEPCAO",
+      "quem": "Dispositivos",
+      "v2": "Evidencia"
+    },
+    {
+      "id": "DECISAO",
+      "quem": "Controlador",
+      "v2": "Decisao / Intencao"
+    },
+    {
+      "id": "ATUACAO",
+      "quem": "Atuador e lâmpada",
+      "v2": "ResultadoAtuacao"
+    },
+    {
+      "id": "ESTADO",
+      "quem": "Controlador (a cada 1 s e a cada mudança)",
+      "v2": "EstadoComodo"
+    },
+    {
+      "id": "SISTEMA",
+      "quem": "Hub e injetor de falhas",
+      "v2": "Falha, reinício, lacuna, relógio"
+    }
+  ],
+  "diagramas": [
+    {
+      "id": "casos-de-uso",
+      "titulo": "Casos de uso",
+      "descricao": "Atores (morador, cachorro, professor e alunos) e o sistema de iluminação."
+    },
+    {
+      "id": "classes",
+      "titulo": "Classes",
+      "descricao": "Ocupante só existe na verdade do simulador; Evidencia, Intencao, ResultadoAtuacao e EstadoSala seguem a V2."
+    },
+    {
+      "id": "estados-ocupacao",
+      "titulo": "Estados — ocupação inferida",
+      "descricao": "Como o controlador infere Ocupada, Vazia ou Desconhecida."
+    },
+    {
+      "id": "estados-luz",
+      "titulo": "Estados — luz",
+      "descricao": "Automático, manual e o fim da precedência de 15 min."
+    },
+    {
+      "id": "sequencia-N01",
+      "titulo": "Sequência — N01",
+      "descricao": "Morador entra na sala vazia."
+    },
+    {
+      "id": "sequencia-FN01",
+      "titulo": "Sequência — FN01",
+      "descricao": "Morador lê parado e a luz apaga (limitação documentada)."
+    },
+    {
+      "id": "componentes",
+      "titulo": "Componentes",
+      "descricao": "Simulador, hub com controlador plugável, avaliação e página."
+    }
+  ],
+  "trilha": [
+    {
+      "inc": 0,
+      "dias": "1–3",
+      "acrescenta": "1 sala, 1 porta, morador e cachorro; SA, SP, atuador, lâmpada, interruptor; JSON e painel"
+    },
+    {
+      "inc": 1,
+      "dias": "4–5",
+      "acrescenta": "2º cômodo e passagem"
+    },
+    {
+      "inc": 2,
+      "dias": "6–7",
+      "acrescenta": "Mais pessoas e visitante"
+    },
+    {
+      "inc": 3,
+      "dias": "8–9",
+      "acrescenta": "Plataforma, gêmeo L/R, app e desconexão"
+    },
+    {
+      "inc": 4,
+      "dias": "10–11",
+      "acrescenta": "Casa A (4 cômodos)"
+    },
+    {
+      "inc": 5,
+      "dias": "12–13",
+      "acrescenta": "Casa B (7 cômodos) e aprendizado do gêmeo"
+    }
+  ]
+}

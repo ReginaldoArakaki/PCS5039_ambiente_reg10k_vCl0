@@ -1,0 +1,72 @@
+{
+  "cenario": "FN01",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-01",
+    "CF05"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "CARACTERIZACAO",
+      "dado": "morador senta e lê parado a partir de t=10 s",
+      "quando": "passam 60 s sem movimento (limitação do PIR)",
+      "entao": {
+        "tipo": "intencao",
+        "acao": "APAGAR",
+        "causa": "AUSENCIA",
+        "entre_ms": [
+          73000,
+          76000
+        ]
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "CARACTERIZACAO",
+      "dado": "morador acena em t=600 s",
+      "quando": "o PIR detecta",
+      "entao": {
+        "tipo": "intencao",
+        "acao": "ACENDER",
+        "causa": "MOVIMENTO_SP",
+        "entre_ms": [
+          600000,
+          601500
+        ]
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "CARACTERIZACAO",
+      "dado": "morador continua parado",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "apagamentos_indevidos",
+        "igual": 2
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "CARACTERIZACAO",
+      "dado": "limitação conhecida",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "escuro_com_ocupante_s",
+        "min": 500
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+classDiagram
+    direction LR
+    class Sala {
+        +id
+        +largura_m
+        +profundidade_m
+        +zonas_cegas
+    }
+    class Porta {
+        +id
+        +x_inicio
+        +x_fim
+    }
+    class Ocupante {
+        <<abstract>>
+        +id
+        +posicao
+        +em_movimento: bool
+    }
+    class Pessoa
+    class Cachorro {
+        +porte
+    }
+    class Dispositivo {
+        <<abstract>>
+        +id
+        +modo: Modo
+        +bateria
+        +online: bool
+    }
+    class SensorPassagem {
+        +rearme_ms
+    }
+    class SensorPresencaPIR {
+        +alcance_m
+        +retencao_ms
+        +p_parado
+    }
+    class Atuador {
+        +ligado: bool
+    }
+    class Lampada {
+        +queimada: bool
+        +efeito_observado: bool
+    }
+    class Interruptor
+    class Hub {
+        +relogio_ms
+        +relogio_confiavel: bool
+    }
+    class Controlador {
+        <<interface>>
+        +iniciar(config)
+        +ao_evento(evidencia, agora_ms) Intencao[]
+        +ao_tick(agora_ms) Intencao[]
+        +estado() EstadoSala
+    }
+    class ControladorReferencia
+    class Registro {
+        <<abstract>>
+        +id
+        +t_ms
+        +seq
+        +camada: Camada
+    }
+    class Evidencia
+    class Intencao {
+        +acao
+        +causa
+        +precedencia
+        +chave
+    }
+    class ResultadoAtuacao {
+        +nivel: NivelEvidencia
+    }
+    class EstadoSala {
+        +ocupacao: Ocupacao
+        +luz
+        +precedencia
+        +idade_evidencia_ms
+    }
+    Sala "1" *-- "1" Porta
+    Sala "1" o-- "0..2" Ocupante : contém (verdade)
+    Ocupante <|-- Pessoa
+    Ocupante <|-- Cachorro
+    Dispositivo <|-- SensorPassagem
+    Dispositivo <|-- SensorPresencaPIR
+    Dispositivo <|-- Atuador
+    Dispositivo <|-- Interruptor
+    Porta "1" -- "1" SensorPassagem
+    Sala "1" -- "1" SensorPresencaPIR
+    Atuador "1" -- "1" Lampada
+    Hub "1" o-- "4" Dispositivo
+    Hub "1" --> "1" Controlador : usa
+    Controlador <|.. ControladorReferencia
+    Registro <|-- Evidencia
+    Registro <|-- Intencao
+    Registro <|-- ResultadoAtuacao
+    Hub "1" --> "*" Registro : registra
+    Controlador ..> EstadoSala

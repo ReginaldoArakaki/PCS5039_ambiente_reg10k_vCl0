@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ReginaldoArakaki/PCS5039_ambiente_reg10k_vCl0/schemas/catalogo.schema.json",
+  "title": "Índice do catálogo (catalogo.json)",
+  "type": "object",
+  "required": [
+    "versao",
+    "incremento",
+    "sala",
+    "cenarios",
+    "controladores",
+    "execucoes",
+    "problemas"
+  ],
+  "properties": {
+    "versao": {
+      "type": "string"
+    },
+    "incremento": {
+      "type": "integer"
+    },
+    "sala": {
+      "$ref": "sala.schema.json"
+    },
+    "cenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "titulo",
+          "tipo",
+          "modo",
+          "requisitos"
+        ]
+      }
+    },
+    "controladores": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "execucoes": {
+      "type": "array",
+      "items": {
+        "$ref": "metricas.schema.json"
+      }
+    },
+    "problemas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "id": "FN05",
+  "titulo": "Cachorro deita e dorme",
+  "tipo": "FALSO_NEGATIVO",
+  "modo": "IDEAL",
+  "duracao_ms": 1500000,
+  "descricao": "Rex deita e dorme por 20 min.",
+  "comportamento_ideal": "Mantém acesa (é ocupante).",
+  "comportamento_referencia": "Apaga cerca de 60 s depois.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "rex",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 6000,
+      "ocupante": "rex",
+      "acao": "ANDAR",
+      "ate": [
+        3.5,
+        3.0
+      ]
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "rex",
+      "acao": "PARADO"
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-01"
+  ],
+  "regras": [
+    "RN-I0-01",
+    "RN-I0-03"
+  ]
+}

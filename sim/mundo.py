@@ -1,0 +1,85 @@
+"""Mundo simulado: a sala e seus ocupantes (camada de verdade, plano §4)."""
+from __future__ import annotations
+
+import math
+import random
+from typing import Optional
+
+PESSOA = "PESSOA"
+CACHORRO = "CACHORRO"
+
+PONTO_ENTRADA = (0.95, 0.4)
+
+
+class Ocupante:
+    def __init__(self, id_: str, tipo: str):
+        self.id = id_
+        self.tipo = tipo
+        self.pos: Optional[tuple[float, float]] = None  # None = exterior
+        self.modo = "FORA"  # FORA, PARADO, ANDAR, ALEATORIO, MICRO
+        self.alvo: Optional[tuple[float, float]] = None
+        self.vel = 1.0
+        self.area: Optional[tuple[float, float, float, float]] = None
+        self.fim_ms: Optional[int] = None
+        self.gesto_ate = 0
+        self.micro_intervalo = (120_000, 240_000)
+        self.micro_prox: Optional[int] = None
+        # Situação no passo atual
+        self.movendo = False
+        self.microgesto = False
+
+    @property
+    def na_sala(self) -> bool:
+        return self.pos is not None
+
+
+class Sala:
+    def __init__(self, cfg: dict):
+        self.cfg = cfg
+        self.largura = cfg["largura_m"]
+        self.profundidade = cfg["profundidade_m"]
+        self.zonas_cegas = cfg.get("zonas_cegas", [])
+        sp = cfg["dispositivos"]["SP-01"]
+        self.sp_pos = (sp["x"], sp["y"])
+        self.sp_alcance = sp["alcance_m"]
+
+    def na_zona_cega(self, p: tuple[float, float]) -> bool:
+        return any(z["x0"] <= p[0] <= z["x1"] and z["y0"] <= p[1] <= z["y1"] for z in self.zonas_cegas)
+
+    def coberto_pelo_sp(self, p: Optional[tuple[float, float]]) -> bool:
+        if p is None or self.na_zona_cega(p):
+            return False
+        return math.dist(p, self.sp_pos) <= self.sp_alcance
+
+    def ponto_aleatorio(self, rng: random.Random, area=None) -> tuple[float, float]:
+        m = 0.3
+        x0, y0, x1, y1 = area if area else (m, m, self.largura - m, self.profundidade - m)
+        return (round(rng.uniform(x0, x1), 3), round(rng.uniform(y0, y1), 3))
+
+
+def mover(o: Ocupante, sala: Sala, t: int, dt_ms: int, rng: random.Random) -> None:
+    """Avança o ocupante um passo de simulação."""
+    o.movendo = False
+    o.microgesto = False
+    if o.pos is None:
+        return
+    if t < o.gesto_ate:
+        o.movendo = True
+    if o.modo == "ALEATORIO" and o.fim_ms is not None and t >= o.fim_ms:
+        o.modo, o.alvo = "PARADO", None
+    if o.modo in ("ANDAR", "ALEATORIO") and o.alvo is not None:
+        dx, dy = o.alvo[0] - o.pos[0], o.alvo[1] - o.pos[1]
+        dist = math.hypot(dx, dy)
+        passo = o.vel * dt_ms / 1000
+        o.movendo = True
+        if dist <= passo:
+            o.pos = o.alvo
+            if o.modo == "ANDAR":
+                o.modo, o.alvo = "PARADO", None
+            else:
+                o.alvo = sala.ponto_aleatorio(rng, o.area)
+        else:
+            o.pos = (o.pos[0] + dx / dist * passo, o.pos[1] + dy / dist * passo)
+    if o.modo == "MICRO" and o.micro_prox is not None and t >= o.micro_prox:
+        o.microgesto = True
+        o.micro_prox = t + rng.randint(*o.micro_intervalo)

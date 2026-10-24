@@ -1,0 +1,50 @@
+{
+  "id": "FN03",
+  "titulo": "Morador na zona cega",
+  "tipo": "FALSO_NEGATIVO",
+  "modo": "IDEAL",
+  "duracao_ms": 600000,
+  "descricao": "O morador arruma uma estante junto à parede leste, dentro da zona Z1.",
+  "comportamento_ideal": "Mantém acesa.",
+  "comportamento_referencia": "Apaga cerca de 60 s depois de entrar na zona cega.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 6000,
+      "ocupante": "morador",
+      "acao": "ANDAR",
+      "ate": [
+        4.5,
+        1.0
+      ]
+    },
+    {
+      "t_ms": 12000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 580000,
+      "area": [
+        4.1,
+        0.2,
+        4.9,
+        1.9
+      ],
+      "vel_m_s": 0.4
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-01"
+  ],
+  "regras": [
+    "RN-I0-03"
+  ]
+}

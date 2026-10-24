@@ -1,0 +1,40 @@
+{
+  "id": "F02",
+  "titulo": "Bateria do SP baixa",
+  "tipo": "FALHA",
+  "modo": "REALISTA",
+  "duracao_ms": 600000,
+  "descricao": "A bateria cai para 12% aos 60 s; a detecção degrada.",
+  "comportamento_ideal": "Avisa antes de falhar.",
+  "comportamento_referencia": "Alerta de bateria no heartbeat seguinte; detecção degradada medida.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 585000
+    }
+  ],
+  "falhas": [
+    {
+      "t_ms": 60000,
+      "tipo": "BATERIA_BAIXA",
+      "nivel": 12
+    }
+  ],
+  "requisitos": [
+    "RF-OPR-09"
+  ],
+  "regras": [
+    "RN-I0-04"
+  ]
+}

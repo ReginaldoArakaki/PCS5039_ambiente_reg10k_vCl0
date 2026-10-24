@@ -1,0 +1,49 @@
+{
+  "id": "N02",
+  "titulo": "Morador sai e a sala fica vazia",
+  "tipo": "NORMAL",
+  "modo": "IDEAL",
+  "duracao_ms": 200000,
+  "descricao": "O morador anda pela sala e sai pela porta aos 60 s.",
+  "comportamento_ideal": "Apaga ao sair.",
+  "comportamento_referencia": "Apaga 60 s após a última detecção (fim da retenção do PIR); desperdício até 90 s.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 45000
+    },
+    {
+      "t_ms": 55000,
+      "ocupante": "morador",
+      "acao": "ANDAR",
+      "ate": [
+        0.95,
+        0.4
+      ]
+    },
+    {
+      "t_ms": 60000,
+      "ocupante": "morador",
+      "acao": "SAIR"
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-01"
+  ],
+  "regras": [
+    "RN-I0-02",
+    "RN-I0-03"
+  ]
+}

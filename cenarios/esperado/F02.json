@@ -1,0 +1,33 @@
+{
+  "cenario": "F02",
+  "modo": "REALISTA",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-09"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "a bateria do SP cai para 12% em t=60 s",
+      "quando": "chega o heartbeat seguinte",
+      "entao": {
+        "tipo": "alerta",
+        "alerta": "BATERIA_BAIXA",
+        "entre_ms": [
+          60000,
+          71000
+        ]
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

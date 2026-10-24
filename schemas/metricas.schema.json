@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ReginaldoArakaki/PCS5039_ambiente_reg10k_vCl0/schemas/metricas.schema.json",
+  "title": "Resultado de uma execução (metricas.json)",
+  "type": "object",
+  "required": [
+    "cenario",
+    "controlador",
+    "semente",
+    "modo",
+    "hash_eventos",
+    "metricas",
+    "invariantes",
+    "assercoes",
+    "requisitos_ok"
+  ],
+  "properties": {
+    "cenario": {
+      "type": "string"
+    },
+    "controlador": {
+      "type": "string"
+    },
+    "semente": {
+      "type": "integer"
+    },
+    "modo": {
+      "enum": [
+        "IDEAL",
+        "REALISTA"
+      ]
+    },
+    "hash_eventos": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "metricas": {
+      "type": "object",
+      "required": [
+        "desperdicio_s",
+        "escuro_com_ocupante_s",
+        "apagamentos_indevidos",
+        "acionamentos",
+        "latencia_reacao_ms_p95"
+      ],
+      "properties": {
+        "desperdicio_s": {
+          "type": "number"
+        },
+        "escuro_com_ocupante_s": {
+          "type": "number"
+        },
+        "apagamentos_indevidos": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "acionamentos": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "latencia_reacao_ms_p95": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "invariantes": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^OR-0[1-6]$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "ok",
+          "violacoes"
+        ]
+      }
+    },
+    "assercoes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "ok",
+          "nivel",
+          "detalhe"
+        ]
+      }
+    },
+    "requisitos_ok": {
+      "type": "boolean"
+    },
+    "aprovado": {
+      "type": "boolean"
+    }
+  }
+}

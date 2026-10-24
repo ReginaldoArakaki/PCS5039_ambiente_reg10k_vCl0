@@ -1,0 +1,68 @@
+{
+  "cenario": "N02",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-01"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "sala vazia e luz apagada",
+      "quando": "o morador entra em t=5 s",
+      "entao": {
+        "tipo": "luz",
+        "valor": "ACESA",
+        "desde_ms": 5000,
+        "ate_ms": 6000
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "CARACTERIZACAO",
+      "dado": "o morador sai em t=60 s",
+      "quando": "passam 60 s sem detecção (após a retenção do PIR)",
+      "entao": {
+        "tipo": "intencao",
+        "acao": "APAGAR",
+        "causa": "AUSENCIA",
+        "entre_ms": [
+          120000,
+          123000
+        ]
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "a sala fica vazia com a luz acesa",
+      "quando": "a luz apaga",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "desperdicio_por_saida_s_max",
+        "max": 90
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "ocupação real",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "apagamentos_indevidos",
+        "igual": 0
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}
