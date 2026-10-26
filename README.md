@@ -10,6 +10,7 @@ A **v0dta** (ajuste "a" da v0dt) acrescenta o **cômodo espelho**: a sala desenh
 
 | Documento | Conteúdo |
 |---|---|
+| [`docs/guia-convencoes.md`](docs/guia-convencoes.md) | Guia de convenções: versões, identificadores, marcas, estrutura dos documentos, ciclo de incremento e publicação |
 | [`docs/ambiente-simulacao-v0dta.md`](docs/ambiente-simulacao-v0dta.md) | Plano e entrega da v0dta (cômodo espelho) |
 | [`docs/ambiente-simulacao-v0dt.md`](docs/ambiente-simulacao-v0dt.md) | Plano e entrega da v0dt (gêmeo digital) |
 | [`docs/ambiente-simulacao-v02.md`](docs/ambiente-simulacao-v02.md) | Plano do incremento 0 (sala, dispositivos, controlador) |
@@ -109,7 +110,9 @@ alunos/       controladores dos grupos
 cenarios/     sala.json, roteiros/ e esperado/
 schemas/      JSON Schema de sala, roteiro, esperado, evento, métricas e catálogo
 docs/         plano, roteiro dos alunos e diagramas UML (docs/uml/*.mmd e *.svg)
-tests/        pytest
+tests/        pytest (tests/dados: assinaturas de regressão por versão)
+tools/        assinaturas.py (regressão das decisões) e consolidar.py (código num único Markdown)
+.claude/skills/  skills do Laboratório de Digital Twin (incremento-simulacao)
 site/         index.html gerado
 saida/        gerado: catalogo.json e saida/<cenário>/<controlador>/<semente>/{eventos.jsonl, metricas.json, espelho/}
 ```
