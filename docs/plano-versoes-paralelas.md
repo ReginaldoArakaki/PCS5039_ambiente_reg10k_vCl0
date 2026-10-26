@@ -1,6 +1,6 @@
 # Plano das versões paralelas V0–V4 e do núcleo Reg10k
 
-**Versão do documento:** v02 | **Data:** 26/10/2026 | **Situação:** aprovado; Fase 1 (nucleo-v1.0) entregue
+**Versão do documento:** v03 | **Data:** 26/10/2026 | **Situação:** aprovado; Fases 1 e 2a entregues
 **Responsável:** Reginaldo Arakaki (EPUSP)
 **Linha de pesquisa:** Laboratório de Digital Twin de Arquitetura de Sistemas de Software (EPUSP) e GLIP USP
 **Base:** repositório `PCS5039_ambiente_reg10k_vCl0` na v1dtb; guia de convenções v03; trilha do plano do ambiente (v02, §2.1)
@@ -9,6 +9,7 @@
 |---|---|---|
 | v01 | 26/10/2026 | Primeira versão, com as decisões de 26/10: núcleo e repositórios de versão, V4 como plataforma inicial, nomes |
 | v02 | 26/10/2026 | Aprovado (as propostas da §9 valem); acesso ao GitHub resolvido; Fase 1 entregue (§11), com ◆ nos ajustes |
+| v03 | 26/10/2026 | Fase 2a entregue (§12): repositórios V0 e V1 publicados, com a primeira rodada de dados |
 
 ---
 
@@ -122,7 +123,7 @@ A abertura de cada mudança segue a skill `incremento-simulacao`. Mudança no n�
 |---|---|---|---|
 | 0 | Acesso ao GitHub; publicar a v1dtb no repositório atual; identidade dos commits | — | ✔ 26/10 |
 | 1 | Núcleo: N1, N2, N4 e a parte mínima de N3; tag `nucleo-v1.0` | Não (é a base) | ✔ 26/10 (§11) |
-| 2a | V0 e V1: migrar os cenários; mesmas assinaturas, como prova de que a migração não mudou nada | Sim | 1 dia |
+| 2a | V0 e V1: migrar os cenários; mesmas assinaturas, como prova de que a migração não mudou nada | Sim | ✔ 26/10 (§12) |
 | 2b | V1: v1dt.1, com N5 no núcleo | Sim | 2 dias |
 | 2c | V2: Casa A, com o resto de N3 | Sim | 2 dias |
 | 2d | V4.0: N6 no núcleo, com R1, R2 e R3 | Sim; depende de 2b para R3 | 2–3 dias |
@@ -201,3 +202,27 @@ Na rodada de 30 sementes, 1 de 1.380 execuções falhou um requisito: o M01 com 
 ### 11.5 Próximo passo
 
 Fase 2a: criar `reg10k-V0` e `reg10k-V1` (repositórios vazios, criados pelo responsável), montá-los com `tools/nova_versao.py --submodulo`, gravar as assinaturas de cada um e publicar. Em seguida, em paralelo: v1dt.1 (V1), Casa A (V2) e V4.0.
+
+## 12. Entrega da Fase 2a: repositórios V0 e V1
+
+| Repositório | Conteúdo | Commit | Tag sugerida |
+|---|---|---|---|
+| [`PCS5039_ambiente_reg10k_V0`](https://github.com/ReginaldoArakaki/PCS5039_ambiente_reg10k_V0) | Sala; 32 cenários (v0, v0dt, v0dta); núcleo `nucleo-v1.0` | `19e64a3` | `v0dta` |
+| [`PCS5039_ambiente_reg10k_V1`](https://github.com/ReginaldoArakaki/PCS5039_ambiente_reg10k_V1) | Sala e cozinha; 14 cenários (v1dt, v1dta, v1dtb); núcleo `nucleo-v1.0` | `de982b1` | `v1dtb` |
+
+◆ Os nomes seguem o padrão dos repositórios criados pelo responsável (`PCS5039_ambiente_reg10k_V0`), e não `reg10k-V0`.
+
+**Prova da migração:** as assinaturas gravadas em cada versão (`dados/assinaturas-V0.json`, 64; `dados/assinaturas-V1.json`, 28) são iguais às do núcleo. Um clone novo com `--recurse-submodules` traz o núcleo na tag e repete as assinaturas.
+
+**Primeira rodada de dados** (`dados/experimentos-V*-20261026.csv`, 30 sementes, referência e grupo_exemplo; manifesto com o núcleo em `nucleo-v1.0` e o commit da versão). Simulação, não medição.
+
+| Família | Medida | V0 ref. | V0 grupo | V1 ref. | V1 grupo |
+|---|---|---|---|---|---|
+| F1 | Atraso percebido máx. (ms, média) | 400 | 800 | 400 | 1.596 |
+| F1 | Requisitos atendidos | 100% | 100% | 99,4% | 84,4% |
+| F3 | Desperdício (s, média) | 61,7 | 21,7 | 60,0 | 0,0 |
+| F7 | Espelho fiel (%) | 96,5 | 96,4 | 74,0 | 73,7 |
+
+A tabela repete, agora com 30 sementes, o achado da v1dt: o `grupo_exemplo` elimina o falso positivo do vão (F3), mas atrasa o acendimento ao passar entre cômodos (F1), e nenhuma das duas estratégias simples atende os dois (exercício E12).
+
+**Cuidado ao comparar a F7 entre versões.** A fidelidade do espelho cai de cerca de 96% (V0) para 74% (V1), mas não por causa do segundo cômodo. Na V1, a F7 tem só o M14, em que o Rex deita na cozinha aos 100 s: o sensor de presença deixa de vê-lo parado, e o gêmeo afirma a cozinha vazia a partir de 165,6 s (erro de percepção). Na V0, a F7 tem só o DT12, sem esse episódio. As famílias têm cenários de conteúdo diferente em cada versão, e por isso só podem ser comparadas entre versões quando os roteiros forem equivalentes. O gerador de cenários por planta (V2) deve produzir, para cada família, os mesmos episódios em todas as plantas. A V0 e a V1 podem ganhar esses cenários equivalentes num ajuste próprio.
