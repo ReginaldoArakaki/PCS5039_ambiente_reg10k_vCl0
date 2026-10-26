@@ -56,6 +56,12 @@ tr.click{cursor:pointer} tr.click:hover td{background:#f3f6fb} tr.sel td{backgro
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .anim.larga{grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr)} .duo.empilha{grid-template-columns:1fr}
 .duo h3{margin:0 0 4px;font-size:13px}
+.palcoBar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 8px}
+.palcoBar .seg button{font-size:12.5px;padding:3px 11px}
+#palco svg{max-height:64vh} .mini svg{max-height:320px}
+.mini{position:relative;cursor:zoom-in} .mini svg{display:block}
+.mini .amp{position:absolute;right:8px;top:8px;border:1px solid var(--line);background:#fff;border-radius:6px;font:inherit;font-size:12px;padding:2px 8px;cursor:pointer}
+.mini:hover svg{border-color:var(--accent)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;vertical-align:middle}
 .seg button{border:0;background:#fff;padding:2px 9px;font:inherit;font-size:12px;cursor:pointer} .seg button.on{background:var(--accent);color:#fff}
 .amostras{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}
@@ -94,7 +100,7 @@ tr.click{cursor:pointer} tr.click:hover td{background:#f3f6fb} tr.sel td{backgro
 <body>
 <header>
   <div>
-    <h1>Simulação Reg10k — v1dt <span class="small muted" style="font-weight:500">sala e cozinha, com gêmeo digital e espelho</span></h1>
+    <h1>Simulação Reg10k — v1dta <span class="small muted" style="font-weight:500">sala e cozinha, com gêmeo digital e espelho</span></h1>
     <div class="sub" id="sub"></div>
   </div>
   <div style="flex:1"></div>
@@ -147,9 +153,10 @@ function limite(c, id) {
   return LIMITES_DT[id];
 }
 
-const S = {tab: "cenarios", cen: D.cenarios[0].id, ctrl: CTRLS[0], t: 0, playing: false, speed: 20,
+const CEN0 = (D.cenarios.find(c => c.versao === D.cenarios[D.cenarios.length - 1].versao) || D.cenarios[0]).id;  // v1dta: abre na versão mais nova
+const S = {tab: "cenarios", cen: CEN0, ctrl: CTRLS[0], t: 0, playing: false, speed: 20,
            modelSec: "geral", filtroTipo: "", filtroVer: "", busca: "", cmpA: CTRLS[0], cmpB: CTRLS[1] || CTRLS[0],
-           zoom: 1, camadas: new Set(CAMADAS), hb: false, buscaEv: "", visao: "R", visaoAm: "R", comodoP: "todos"};
+           zoom: 1, camadas: new Set(CAMADAS), hb: false, buscaEv: "", visao: "R", visaoAm: "R", comodoP: "todos", dt: false};
 
 function ex(cen = S.cen, ctrl = S.ctrl) { return D.execucoes[`${cen}|${ctrl}`]; }
 function lerHash() {
@@ -559,7 +566,7 @@ function renderCenarios() {
     $("#amCtrl").onchange = ev => { S.ctrl = ev.target.value; renderCenarios(); gravarHash(); };
     T.querySelectorAll(".amostras img").forEach(im => im.onclick = () => { $("#lb img").src = im.dataset.src; $("#lb").classList.add("on"); });
     T.querySelectorAll("[data-svg]").forEach(b => b.onclick = () => { const i = Number(b.dataset.svg); baixar(`${c.id}-${S.ctrl}-${esp.amostras[i].rotulo}-${S.visaoAm}.svg`, esp.svg[S.visaoAm][i], "image/svg+xml"); });
-    T.querySelectorAll("[data-ver]").forEach(b => b.onclick = () => { S.t = Number(b.dataset.ver); S.visao = S.visaoAm; S.playing = false; irPara("animacao"); });
+    T.querySelectorAll("[data-ver]").forEach(b => b.onclick = () => { S.t = Number(b.dataset.ver); S.visao = S.visaoAm; S.dt = true; S.playing = false; irPara("animacao"); });
   }
   ligarEditor();
 }
@@ -657,7 +664,10 @@ function conePath(c) {
 }
 function plantaSVG(p, espelho) {
   // p: prefixo dos ids ("" na casa real, "e-" no espelho)
-  let h = `<defs>${PLA.comodos.map(c => `<clipPath id="${p}clip-${c.id}"><rect x="${X(c.x0)}" y="${Y(c.y0 + c.profundidade)}" width="${c.largura * PX}" height="${c.profundidade * PX}"/></clipPath>`).join("")}</defs>`;
+  // v1dta: as paredes têm um recorte em cada vão interno, para o piso dos dois cômodos aparecer pela abertura
+  const vaos = PLA.passagens.filter(ps => ps.x_inicio == null);
+  const mascara = `<mask id="${p}paredes" maskUnits="userSpaceOnUse" x="0" y="0" width="${X(PLA.largura) + M0}" height="${Y(0) + M0}"><rect x="0" y="0" width="${X(PLA.largura) + M0}" height="${Y(0) + M0}" fill="#fff"/>${vaos.map(ps => `<rect x="${X(ps.x) - 8}" y="${Y(ps.y_fim) + 3}" width="16" height="${(ps.y_fim - ps.y_inicio) * PX - 6}" fill="#000"/>`).join("")}</mask>`;
+  let h = `<defs>${mascara}${PLA.comodos.map(c => `<clipPath id="${p}clip-${c.id}"><rect x="${X(c.x0)}" y="${Y(c.y0 + c.profundidade)}" width="${c.largura * PX}" height="${c.profundidade * PX}"/></clipPath>`).join("")}</defs>`;
   for (const c of PLA.comodos) {
     const x0 = X(c.x0), y0 = Y(c.y0 + c.profundidade), w = c.largura * PX, hh = c.profundidade * PX;
     const spdx = c.sp.x > c.x0 + c.largura / 2 ? -12 : 12, spdy = Y(c.sp.y) < Y(c.y0 + c.profundidade / 2) ? 12 : -12;
@@ -669,7 +679,7 @@ function plantaSVG(p, espelho) {
       ${espelho ? `<ellipse id="${p}mancha-${c.id}" cx="${x0 + w / 2}" cy="${Y(c.y0 + c.profundidade / 2 - 0.7)}" rx="${Math.min(1.7, c.largura / 3) * PX}" ry="${1.15 * PX}" fill="#22a06b" opacity="0"/>
         <text id="${p}manchaTxt-${c.id}" x="${x0 + w / 2}" y="${Y(c.y0 + c.profundidade / 2 - 0.7) + 5}" text-anchor="middle" font-size="15" font-weight="700" fill="#065f46" display="none">presença</text>
         <text id="${p}q-${c.id}" x="${x0 + w / 2}" y="${Y(c.y0 + c.profundidade / 2 - 0.7) + 18}" text-anchor="middle" font-size="54" font-weight="700" fill="#f5a524" display="none">?</text>` : ""}
-      <rect x="${x0}" y="${y0}" width="${w}" height="${hh}" fill="none" stroke="#334155" stroke-width="6"/>
+      <rect x="${x0}" y="${y0}" width="${w}" height="${hh}" fill="none" stroke="#334155" stroke-width="6" mask="url(#${p}paredes)"/>
       <text class="nomeC" x="${x0 + 10}" y="${y0 + 22}" font-size="14" font-weight="700" fill="#cbd5e1" id="${p}nome-${c.id}">${esc(c.nome)}</text>
       <g><circle cx="${X(c.sp.x) + spdx}" cy="${Y(c.sp.y) + spdy}" r="10" fill="#0e7490"/><text x="${X(c.sp.x) + spdx}" y="${Y(c.sp.y) + spdy + 4}" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">SP</text></g>
       <text id="${p}spX-${c.id}" x="${X(c.sp.x) + spdx}" y="${Y(c.sp.y) + spdy * 3.3}" text-anchor="middle" font-size="22" fill="#ef4444" font-weight="700" display="none">✕</text>
@@ -685,9 +695,11 @@ function plantaSVG(p, espelho) {
         <rect x="${X(ps.x_inicio) - 7}" y="${Y(ps.y) - 7}" width="10" height="14" fill="#0f172a"/><rect x="${X(ps.x_fim) - 3}" y="${Y(ps.y) - 7}" width="10" height="14" fill="#0f172a"/>
         ${espelho ? "" : `<text x="${X((ps.x_inicio + ps.x_fim) / 2)}" y="${Y(ps.y) + 20}" text-anchor="middle" font-size="12" fill="#334155">porta · ${ps.sa}</text>`}`;
     } else {  // vão na parede vertical
-      h += `<line x1="${X(ps.x)}" y1="${Y(ps.y_inicio)}" x2="${X(ps.x)}" y2="${Y(ps.y_fim)}" stroke="#64748b" stroke-width="8"/>
-        <line id="${p}sa-${ps.sa}" x1="${X(ps.x)}" y1="${Y(ps.y_inicio)}" x2="${X(ps.x)}" y2="${Y(ps.y_fim)}" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6 5"/>
-        ${espelho ? "" : `<text x="${X(ps.x)}" y="${Y(ps.y_inicio) + 18}" text-anchor="middle" font-size="11" fill="#e2e8f0" stroke="#2c3240" stroke-width="3" paint-order="stroke">vão · ${ps.sa}</text>`}`;
+      // v1dta: o vão é uma abertura na parede (piso contínuo, batentes), com o feixe do SA no meio
+      const ya = Y(ps.y_fim), yb = Y(ps.y_inicio), xm = X(ps.x);
+      h += `<rect x="${xm - 9}" y="${ya - 3}" width="18" height="6" fill="#334155"/><rect x="${xm - 9}" y="${yb - 3}" width="18" height="6" fill="#334155"/>
+        <line id="${p}sa-${ps.sa}" x1="${xm}" y1="${ya + 4}" x2="${xm}" y2="${yb - 4}" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6 5"/>
+        ${espelho ? "" : `<text x="${xm + 14}" y="${(ya + yb) / 2 + 4}" text-anchor="start" font-size="11.5" font-weight="600" fill="#1e293b" stroke="#fff" stroke-width="3.5" paint-order="stroke">vão · ${ps.sa}</text>`}`;
     }
   }
   return h;
@@ -726,19 +738,36 @@ function montarAnimacao() {
     <text id="e-classeTxt" x="${X(0) + 12}" y="${Y(0) + 76}" font-size="14" font-weight="700" fill="#fff"></text></svg>`;
   const c = CEN[S.cen];
   const multi = PLA.multi;
-  $("#tab-animacao").innerHTML = `<div class="anim${multi ? " larga" : ""}"><div class="card" style="padding:10px"><div class="duo${multi ? " empilha" : ""}"><div><h3>${multi ? "Casa real" : "Sala real"} (verdade)</h3>${svg}</div>
-      <div><h3>${multi ? "Casa espelho" : "Cômodo espelho"} <span class="seg" id="visao"><button data-v="R" class="${S.visao === "R" ? "on" : ""}">plataforma (R)</button><button data-v="L" class="${S.visao === "L" ? "on" : ""}">hub (L)</button></span></h3>${esp}
-      <div class="small muted" style="margin-top:4px">Só o que o gêmeo recebeu: presença sem identidade nem posição (RN09), luz com o nível de evidência, sinais quando chegam${multi ? "; um estado por cômodo" : ""}.</div></div></div>
+  const nReal = multi ? "Casa real" : "Sala real";
+  // v1dta: um palco grande (casa real ou gêmeo) e o outro em miniatura ao lado; clique troca
+  $("#tab-animacao").innerHTML = `<div class="anim larga"><div class="card" style="padding:10px">
+      <div class="palcoBar"><span class="seg" id="palcoSel"><button data-p="real">${nReal} (verdade)</button><button data-p="dt">Gêmeo digital (DT)</button></span>
+        <span class="small muted">visão do gêmeo</span><span class="seg" id="visao"><button data-v="R" class="${S.visao === "R" ? "on" : ""}">plataforma (R)</button><button data-v="L" class="${S.visao === "L" ? "on" : ""}">hub (L)</button></span></div>
+      <div id="palco"></div><div id="hostReal" hidden>${svg}</div><div id="hostDT" hidden>${esp}</div>
+      <div class="small muted" id="notaDT" style="margin-top:4px">O gêmeo mostra só o que recebeu: presença sem identidade nem posição (RN09), luz com o nível de evidência, sinais quando chegam${multi ? "; um estado por cômodo" : ""}.</div>
       <div class="controls"><button class="b pri" id="play">▶</button><button class="b" id="back" title="−1 s (←)">⟨ 1 s</button><button class="b" id="fwd" title="+1 s (→)">1 s ⟩</button>
         <label class="small">Velocidade <select id="vel">${[1, 5, 20, 60, 120].map(v => `<option value="${v}"${v === S.speed ? " selected" : ""}>${v}×</option>`).join("")}</select></label>
         <span class="mono small" id="tTxt"></span></div>
       <div style="position:relative"><input type="range" id="tSlider" min="0" max="${c.duracao_ms}" step="100" style="width:100%"><svg id="marks" width="100%" height="12" style="display:block"></svg></div>
       <div class="legend small"><span><i style="background:#0f766e"></i>sessão hub ↔ plataforma</span><span><i style="background:#fecaca"></i>sem sessão</span><span><i style="background:var(--person)"></i>Morador</span><span><i style="background:var(--dog)"></i>Rex (cachorro)</span><span><i style="background:#ffe680"></i>luz acesa</span><span><i style="background:#0e7490;opacity:.4"></i>cobertura do SP</span><span><i style="background:repeating-linear-gradient(45deg,#94a3b8 0 3px,transparent 3px 6px)"></i>zona cega</span></div>
       <p class="small muted" style="margin:6px 0 0">Atalhos: espaço = tocar/pausar, ← → = 1 s (com Shift, 10 s). Marcas na régua: ▲ acender, ▼ apagar, ■ falha.</p></div>
-    <div><div class="card"><h2>${c.id} — ${esc(c.titulo)}</h2><div class="views" id="vistas"></div><div class="kv" id="estado"></div></div>
+    <div><div class="card" style="padding:10px"><h3 style="margin:0 0 6px;font-size:13px" id="miniTit"></h3><div class="mini" id="mini" title="Clique para ampliar"></div></div>
+      <div class="card"><h2>${c.id} — ${esc(c.titulo)}</h2><div class="views" id="vistas"></div><div class="kv" id="estado"></div></div>
       <div class="card"><h2>Eventos recentes</h2><div class="ticker" id="ticker"></div></div></div></div>`;
   A = {cen: S.cen, ctrl: S.ctrl, dd: Object.fromEntries(PLA.comodos.map(k => [k.id, derivar(S.cen, S.ctrl, k.id)])), pos: D.posicoes[S.cen]};
   A.d = A.dd[PLA.comodos[0].id];
+  const real = $("#cena"), dt = $("#espelho");
+  const montarPalco = () => {
+    const [grande, peq] = S.dt ? [dt, real] : [real, dt];
+    $("#palco").replaceChildren(grande); $("#mini").replaceChildren(peq);
+    const amp = document.createElement("button"); amp.className = "amp"; amp.textContent = "⤢ ampliar"; $("#mini").append(amp);
+    $("#miniTit").textContent = S.dt ? `${nReal} (verdade)` : "Gêmeo digital (DT) — miniatura";
+    $("#notaDT").hidden = !S.dt;
+    document.querySelectorAll("#palcoSel button").forEach(b => b.classList.toggle("on", (b.dataset.p === "dt") === S.dt));
+  };
+  document.querySelectorAll("#palcoSel button").forEach(b => b.onclick = () => { S.dt = b.dataset.p === "dt"; montarPalco(); });
+  $("#mini").onclick = () => { S.dt = !S.dt; montarPalco(); };
+  montarPalco();
   document.querySelectorAll("#visao button").forEach(b => b.onclick = () => { S.visao = b.dataset.v; document.querySelectorAll("#visao button").forEach(x => x.classList.toggle("on", x.dataset.v === S.visao)); quadro(); });
   $("#play").onclick = () => tocar(!S.playing);
   $("#back").onclick = () => passo(-1000); $("#fwd").onclick = () => passo(1000);
