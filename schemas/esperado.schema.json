@@ -80,6 +80,22 @@
                   "app_consulta",
                   "espelho"
                 ]
+              },
+              "apos": {
+                "type": "object",
+                "required": [
+                  "evento"
+                ],
+                "description": "nucleo-v1.1: a janela (em_ms, desde_ms, ate_ms, entre_ms) é relativa a este evento da verdade; os outros campos filtram o evento",
+                "properties": {
+                  "evento": {
+                    "type": "string"
+                  },
+                  "ocorrencia": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
               }
             }
           }

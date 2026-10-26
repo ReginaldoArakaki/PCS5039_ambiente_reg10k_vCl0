@@ -367,7 +367,7 @@ function cabecalho() {
   document.title = `Simulação Reg10k — ${id.nome}`;
   const porAmb = {};
   D.cenarios.forEach(c => porAmb[c.ambiente] = (porAmb[c.ambiente] || 0) + 1);
-  const ambs = Object.entries(porAmb).map(([a, n]) => { const p = D.ambientes[a].planta; return `${p.comodos.map(k => k.nome).join(" e ")}: ${n} cenário${n > 1 ? "s" : ""}`; }).join(" · ");
+  const ambs = Object.entries(porAmb).map(([a, n]) => { const p = D.ambientes[a].planta; const nm = p.comodos.map(k => k.nome); return `${nm.length > 1 ? nm.slice(0, -1).join(", ") + " e " + nm.at(-1) : nm[0]}: ${n} cenário${n > 1 ? "s" : ""}`; }).join(" · ");
   $("#sub").textContent = `${ambs} · controladores: ${CTRLS.join(", ")}${id.nome !== id.nucleo ? ` · núcleo ${id.nucleo}` : ""} · gerado em ${D.meta.gerado_em}`;
   const p = D.meta.problemas;
   $("#status").innerHTML = p.length ? `<span class="pill bad" title="${esc(p.join("\n"))}">${p.length} problema(s) no catálogo</span>`
@@ -795,6 +795,7 @@ function montarAnimacao() {
   document.querySelectorAll("#palcoSel button").forEach(b => b.onclick = () => { S.dt = b.dataset.p === "dt"; montarPalco(); });
   $("#mini").onclick = () => { S.dt = !S.dt; montarPalco(); };
   montarPalco();
+  $("#estado").onclick = ev => { const b = ev.target.closest("[data-ca]"); if (b) { S.comodoA = b.dataset.ca; quadro(); } };
   document.querySelectorAll("#visao button").forEach(b => b.onclick = () => { S.visao = b.dataset.v; document.querySelectorAll("#visao button").forEach(x => x.classList.toggle("on", x.dataset.v === S.visao)); quadro(); });
   $("#play").onclick = () => tocar(!S.playing);
   $("#back").onclick = () => passo(-1000); $("#fwd").onclick = () => passo(1000);
@@ -894,7 +895,11 @@ function quadro() {
   const d0 = A.d, hubOff = d0.hubOff.some(([a, b]) => t >= a && t < b), plat = d0.platFora.some(([a, b]) => t >= a && t < b);
   const pill = {OCUPADA: "ok", VAZIA: "n", DESCONHECIDA: "warn"};
   const selo = {ATUAL: '<span class="pill ok">atual</span>', DESATUALIZADO: '<span class="pill warn">desatualizado</span>', SEM_EVIDENCIA: '<span class="pill n">sem evidência</span>'};
-  let real = "", hub = "", rem = "", kv = "";
+  let real = "", hub = "", rem = "", kv = "", linhasT = "";
+  // nucleo-v1.1: com mais de 2 cômodos, os três pontos de vista viram uma tabela (uma linha por cômodo)
+  // e o detalhe (SP, controle, alertas, decisão) mostra só o cômodo escolhido
+  const compacto = PLA.comodos.length > 2;
+  if (compacto && !PLA.comodos.some(k => k.id === S.comodoA)) S.comodoA = PLA.comodos[0].id;
   for (const k of PLA.comodos) {
     const d = A.dd[k.id], pres = d.presentes.at(t).split(",").filter(Boolean), acesa = d.luz.at(t);
     const ocup = d.ocup.at(t), luzEst = d.luzEst.at(t), prec = d.prec.at(t), rOc = d.remOcup.at(t), rLz = d.remLuz.at(t), rAt = d.remAtual.at(t);
@@ -908,17 +913,23 @@ function quadro() {
     rem += `${tit}${plat ? '<div class="big">indisponível</div>' : `<div class="big">${rOc ?? "—"}</div><div class="mono">${rLz ?? "—"}</div>${selo[rAt] || ""}${idade != null ? ` <span class="small muted">idade ${(idade / 1000).toFixed(0)} s</span>` : ""}<div>${confereR}</div>`}`;
     const mudo = d.spMudo.some(([a, b]) => t >= a && t < b), alto = d.spAlto.at(t) && !mudo, hb = d.hbs.filter(h => h.t_ms <= t).pop();
     const ultI = d.intencoes.filter(i => i.t_ms <= t).pop(), res = ultI && d.resultados.find(r => r.chave === ultI.chave && r.t_ms <= t), alertas = d.alertas.at(t);
+    linhasT += `<tr><td><b>${esc(k.nome)}</b></td><td>${pres.length ? pres.map(o => esc(NOMES[o] || o)).join(" e ") : "vazio"} · ${acesa ? "acesa" : "apagada"}</td>
+      <td>${hubOff ? "hub desligado" : `${ocup} ${confere}`}</td><td>${plat ? "indisponível" : `${rOc ?? "—"} ${selo[rAt] || ""}`}</td></tr>`;
+    if (compacto && k.id !== S.comodoA) continue;
     const nm = multi ? ` (${esc(k.nome.toLowerCase())})` : "";
     kv += `<div>SP${nm}</div><div>${mudo ? '<span class="pill bad">sem resposta</span>' : alto ? '<span class="pill ok">detectando</span>' : '<span class="pill n">repouso</span>'}${hb ? ` <span class="small muted">bateria ${hb.bateria}%</span>` : ""}</div>
       <div><b>Controle${nm}</b></div><div>${hubOff ? '<span class="pill bad">hub desligado</span>' : `<span class="pill ${pill[ocup]}">${ocup}</span> <span class="mono small">${luzEst}</span>${prec !== "AUTOMATICA" ? ` <span class="pill warn">precedência ${prec.toLowerCase()}</span>` : ""}`}</div>
       <div>Alertas${nm}</div><div>${alertas ? alertas.split(", ").map(a => `<span class="pill bad">${a}</span>`).join(" ") : '<span class="muted">nenhum</span>'}</div>
       <div>Última decisão${nm}</div><div class="small">${ultI ? `${fmtT(ultI.t_ms)} <b>${ultI.acao}</b> por ${ultI.causa} (${ultI.regra})${res ? ` → <span class="mono">${res.nivel}</span>` : ""}` : "—"}</div>`;
   }
-  $("#vistas").innerHTML = `<div class="view"><h4>O que acontece</h4>${real}</div><div class="view"><h4>O que o hub acha (L)</h4>${hub}</div><div class="view"><h4>O que a plataforma acha (R)</h4>${rem}</div>`;
+  $("#vistas").innerHTML = compacto
+    ? `<table class="small" style="grid-column:1/-1"><tr><th>Cômodo</th><th>O que acontece</th><th>O que o hub acha (L)</th><th>O que a plataforma acha (R)</th></tr>${linhasT}</table>`
+    : `<div class="view"><h4>O que acontece</h4>${real}</div><div class="view"><h4>O que o hub acha (L)</h4>${hub}</div><div class="view"><h4>O que a plataforma acha (R)</h4>${rem}</div>`;
+  const chipsC = compacto ? `<div style="grid-column:1/-1">Detalhe do cômodo: <span class="seg">${PLA.comodos.map(k => `<button data-ca="${k.id}" class="${k.id === S.comodoA ? "on" : ""}">${esc(k.nome)}</button>`).join("")}</span></div>` : "";
   const pas = PLA.passagens.map(ps => { const l = (A.dd[ps.comodos[0]].porSA[ps.sa] || []).filter(p => p <= t).pop(); return `${ps.sa}: ${l != null ? `há ${((t - l) / 1000).toFixed(1)} s` : "nenhuma"}`; }).join(" · ");
-  const verdadeTxt = OCUP().map(o => { const p = posicao(o.id, t); const onde = p ? (multi ? `em ${esc(NOMES_C(PLA.comodos.find(k => p[0] >= k.x0 && p[0] <= k.x0 + k.largura)?.id))}` : "na sala") : "fora"; return `${esc(o.nome || o.id)}: ${onde}${p ? (p[2] ? ", em movimento" : ", parado") : ""}`; }).join("<br>");
+  const verdadeTxt = OCUP().map(o => { const p = posicao(o.id, t); const onde = p ? (multi ? `em ${esc(NOMES_C(PLA.comodos.find(k => p[0] >= k.x0 && p[0] <= k.x0 + k.largura && p[1] >= k.y0 && p[1] <= k.y0 + k.profundidade)?.id))}` : "na sala") : "fora"; return `${esc(o.nome || o.id)}: ${onde}${p ? (p[2] ? ", em movimento" : ", parado") : ""}`; }).join("<br>");
   const ultApp = d0.app.filter(v => v.t_ms <= t && v.tipo.startsWith("APP_")).pop(), ultRes = d0.appRes.filter(v => v.t_ms <= t).pop();
-  $("#estado").innerHTML = `<div><b>Verdade</b></div><div>${verdadeTxt}</div><div>Última passagem</div><div class="small">${pas}</div>${kv}
+  $("#estado").innerHTML = `${chipsC}<div><b>Verdade</b></div><div>${verdadeTxt}</div><div>Última passagem</div><div class="small">${pas}</div>${kv}
     <div>Último app</div><div class="small">${ultApp ? `${fmtT(ultApp.t_ms)} ${esc(desc(ultApp))}` : "—"}${ultRes ? `<br>${fmtT(ultRes.t_ms)} ${esc(desc(ultRes))}` : ""}</div>`;
   // Faixa hub ↔ plataforma ↔ app
   const sessao = d0.sessao.at(t), enlaceFora = d0.enlaceFora.some(([a, b]) => t >= a && t < b);

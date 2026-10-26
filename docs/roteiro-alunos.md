@@ -208,3 +208,20 @@ O problema: a referência acende o cômodo vizinho com qualquer passagem pelo v�
 | E12.2: controlador coordenado (invariantes e requisitos) | 45% |
 | E12.3: medição em M01–M03 e na regressão | 20% |
 | E12.4: desafio M06 | 10% |
+
+### E13. Parâmetros por cômodo na Casa A (V2)
+
+Repositório: `PCS5039_ambiente_reg10k_V2`. A Casa A tem sala, cozinha, quarto e banheiro (suíte). Um `t_apagamento` único não serve à casa toda: com 60 s, a pessoa parada no banho fica no escuro; com 15 min, a luz fica acesa à toa depois que todos saem. A referência usa 5 min no banheiro (RN-V2-01, cenário A01).
+
+1. Rode `python nucleo/reg10k.py experimentos --sementes 30` e, com o CSV, monte para cada cômodo a curva **escuro com ocupante × desperdício** nas famílias F1 (uso normal) e F2 (parado). Qual é o custo de cada valor de `t_apagamento`?
+2. Escolha um `t_apagamento` por cômodo (em `ambiente/casa-a.json`, campo `controle` do cômodo, entre 30 s e 30 min) e justifique cada valor com os dados. Não basta resolver o A01: veja também o A02 (deitado no quarto).
+3. Rode de novo os experimentos e compare antes × depois, com a ressalva de que são dados de simulação.
+4. Discussão: que informação a mais (sensor, horário, aprendizado do gêmeo) permitiria parâmetros melhores? Isso prepara a V3.
+
+**Entrega:** o `casa-a.json` alterado, os dois CSV com os manifestos e uma página de análise.
+
+| Item | Peso sugerido |
+|---|---|
+| E13.1 e E13.3: análise dos dados (antes e depois) | 40% |
+| E13.2: escolha e justificativa dos parâmetros | 40% |
+| E13.4: discussão | 20% |

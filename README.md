@@ -1,4 +1,4 @@
-# PCS5039 — Ambiente de simulação Reg10k: núcleo (nucleo-v1.0)
+# PCS5039 — Ambiente de simulação Reg10k: núcleo (nucleo-v1.1)
 
 Projeto de referência da disciplina **PCS5039 — Engenharia de Software Orientada a IoT** (EPUSP): automação de iluminação residencial em ambiente simulado.
 
@@ -26,7 +26,7 @@ A **v0dta** (ajuste "a" da v0dt) acrescenta o **cômodo espelho**: a sala desenh
 | [`docs/ambiente-simulacao-v0dta.md`](docs/ambiente-simulacao-v0dta.md) | Plano e entrega da v0dta (cômodo espelho) |
 | [`docs/ambiente-simulacao-v0dt.md`](docs/ambiente-simulacao-v0dt.md) | Plano e entrega da v0dt (gêmeo digital) |
 | [`docs/ambiente-simulacao-v02.md`](docs/ambiente-simulacao-v02.md) | Plano do incremento 0 (sala, dispositivos, controlador) |
-| [`docs/roteiro-alunos.md`](docs/roteiro-alunos.md) | Exercícios E1–E6 (v0), E7–E10 (v0dt), E11 (v0dta) e E12 (v1dt) |
+| [`docs/roteiro-alunos.md`](docs/roteiro-alunos.md) | Exercícios E1–E6 (v0), E7–E10 (v0dt), E11 (v0dta), E12 (v1dt) e E13 (v2dt, Casa A) |
 | [`docs/plataforma/`](docs/plataforma/) | V1 Business Drivers v02 e V2/V3 Requisitos v05 da plataforma Reg10k |
 
 Os documentos da plataforma que este ambiente realiza estão em [`docs/plataforma/`](docs/plataforma/): a V1 Business Drivers (v02) e os requisitos das visões V2 e V3 (v02), no referencial RM-ODP adaptado.
@@ -69,6 +69,8 @@ python nucleo/reg10k.py assinaturas gravar V0
 ```
 
 No próprio núcleo, os mesmos comandos valem com `python -m catalogo`, `python -m experimentos` etc.; `--raiz PASTA` aponta para outra versão.
+
+A **nucleo-v1.1** traz o **gerador de cenários por planta** (`python nucleo/reg10k.py gerador --ambiente <planta> --versao <versão>`): as famílias F1 a F7 com os mesmos episódios em qualquer casa, para comparar versões. Traz também as **asserções com janela relativa a um evento** (campo `apos`, por exemplo "acende até 1 s depois de entrar"), que valem em qualquer semente, e corrige o desperdício por saída: o período agora termina quando alguém volta ao cômodo antes de a luz apagar.
 
 O **protocolo de experimentos** (`experimentos/`) roda as famílias F1 a F7 (uso normal, permanência parada, passagem sem entrar, falha de dispositivo, queda de rede, comando remoto, espelho) com N sementes e grava um CSV com uma linha por execução e um **manifesto** com o commit do núcleo e da versão, as sementes e o hash de cada entrada. Cada versão diz quais cenários entram em cada família em `experimentos/familias.json`. Resultados de simulação, não de medição.
 

@@ -1,7 +1,7 @@
 # Guia de convenções — projeto Reg10k e ambiente de simulação PCS5039
 
 **Documento:** guia-convencoes.md
-**Versão:** 04 | **Data:** 26/10/2026 (v01 a v03 de 25/10/2026)
+**Versão:** 05 | **Data:** 26/10/2026 (v01 a v03 de 25/10/2026; v04 de 26/10/2026)
 **Linha de pesquisa:** Laboratório de Digital Twin de Arquitetura de Sistemas de Software (EPUSP) e GLIP USP
 **Coordenação:** Reginaldo Arakaki (EPUSP)
 **Base:** prática consolidada nas versões v0, v0dt e v0dta do ambiente e nas versões v01 a v04 da V1 e da V2/V3.
@@ -15,6 +15,7 @@
 |---|---|---|
 | 01 | 25/10/2026 | Primeira versão |
 | 02 | 25/10/2026 | Com a v1dt: ambientes (`sala` e `residencia-v1`), prefixos RN-V1 e M, campo `comodo` no registro e nas asserções, chave de intenção por cômodo |
+| 05 | 26/10/2026 | Com a nucleo-v1.1: janela relativa (§7.1), prefixo `G` dos cenários gerados, RN-V2 |
 | 04 | 26/10/2026 | Com a nucleo-v1.0: núcleo e repositórios de versão (§2), publicação direta no `main` e tags pelo responsável (§9), autor dos commits |
 | 03 | 25/10/2026 | Com a v1dtb: diagrama com sufixo de versão quando a estrutura muda, nomes de classe da V2 com sinônimos no código, ajuste pequeno sem rodada de dúvidas (§6) |
 
@@ -215,6 +216,12 @@ Ajuste pequeno (letra) pedido pelo responsável com escopo claro pode pular as e
 | Regressão | Roteiros e esperados de versões anteriores **não são editados**. Asserções novas sobre cenários antigos vão para os testes |
 | Invariantes | OR-nn verificadas em toda execução; cada uma cita a INV ou a RN de base. OR que depende de condição informa `aplica: false` quando não se aplica |
 | Modos | IDEAL valida a lógica; REALISTA tem distribuição em 30 sementes no catálogo |
+
+---
+
+### 7.1 Janela relativa (desde a nucleo-v1.1)
+
+Asserção cuja janela depende de um movimento do morador usa `apos` (âncora num evento da verdade), e não horários fixos: `{"tipo": "luz", "comodo": "quarto", "valor": "ACESA", "apos": {"evento": "CRUZOU_PORTA", "sentido": "ENTRADA"}, "ate_ms": 1000}`. Horários fixos ficam para o que não depende do acaso: falhas injetadas, ações do app e entradas pela porta. Cenários gerados pelo gerador por planta têm prefixo `G`.
 
 ---
 

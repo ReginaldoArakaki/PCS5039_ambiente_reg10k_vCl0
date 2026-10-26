@@ -194,7 +194,10 @@ class Analise:
             if c["sentido"] != "SAIDA" or self.ocupada.em(t + 1) or not self.luz.em(t):
                 continue
             prox = [ts for ts, v in zip(self.luz.ts, self.luz.vs) if ts > t and not v]
-            por_saida.append((prox[0] if prox else fim) - t)
+            # nucleo-v1.1: o período termina no apagamento ou quando alguém volta ao cômodo, o que vier
+            # primeiro (antes, uma volta antes do apagamento fazia a saída anterior contar até o apagamento final)
+            volta = [ts for ts, v in zip(self.ocupada.ts, self.ocupada.vs) if ts > t and v]
+            por_saida.append(min([fim] + prox[:1] + volta[:1]) - t)
 
         desconhecida = _cruzamento([self.ocupacao_inf], fim, lambda o: o == DESCONHECIDA)
         # O controlador começa em Desconhecida até a primeira avaliação; desconta o 1º segundo
@@ -449,9 +452,38 @@ class Analise:
                                   f"{a[dif] if dif < len(a) else '—'} × {b[dif] if dif < len(b) else '—'}")
 
     # ------------------------------------------------------------- asserções
+    def ancora(self, apos: dict) -> Optional[int]:
+        """nucleo-v1.1: instante do evento da verdade a que a janela da asserção é relativa.
+
+        `apos` = {"evento": TIPO, "ocorrencia": n (1 = primeira), <campo>: <valor>…}; os demais campos
+        filtram o evento (por exemplo "sentido": "ENTRADA", "ocupante": "morador", "para": "quarto").
+        Na vista de um cômodo, a entrada pelo vão aparece como CRUZOU_PORTA com sentido ENTRADA.
+        """
+        filtro = {k: v for k, v in apos.items() if k not in ("evento", "ocorrencia")}
+        achados = [ev["t_ms"] for ev in self.ev
+                   if ev["camada"] == VERDADE and ev["tipo"] == apos["evento"]
+                   and all(ev.get(k) == v for k, v in filtro.items())]
+        n = apos.get("ocorrencia", 1)
+        return achados[n - 1] if len(achados) >= n else None
+
     def verificar(self, a: dict, metricas: dict) -> tuple[bool, str]:
         e = a["entao"]
         tipo = e["tipo"]
+        if "apos" in e and tipo in ("luz", "luz_constante", "ocupacao"):
+            t0 = self.ancora(e["apos"])
+            if t0 is None:
+                return False, f"evento âncora {e['apos']} não ocorreu"
+            rel = dict(e)
+            del rel["apos"]
+            for k in ("em_ms", "desde_ms", "ate_ms"):
+                if k in rel:
+                    rel[k] = t0 + rel[k]
+            if tipo == "luz" and "em_ms" not in rel:
+                rel.setdefault("desde_ms", t0)
+            if "entre_ms" in rel:
+                rel["entre_ms"] = [t0 + rel["entre_ms"][0], t0 + rel["entre_ms"][1]]
+            ok, det = self.verificar({**a, "entao": rel}, metricas)
+            return ok, f"{det} (âncora {e['apos']['evento']} em {t0} ms)"
         if tipo == "metrica":
             v = metricas.get(e["nome"])
             if v is None:

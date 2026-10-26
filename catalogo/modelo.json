@@ -104,6 +104,16 @@
       "id": "RN-V1-04",
       "texto": "O gêmeo mantém um EstadoComodo por cômodo; a atualidade é por cômodo.",
       "origem": "RN-DT-04; EstadoComodo (V2)"
+    },
+    {
+      "id": "RN-V2-01",
+      "texto": "Cada cômodo tem os seus parâmetros; o T_apagamento pode diferir por cômodo dentro dos limites da plataforma (30 s a 30 min).",
+      "origem": "RF-OPR-01; PS05 (A13); RN-V1-02"
+    },
+    {
+      "id": "RN-V2-02",
+      "texto": "Passagem interna em qualquer parede segue a RN-V1-01: o SA vai aos dois cômodos que ela liga.",
+      "origem": "RN-V1-01; A14"
     }
   ],
   "parametros": [
