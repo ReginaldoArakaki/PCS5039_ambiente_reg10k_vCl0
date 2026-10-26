@@ -84,6 +84,26 @@
       "id": "RN-DT-09",
       "texto": "Comando remoto aceito cria precedência REMOTA por 15 min sobre a automação. É recusado se houver precedência manual ativa; o interruptor sempre prevalece sobre o app.",
       "origem": "RN07; R10 §7.2 (precedência)"
+    },
+    {
+      "id": "RN-V1-01",
+      "texto": "O SA de uma passagem interna é evidência para os dois cômodos que ela liga, sem direção.",
+      "origem": "RN09; A14"
+    },
+    {
+      "id": "RN-V1-02",
+      "texto": "Cada cômodo tem seu controlador, seus parâmetros e seu atuador; a decisão de um cômodo nunca atua em outro.",
+      "origem": "RF-OPR-01; DQ1-02"
+    },
+    {
+      "id": "RN-V1-03",
+      "texto": "Comando remoto e preferência indicam o cômodo; validade, chave e precedência como na v0dt.",
+      "origem": "RN-DT-05, RN-DT-07, RN-DT-09"
+    },
+    {
+      "id": "RN-V1-04",
+      "texto": "O gêmeo mantém um EstadoComodo por cômodo; a atualidade é por cômodo.",
+      "origem": "RN-DT-04; EstadoComodo (V2)"
     }
   ],
   "parametros": [
@@ -165,7 +185,7 @@
     "RF-OPR-02": "Intervenção manual local com precedência temporária",
     "RF-OPR-04": "Classificação do resultado da atuação por nível de evidência",
     "RF-OPR-05": "Efeito único por chave de intenção",
-    "RF-OPR-09": "Saúde de hub e dispositivos (sem resposta, bateria)",
+    "RF-OPR-09": "Saúde de hub e dispositivos",
     "RF-SYN-01": "Publicação de evidências com ordem e indicação de relógio confiável",
     "RF-GOV-05": "Registros imutáveis, somente acréscimo",
     "RNF-DES-03": "Reação local: evidência → comando ao atuador, p95 ≤ 500 ms",
@@ -175,7 +195,7 @@
     "CV03": "V1 — SP sem resposta: ocupação desconhecida",
     "CV04": "V1 — atuação sem confirmação: resultado desconhecido",
     "CV08": "V1 — intervenção manual prevalece sobre a automação",
-    "CV15": "V1 — leituras alternantes não apagam antes da ausência estável",
+    "CV15": "V1 — passagens repetidas e leituras alternantes",
     "CF05": "V3 — decisão local com presença desconhecida",
     "RN01": "V1 — falta de resposta nunca prova ausência",
     "RN02": "V1 — intenção, execução relatada e efeito observado são distintos",
@@ -206,7 +226,9 @@
     "RN07": "V1 — cada intervenção tem solicitante, motivo, prazo, resultado e precedência",
     "RN34": "V1 — ocupante inclui animal de grande porte (A12)",
     "RNP-MP3-02": "V1 — comandos remotos com validade, autorização e precedência",
-    "RNP-MP3-03": "V1 — intervenção manual com precedência temporária"
+    "RNP-MP3-03": "V1 — intervenção manual com precedência temporária",
+    "PS05": "V1 — ausência estável: 60 s sem detecção",
+    "RN-V1-01": "v1dt — SA do vão entregue aos dois cômodos"
   },
   "metricas": [
     {
@@ -360,6 +382,16 @@
       "id": "OR-12",
       "texto": "Com a plataforma ou o canal fora, as decisões locais são idênticas às da mesma execução sem a falha de rede (execução pareada).",
       "base": "RNF-CON-01; RN-DT-08"
+    },
+    {
+      "id": "OR-13",
+      "texto": "O SA de uma passagem interna é entregue aos dois controladores; nenhum controlador recebe evidência de dispositivo de outro cômodo.",
+      "base": "RN-V1-01; RN09"
+    },
+    {
+      "id": "OR-14",
+      "texto": "Toda intenção de um cômodo vai ao atuador desse cômodo.",
+      "base": "RN-V1-02"
     }
   ],
   "camadas": [
@@ -464,6 +496,16 @@
       "id": "espelho-v0dta",
       "titulo": "Cômodo espelho — classes de fidelidade (v0dta)",
       "descricao": "Como cada instante é classificado: fiel, percepção, sincronização ou não afirma."
+    },
+    {
+      "id": "planta-v1dt",
+      "titulo": "Residência da v1dt",
+      "descricao": "Sala e cozinha, porta externa e vão interno, um controlador por cômodo."
+    },
+    {
+      "id": "sequencia-M03",
+      "titulo": "Sequência — espiar a cozinha (M03)",
+      "descricao": "O SA do vão vai aos dois controladores; sem coordenação, a cozinha acende."
     }
   ],
   "trilha": [

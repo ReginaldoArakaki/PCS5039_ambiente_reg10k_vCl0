@@ -1,0 +1,39 @@
+{
+  "id": "M11",
+  "versao": "v1dt",
+  "ambiente": "residencia-v1",
+  "titulo": "Comando remoto acende a cozinha",
+  "tipo": "GEMEO_DIGITAL",
+  "modo": "IDEAL",
+  "duracao_ms": 180000,
+  "descricao": "Casa vazia. O titular toca em \"acender a cozinha\" no app em t=70 s e consulta o app em t=75 s.",
+  "comportamento_ideal": "Só a cozinha acende; o app mostra o resultado em até 3 s e o estado atual da cozinha.",
+  "comportamento_referencia": "O comando vai ao controlador da cozinha, com precedência REMOTA (RN-DT-09).",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 70000,
+      "ocupante": "app",
+      "acao": "APP_COMANDO",
+      "comando": "ACENDER",
+      "comodo": "cozinha"
+    },
+    {
+      "t_ms": 75000,
+      "ocupante": "app",
+      "acao": "APP_CONSULTA"
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-03",
+    "RNF-DES-02"
+  ],
+  "regras": [
+    "RN-V1-03",
+    "RN-DT-09"
+  ]
+}

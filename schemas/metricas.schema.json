@@ -126,7 +126,7 @@
     "invariantes": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^OR-(0[1-9]|1[0-2])$"
+        "pattern": "^OR-(0[1-9]|1[0-4])$"
       },
       "additionalProperties": {
         "type": "object",
@@ -163,7 +163,8 @@
       "enum": [
         "v0",
         "v0dt",
-        "v0dta"
+        "v0dta",
+        "v1dt"
       ]
     },
     "execucao_pareada": {
@@ -284,6 +285,15 @@
             }
           }
         }
+      }
+    },
+    "comodos": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "metricas"
+        ]
       }
     }
   }

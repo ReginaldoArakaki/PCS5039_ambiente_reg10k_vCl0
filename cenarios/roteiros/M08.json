@@ -1,0 +1,62 @@
+{
+  "id": "M08",
+  "versao": "v1dt",
+  "ambiente": "residencia-v1",
+  "titulo": "SP da cozinha sem resposta",
+  "tipo": "FALHA",
+  "modo": "IDEAL",
+  "duracao_ms": 300000,
+  "descricao": "O morador está na cozinha quando o SP-02 para de responder (t=60 s); ele volta para a sala em t=205 s.",
+  "comportamento_ideal": "A cozinha passa a ocupação desconhecida, sinaliza a falha e nunca apaga por silêncio (RN01).",
+  "comportamento_referencia": "Como na F01 da v0, agora só na cozinha: a sala segue normal.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "cozinha"
+    },
+    {
+      "t_ms": 15000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 185000
+    },
+    {
+      "t_ms": 205000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "sala"
+    },
+    {
+      "t_ms": 210000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 85000
+    }
+  ],
+  "falhas": [
+    {
+      "t_ms": 60000,
+      "tipo": "SP_SEM_RESPOSTA",
+      "dispositivo": "SP-02"
+    }
+  ],
+  "requisitos": [
+    "RN01",
+    "RF-OPR-09"
+  ],
+  "regras": [
+    "RN-I0-04",
+    "RN-V1-02"
+  ]
+}

@@ -1,4 +1,9 @@
-"""Mundo simulado: a sala e seus ocupantes (camada de verdade, plano §4)."""
+"""Mundo simulado: os ocupantes e seu movimento (camada de verdade, plano §4).
+
+v1dt: o ocupante tem um cômodo e pode mudar de cômodo por uma passagem
+interna (modo PASSANDO). A geometria dos cômodos está em sim/residencia.py;
+a classe Sala abaixo fica só por compatibilidade com código de alunos.
+"""
 from __future__ import annotations
 
 import math
@@ -16,6 +21,9 @@ class Ocupante:
         self.id = id_
         self.tipo = tipo
         self.pos: Optional[tuple[float, float]] = None  # None = exterior
+        self.comodo: Optional[str] = None  # v1dt: cômodo atual (None = exterior)
+        self.chegou_passagem = False       # v1dt: chegou ao vão e vai cruzar neste passo
+        self.destino = None                # v1dt: (passagem, cômodo de destino, alvo)
         self.modo = "FORA"  # FORA, PARADO, ANDAR, ALEATORIO, MICRO
         self.alvo: Optional[tuple[float, float]] = None
         self.vel = 1.0
@@ -57,8 +65,11 @@ class Sala:
         return (round(rng.uniform(x0, x1), 3), round(rng.uniform(y0, y1), 3))
 
 
-def mover(o: Ocupante, sala: Sala, t: int, dt_ms: int, rng: random.Random) -> None:
-    """Avança o ocupante um passo de simulação."""
+def mover(o: Ocupante, sala, t: int, dt_ms: int, rng: random.Random) -> None:
+    """Avança o ocupante um passo de simulação.
+
+    `sala` é o cômodo atual do ocupante (sim.residencia.Comodo), ou a Sala da v0.
+    """
     o.movendo = False
     o.microgesto = False
     if o.pos is None:
@@ -67,14 +78,16 @@ def mover(o: Ocupante, sala: Sala, t: int, dt_ms: int, rng: random.Random) -> No
         o.movendo = True
     if o.modo == "ALEATORIO" and o.fim_ms is not None and t >= o.fim_ms:
         o.modo, o.alvo = "PARADO", None
-    if o.modo in ("ANDAR", "ALEATORIO") and o.alvo is not None:
+    if o.modo in ("ANDAR", "ALEATORIO", "PASSANDO") and o.alvo is not None:
         dx, dy = o.alvo[0] - o.pos[0], o.alvo[1] - o.pos[1]
         dist = math.hypot(dx, dy)
         passo = o.vel * dt_ms / 1000
         o.movendo = True
         if dist <= passo:
             o.pos = o.alvo
-            if o.modo == "ANDAR":
+            if o.modo == "PASSANDO":
+                o.chegou_passagem = True
+            elif o.modo == "ANDAR":
                 o.modo, o.alvo = "PARADO", None
             else:
                 o.alvo = sala.ponto_aleatorio(rng, o.area)

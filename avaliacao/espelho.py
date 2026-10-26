@@ -206,6 +206,11 @@ def svg_amostra(sala: dict, a: dict, titulo: str, visao: str = "R") -> str:
     return "\n".join(o)
 
 
+def svg(sala: dict, a: dict, titulo: str, visao: str = "R") -> str:
+    """SVG de uma amostra: sala (v0) ou residência (v1dt)."""
+    return svg_amostra_residencia(sala, a, titulo, visao) if "comodos" in a else svg_amostra(sala, a, titulo, visao)
+
+
 def salvar_amostras(pasta, sala: dict, roteiro: dict, controlador: str, lista: list[dict]) -> None:
     import json
     pasta.mkdir(parents=True, exist_ok=True)
@@ -213,4 +218,124 @@ def salvar_amostras(pasta, sala: dict, roteiro: dict, controlador: str, lista: l
     for a in lista:
         t = a["t_ms"] / 1000
         titulo = f"{roteiro['id']} — {NOMES_ROTULO[a['rotulo']]} (t = {int(t // 60)}:{t % 60:04.1f}) · {controlador}"
-        (pasta / f"{a['rotulo']}.svg").write_text(svg_amostra(sala, a, titulo), encoding="utf-8")
+        (pasta / f"{a['rotulo']}.svg").write_text(svg(sala, a, titulo), encoding="utf-8")
+
+
+# =============================================================== residência (v1dt)
+_GRAV = {"PERCEPCAO": 3, "SINCRONIZACAO": 2, "NAO_AFIRMA": 1, "FIEL": 0}
+
+
+def amostras_residencia(analises: dict, res, eventos: list[dict], roteiro: dict) -> list[dict]:
+    """Amostras da residência: o lado real inteiro e, por cômodo, o que o hub e a plataforma sabem."""
+    por = {cid: amostras(an) for cid, an in analises.items()}
+    saida = []
+    for i, (rot, t) in enumerate(zip(ROTULOS, instantes(roteiro))):
+        ocup = _ultimo(eventos, t, lambda e: e["camada"] == VERDADE and e["tipo"] == "OCUPANTES")
+        pos = _ultimo(eventos, t, lambda e: e["camada"] == VERDADE and e["tipo"] == "POSICOES")
+        comodos = {cid: {"L": por[cid][i]["L"], "R": por[cid][i]["R"]} for cid in res.ids}
+        saida.append({
+            "rotulo": rot, "t_ms": t,
+            "real": {"presentes": (ocup or {}).get("presentes", []),
+                     "por_comodo": (ocup or {}).get("por_comodo", {}),
+                     "luz_fisica": {cid: por[cid][i]["real"]["luz_fisica"] for cid in res.ids},
+                     "posicoes": (pos or {}).get("ocupantes", {})},
+            "comodos": comodos,
+            "L": {"classe": max((c["L"]["classe"] for c in comodos.values()), key=_GRAV.get)},
+            "R": {"classe": max((c["R"]["classe"] for c in comodos.values()), key=_GRAV.get)},
+        })
+    return saida
+
+
+def svg_amostra_residencia(cfg: dict, a: dict, titulo: str, visao: str = "R") -> str:
+    """Retrato lado a lado da residência inteira: real × espelho, cômodo a cômodo."""
+    from sim.residencia import Residencia
+    res = Residencia(cfg)
+    xmax = max(c.x0 + c.largura for c in res.comodos.values())
+    ymax = max(c.y0 + c.profundidade for c in res.comodos.values())
+    px = 44
+    larg, alt = xmax * px, ymax * px
+    xr, xe, y0 = 20, 20 + larg + 50, 52
+    X = lambda x0, x: x0 + x * px
+    Y = lambda y: y0 + (ymax - y) * px
+    tipos = {x["id"]: x["tipo"] for x in res.ocupantes}
+    nomes = {x["id"]: x.get("nome", x["id"]) for x in res.ocupantes}
+    o = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{2 * larg + 90}" height="{y0 + alt + 60 + 16 * (len(res.ids) + 2)}" '
+         f'font-family="Arial, Helvetica, sans-serif" font-size="12">',
+         '<defs><pattern id="hz" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
+         '<line x1="0" y1="0" x2="0" y2="6" stroke="#94a3b8" stroke-width="2"/></pattern>'
+         '<pattern id="hd" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
+         '<line x1="0" y1="0" x2="0" y2="8" stroke="#e2e8f0" stroke-width="2.5" opacity=".7"/></pattern></defs>',
+         '<rect width="100%" height="100%" fill="#ffffff"/>',
+         f'<text x="20" y="20" font-size="14" font-weight="700">{_esc(titulo)}</text>',
+         f'<text x="{xr}" y="{y0 - 10}" font-weight="700">Casa real (verdade)</text>',
+         f'<text x="{xe}" y="{y0 - 10}" font-weight="700">Espelho — {"plataforma (DTReg10k-R)" if visao == "R" else "hub (DTReg10k-L)"}</text>']
+
+    def comodo(x0, c, acesa, hachura=False):
+        out = [f'<rect x="{X(x0, c.x0)}" y="{Y(c.y0 + c.profundidade)}" width="{c.largura * px}" height="{c.profundidade * px}" '
+               f'fill="{"#fdf6dc" if acesa else "#2c3240"}"/>']
+        for z in c.zonas_cegas:
+            out.append(f'<rect x="{X(x0, z["x0"])}" y="{Y(z["y1"])}" width="{(z["x1"] - z["x0"]) * px}" '
+                       f'height="{(z["y1"] - z["y0"]) * px}" fill="url(#hz)" opacity=".5"/>')
+        lx, ly = c.lampada_pos
+        out.append(f'<circle cx="{X(x0, lx)}" cy="{Y(ly)}" r="8" fill="{"#facc15" if acesa else "#475569"}" stroke="#0f172a"/>')
+        out.append(f'<rect x="{X(x0, c.x0)}" y="{Y(c.y0 + c.profundidade)}" width="{c.largura * px}" '
+                   f'height="{c.profundidade * px}" fill="{"url(#hd)" if hachura else "none"}" stroke="#334155" stroke-width="4"/>')
+        out.append(f'<text x="{X(x0, c.x0) + 6}" y="{Y(c.y0 + c.profundidade) + 15}" font-weight="700" '
+                   f'fill="{"#334155" if acesa else "#cbd5e1"}">{_esc(c.nome)}</text>')
+        return out
+
+    def passagens(x0):
+        out = []
+        for ps in res.passagens.values():
+            p = ps.cfg
+            if "x_inicio" in p:
+                out.append(f'<line x1="{X(x0, p["x_inicio"])}" y1="{Y(p["y"])}" x2="{X(x0, p["x_fim"])}" y2="{Y(p["y"])}" '
+                           f'stroke="#ffffff" stroke-width="6"/>')
+            elif "y_inicio" in p:
+                out.append(f'<line x1="{X(x0, p["x"])}" y1="{Y(p["y_inicio"])}" x2="{X(x0, p["x"])}" y2="{Y(p["y_fim"])}" '
+                           f'stroke="#ffffff" stroke-width="6"/>')
+        return out
+
+    real = a["real"]
+    for c in res.comodos.values():
+        o += comodo(xr, c, real["luz_fisica"].get(c.id, False))
+    o += passagens(xr)
+    for oid, p in (real.get("posicoes") or {}).items():
+        if p:
+            cao = tipos.get(oid) == "CACHORRO"
+            o.append(f'<circle cx="{X(xr, p[0])}" cy="{Y(p[1])}" r="{8 if cao else 10}" fill="{"#9a5b13" if cao else "#2563eb"}" '
+                     f'stroke="#fff" stroke-width="2"/><text x="{X(xr, p[0])}" y="{Y(p[1]) + 4}" text-anchor="middle" '
+                     f'font-size="9" font-weight="700" fill="#fff">{"R" if cao else "M"}</text>')
+    for c in res.comodos.values():
+        m = a["comodos"][c.id][visao]
+        afirma = m.get("atualidade") == ATUAL if visao == "R" else bool(m.get("hub_ligado"))
+        o += comodo(xe, c, m.get("luz") in LUZ_ACESA, hachura=not afirma)
+        cx, cy = X(xe, c.x0 + c.largura / 2), Y(c.y0 + c.profundidade / 2 - 0.6)
+        if m.get("ocupacao") == "OCUPADA":
+            o.append(f'<ellipse cx="{cx}" cy="{cy}" rx="{min(1.4, c.largura / 3) * px}" ry="{0.9 * px}" fill="#22a06b" opacity=".38"/>'
+                     f'<text x="{cx}" y="{cy + 4}" text-anchor="middle" font-weight="700" fill="#065f46">presença</text>')
+        elif m.get("ocupacao") == "DESCONHECIDA":
+            o.append(f'<text x="{cx}" y="{cy + 10}" text-anchor="middle" font-size="28" font-weight="700" fill="#f5a524">?</text>')
+    o += passagens(xe)
+    yt = y0 + alt + 22
+    linhas_r = [f"{c.nome}: {', '.join(nomes.get(i, i) for i in real['por_comodo'].get(c.id, [])) or 'vazio'} · "
+                f"lâmpada {'acesa' if real['luz_fisica'].get(c.id) else 'apagada'}" for c in res.comodos.values()]
+    linhas_e = []
+    for c in res.comodos.values():
+        m = a["comodos"][c.id][visao]
+        extra = ""
+        if visao == "R":
+            idade = m.get("idade_ms")
+            extra = f" · {m.get('atualidade')}" + (f" · {idade / 1000:.0f} s" if idade is not None else "")
+        linhas_e.append(f"{c.nome}: {m.get('ocupacao') or '—'} · {m.get('luz') or '—'}{extra}")
+    for i, l in enumerate(linhas_r):
+        o.append(f'<text x="{xr}" y="{yt + 16 * i}">{_esc(l)}</text>')
+    for i, l in enumerate(linhas_e):
+        o.append(f'<text x="{xe}" y="{yt + 16 * i}">{_esc(l)}</text>')
+    cl = a[visao]["classe"]
+    yb = yt + 16 * len(res.ids) + 6
+    o.append(f'<rect x="{xr}" y="{yb}" width="{2 * larg + 50}" height="24" rx="5" fill="{_COR_CLASSE[cl]}"/>'
+             f'<text x="{xr + 10}" y="{yb + 16}" fill="#fff" font-weight="700">{_esc(_TXT_CLASSE[cl])} '
+             f'(a mais grave entre os cômodos)</text>')
+    o.append("</svg>")
+    return "\n".join(o)

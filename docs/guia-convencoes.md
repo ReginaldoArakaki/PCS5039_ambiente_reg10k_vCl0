@@ -1,11 +1,20 @@
 # Guia de convenções — projeto Reg10k e ambiente de simulação PCS5039
 
 **Documento:** guia-convencoes.md
-**Versão:** 01 | **Data:** 25/10/2026
+**Versão:** 02 | **Data:** 25/10/2026 (v01 de 25/10/2026)
 **Linha de pesquisa:** Laboratório de Digital Twin de Arquitetura de Sistemas de Software (EPUSP) e GLIP USP
 **Coordenação:** Reginaldo Arakaki (EPUSP)
 **Base:** prática consolidada nas versões v0, v0dt e v0dta do ambiente e nas versões v01 a v04 da V1 e da V2/V3.
 **Situação:** em uso. Vale para os documentos da plataforma, os planos de incremento, o código do ambiente e as skills.
+
+---
+
+## Histórico de versões
+
+| Versão | Data | Alterações |
+|---|---|---|
+| 01 | 25/10/2026 | Primeira versão |
+| 02 | 25/10/2026 | Com a v1dt: ambientes (`sala` e `residencia-v1`), prefixos RN-V1 e M, campo `comodo` no registro e nas asserções, chave de intenção por cômodo |
 
 ---
 
@@ -94,14 +103,14 @@ Módulos de RF: ADE, KIT, COM, OPR, SYN, ACO, GOV. Características de RNF (ISO/
 
 | Prefixo | Elemento | Formato |
 |---|---|---|
-| RN-I0, RN-DT | Regra do incremento | RN-I0-05, RN-DT-09 (a regra cita a RN da V1 de origem) |
+| RN-I0, RN-DT, RN-V1 | Regra do incremento | RN-I0-05, RN-DT-09, RN-V1-01 (a regra cita a RN da V1 de origem) |
 | DI, DT-, DTA- | Decisão de orientação do plano | DT-02, DTA-03 |
 | DQ, DQA | Decisão a confirmar no plano (com proposta) | DQ-04, DQA-04 |
 | PI | Pendência do incremento | PI-01 |
 | CP | Critério de pronto | CP-DT-05, CP-DTA-01 |
-| OR | Invariante do oráculo | OR-01 a OR-12 (numeração contínua entre versões) |
+| OR | Invariante do oráculo | OR-01 a OR-14 (numeração contínua entre versões) |
 | E | Exercício dos alunos | E1–E11 (numeração contínua entre versões) |
-| Cenários | Prefixo por tipo + dois dígitos | N, FP, FN, F (v0); DT (gêmeo); novos prefixos por versão |
+| Cenários | Prefixo + dois dígitos | N, FP, FN, F (v0); DT (gêmeo, v0dt); M (residência com vários cômodos, v1dt); o tipo fica no campo `tipo` |
 | Asserções | A1, A2… (comportamento); E1… (espelho); INV (invariantes) | dentro de cada `esperado/<ID>.json` |
 
 Um identificador nunca é reaproveitado com outro significado. Item removido some do documento seguinte, com nota no histórico.
@@ -182,7 +191,9 @@ Duração de referência: incremento novo, 2 dias; ajuste (letra), 1 dia.
 
 | Regra | Detalhe |
 |---|---|
-| Roteiro | `cenarios/roteiros/<ID>.json`: id, versao, titulo, tipo, modo, duracao_ms, descricao, comportamento_ideal, comportamento_referencia, estado_inicial, acoes, falhas, requisitos, regras; opcionais: rede, controle, amostras_ms |
+| Roteiro | `cenarios/roteiros/<ID>.json`: id, versao, titulo, tipo, modo, duracao_ms, descricao, comportamento_ideal, comportamento_referencia, estado_inicial, acoes, falhas, requisitos, regras; opcionais: ambiente, rede, controle, controle_comodos, amostras_ms |
+| Ambiente | `cenarios/sala.json` (um cômodo, formato da v0) ou `cenarios/residencia-*.json` (cômodos e passagens); o roteiro indica com `ambiente` |
+| Cômodo nas asserções | `"comodo"` em `entao` escolhe o cômodo; sem ele, métricas valem para a residência e os demais tipos, para o primeiro cômodo |
 | Esperado | `cenarios/esperado/<ID>.json`: asserções dado/quando/então com `nivel` |
 | REQUISITO | Vale para qualquer controlador; falhar reprova |
 | CARACTERIZACAO | Descreve a referência, inclusive limitações; em outro controlador, "difere" é informação |
@@ -196,7 +207,8 @@ Duração de referência: incremento novo, 2 dias; ajuste (letra), 1 dia.
 
 | Regra | Detalhe |
 |---|---|
-| Camadas do registro | VERDADE, PERCEPCAO, DECISAO, ATUACAO, ESTADO, SISTEMA, REDE, PLATAFORMA. Camada nova só por decisão de plano |
+| Camadas do registro | VERDADE, PERCEPCAO, DECISAO, ATUACAO, ESTADO, SISTEMA, REDE, PLATAFORMA. Camada nova só por decisão de plano. Eventos de um cômodo levam `comodo`; evidências levam `comodos` (a quem foram entregues) |
+| Chaves de intenção | `I-<boot>-<n>` com um cômodo; `I-<cômodo>-<boot>-<n>` com vários |
 | Nomes | Domínio em português, como na V2 (`Evidencia`, `Intencao`, `ResultadoAtuacao`) |
 | Contrato do controlador | `iniciar`, `ao_evento`, `ao_tick`, `estado`. Evidência nova entra pelo `ao_evento`; o contrato não muda sem decisão explícita |
 | Geradores aleatórios | Um por componente, nomeado (`random.Random(f"{semente}:{roteiro}:{nome}")`) |

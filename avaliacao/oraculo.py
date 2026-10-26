@@ -21,7 +21,7 @@ from sim.modelos import (
 )
 
 NIVEIS_VALIDOS = {EFEITO_OBSERVADO, EXECUCAO_RELATADA, DESCONHECIDO, SUBSTITUIDA}
-INVARIANTES = tuple(f"OR-{i:02d}" for i in range(1, 13))
+INVARIANTES = tuple(f"OR-{i:02d}" for i in range(1, 15))
 PRAZO_ATUALIDADE_MS = 5_000   # PS11: divergência L × R tolerada até a sincronização
 # v0dta: classes de fidelidade do espelho (plano v0dta §5)
 FIEL = "FIEL"
@@ -77,8 +77,10 @@ def _cruzamento(series: list[Serie], fim: int, pred) -> float:
 
 # -------------------------------------------------------------------- análise
 class Analise:
-    def __init__(self, eventos: list[dict], roteiro: dict, sala: dict, par: Optional[list[dict]] = None):
+    def __init__(self, eventos: list[dict], roteiro: dict, sala: dict, par: Optional[list[dict]] = None,
+                 parcial: bool = False):
         self.ev = eventos
+        self.parcial = parcial  # v1dt: vista de um cômodo (OR-01 é verificada no registro inteiro)
         self.roteiro = roteiro
         self.sala = sala
         self.par = par
@@ -330,7 +332,7 @@ class Analise:
 
         # OR-01: seq estritamente crescente e ids únicos (registro só acréscimo)
         seqs = [e["seq"] for e in self.ev]
-        if seqs != list(range(1, len(seqs) + 1)):
+        if not self.parcial and seqs != list(range(1, len(seqs) + 1)):
             r["OR-01"].append("seq não é 1..n contínuo")
         if len({e["id"] for e in self.ev}) != len(self.ev):
             r["OR-01"].append("ids repetidos")
@@ -598,12 +600,18 @@ def roteiro_sem_rede(roteiro: dict) -> dict:
 
 def avaliar(eventos: list[dict], roteiro: dict, sala: dict, esperado: Optional[dict],
             par: Optional[list[dict]] = None) -> dict:
+    from avaliacao.residencia import avaliar_residencia, isolamento_e_atuacao  # v1dt
+    from sim.residencia import Residencia
+    res = Residencia(sala)
+    if res.multi:
+        return avaliar_residencia(eventos, roteiro, res, esperado, par)
     an = Analise(eventos, roteiro, sala, par)
     m = an.metricas()
     from avaliacao.espelho import amostras  # v0dta
     espelho = {"segmentos": {"R": an.segmentos_espelho("R"), "L": an.segmentos_espelho("L")},
                "amostras": amostras(an)}
     inv = an.invariantes()
+    inv.update(isolamento_e_atuacao(eventos, res))
     resultados = {}
     if esperado:
         for a in esperado.get("assercoes", []):

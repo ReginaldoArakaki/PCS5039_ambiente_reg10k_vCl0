@@ -89,12 +89,13 @@ class AgenteSincronizacao:
         self.canal.enviar(t, SOBE, msg, self.plataforma.receber)
 
     def _resumo(self, t: float, reconexao: bool = False) -> None:
-        e = self.hub.ctrl.estado() if self.hub.ctrl else None
-        estado = None if e is None else {
+        # v1dt: um estado por cômodo (EstadoComodo, RN-V1-04)
+        comodos = {cid: None if e is None else {
             "ocupacao": e.ocupacao, "luz": e.luz, "precedencia": e.precedencia,
             "idade_evidencia_ms": e.idade_evidencia_ms, "alertas": list(e.alertas)}
+            for cid, e in self.hub.estados().items()}
         # O resumo não entra na fila: perdido, o próximo o substitui
-        self._publicar(t, {"tipo": "RESUMO", "ref_seq": self.reg._seq, "t_origem": int(t), "estado": estado,
+        self._publicar(t, {"tipo": "RESUMO", "ref_seq": self.reg._seq, "t_origem": int(t), "comodos": comodos,
                            "versao_config": self.versao_aplicada, "reconexao": reconexao,
                            "fila": len(self.fila)}, enfileirar=False)
         self.proximo_resumo = t + self.p["resumo_ms"]
@@ -180,18 +181,19 @@ class AgenteSincronizacao:
         self._responder(t, {"tipo": "ACK_COMANDO", "chave": chave})
         if chave in self.comandos_vistos:
             self.reg.add(SISTEMA, "COMANDO_REMOTO_RECEBIDO", t, chave=chave, acao=msg["acao"],
-                         valida_ate_ms=msg["valida_ate_ms"], decisao="REPETIDO")
+                         valida_ate_ms=msg["valida_ate_ms"], decisao="REPETIDO", comodo=msg.get("comodo"))
             return
         if t > msg["valida_ate_ms"]:
             self.comandos_vistos[chave] = EXPIRADA
             self.reg.add(SISTEMA, "COMANDO_REMOTO_RECEBIDO", t, chave=chave, acao=msg["acao"],
-                         valida_ate_ms=msg["valida_ate_ms"], decisao="EXPIRADO")
+                         valida_ate_ms=msg["valida_ate_ms"], decisao="EXPIRADO", comodo=msg.get("comodo"))
             self.resultado_comando(t, chave, EXPIRADA, motivo="VALIDADE_VENCIDA")
             return
         self.comandos_vistos[chave] = None
         self.reg.add(SISTEMA, "COMANDO_REMOTO_RECEBIDO", t, chave=chave, acao=msg["acao"],
-                     valida_ate_ms=msg["valida_ate_ms"], decisao="ACEITO")
-        motivo = self.hub.comando_remoto(int(t), chave, msg["acao"], msg.get("solicitante", "titular"))
+                     valida_ate_ms=msg["valida_ate_ms"], decisao="ACEITO", comodo=msg.get("comodo"))
+        motivo = self.hub.comando_remoto(int(t), chave, msg["acao"], msg.get("solicitante", "titular"),
+                                         msg.get("comodo"))
         if motivo:
             self.resultado_comando(t, chave, REJEITADA, motivo=motivo)
 

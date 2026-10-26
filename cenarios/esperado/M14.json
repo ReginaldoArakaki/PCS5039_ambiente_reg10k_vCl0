@@ -1,0 +1,71 @@
+{
+  "cenario": "M14",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RN-V1-04",
+    "RN34"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "morador na sala",
+      "quando": "o cenário segue",
+      "entao": {
+        "tipo": "luz_constante",
+        "comodo": "sala",
+        "valor": "ACESA",
+        "entre_ms": [
+          6000,
+          300000
+        ]
+      }
+    },
+    {
+      "id": "E1",
+      "nivel": "CARACTERIZACAO",
+      "dado": "Rex deitado",
+      "quando": "t = 250 s",
+      "entao": {
+        "tipo": "espelho",
+        "comodo": "cozinha",
+        "em_ms": 250000,
+        "classe": "PERCEPCAO"
+      }
+    },
+    {
+      "id": "E2",
+      "nivel": "CARACTERIZACAO",
+      "dado": "morador andando",
+      "quando": "t = 250 s",
+      "entao": {
+        "tipo": "espelho",
+        "comodo": "sala",
+        "em_ms": 250000,
+        "classe": "FIEL"
+      }
+    },
+    {
+      "id": "E3",
+      "nivel": "REQUISITO",
+      "dado": "Rex andando",
+      "quando": "t = 60 s",
+      "entao": {
+        "tipo": "espelho",
+        "comodo": "cozinha",
+        "em_ms": 60000,
+        "classe": "FIEL"
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

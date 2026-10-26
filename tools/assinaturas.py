@@ -19,13 +19,14 @@ RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ))
 
 from avaliacao.oraculo import _assinatura  # noqa: E402
-from catalogo.executar import carregar_roteiros, carregar_sala, descobrir_controladores  # noqa: E402
+from catalogo.executar import ambiente_de, carregar_roteiros, descobrir_controladores  # noqa: E402
 from sim.motor import simular  # noqa: E402
 
 
 def calcular() -> dict[str, str]:
-    sala, out = carregar_sala(), {}
+    out = {}
     for r in carregar_roteiros():
+        sala = ambiente_de(r)
         for nome, fab in descobrir_controladores().items():
             a = _assinatura(simular(sala, r, fab, 42).eventos)
             out[f"{r['id']}|{nome}"] = hashlib.sha256(json.dumps(a).encode()).hexdigest()

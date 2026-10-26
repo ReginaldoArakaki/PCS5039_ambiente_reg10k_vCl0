@@ -1,0 +1,78 @@
+{
+  "id": "M12",
+  "versao": "v1dt",
+  "ambiente": "residencia-v1",
+  "titulo": "Preferência só da cozinha",
+  "tipo": "GEMEO_DIGITAL",
+  "modo": "IDEAL",
+  "duracao_ms": 420000,
+  "descricao": "Em t=10 s o titular muda o tempo de apagamento da cozinha para 120 s. O morador passa pela cozinha e sai de casa.",
+  "comportamento_ideal": "A cozinha apaga 120 s depois de ficar vazia; a sala continua com 60 s.",
+  "comportamento_referencia": "O hub aplica a versão 2 só no controlador da cozinha (RN-V1-03).",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 10000,
+      "ocupante": "app",
+      "acao": "APP_PREFERENCIA",
+      "t_apagamento_ms": 120000,
+      "comodo": "cozinha"
+    },
+    {
+      "t_ms": 20000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 25000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "cozinha"
+    },
+    {
+      "t_ms": 30000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 60000
+    },
+    {
+      "t_ms": 95000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "sala"
+    },
+    {
+      "t_ms": 100000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 50000
+    },
+    {
+      "t_ms": 150000,
+      "ocupante": "morador",
+      "acao": "ANDAR",
+      "ate": [
+        0.95,
+        1.0
+      ]
+    },
+    {
+      "t_ms": 160000,
+      "ocupante": "morador",
+      "acao": "SAIR"
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-07",
+    "RF-SYN-06",
+    "INV-14"
+  ],
+  "regras": [
+    "RN-V1-03",
+    "RN-DT-07"
+  ]
+}

@@ -1,0 +1,15 @@
+flowchart LR
+    EXT([Exterior]) <-->|"PORTA-01 · SA-01"| SALA
+    subgraph SALA["Sala 5 × 4 m"]
+        SP1[SP-01 · zona cega Z1]
+        L1[LAMP-01 · ATU-01 · INT-01]
+        C1{{Controlador da sala}}
+    end
+    SALA <-->|"VAO-01 · SA-02 (vai aos dois)"| COZ
+    subgraph COZ["Cozinha 3,5 × 4 m"]
+        SP2[SP-02]
+        L2[LAMP-02 · ATU-02 · INT-02]
+        C2{{Controlador da cozinha}}
+    end
+    C1 -.-> GEM[(DTReg10k-L e R · um estado por cômodo)]
+    C2 -.-> GEM

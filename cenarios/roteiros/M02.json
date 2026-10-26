@@ -1,0 +1,43 @@
+{
+  "id": "M02",
+  "versao": "v1dt",
+  "ambiente": "residencia-v1",
+  "titulo": "Entra pela rua e vai direto à cozinha",
+  "tipo": "NORMAL",
+  "modo": "IDEAL",
+  "duracao_ms": 180000,
+  "descricao": "O morador entra pela porta da sala em t=5 s e segue direto para a cozinha.",
+  "comportamento_ideal": "A cozinha acende quando ele chega; a sala, que ele só atravessou, apaga depois de 60 s.",
+  "comportamento_referencia": "A sala acende na entrada (SA-01) e apaga 60 s depois da última detecção.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 6000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "cozinha",
+      "vel_m_s": 1.2
+    },
+    {
+      "t_ms": 15000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 160000
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-01"
+  ],
+  "regras": [
+    "RN-V1-01"
+  ]
+}

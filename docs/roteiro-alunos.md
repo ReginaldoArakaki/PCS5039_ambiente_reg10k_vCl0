@@ -177,3 +177,34 @@ As **amostras** (início, meio e fim) ficam na aba Cenários e em `saida/<cenár
 | E11.1: análise das amostras | 50% |
 | E11.2: mudança e medição | 35% |
 | E11.3: discussão | 15% |
+
+---
+
+# v1dt: sala e cozinha (2 dias)
+
+**Ambiente:** `cenarios/residencia-v1.json`. Sala (como antes) e cozinha (3,5 × 4 m, sem zona cega) ligadas por um vão sem porta, com o SA-02. Cada cômodo tem o seu controlador, com a **mesma interface** de sempre; o hub cria um por cômodo. O SA-02 é entregue aos dois, com `dados["passagem"] == "VAO-01"` e `dados["comodos"] == ["sala", "cozinha"]`, e não diz a direção (RN09).
+
+```bash
+python -m sim --cenario M01                                  # sala ↔ cozinha
+python -m sim --cenario M03 --controlador alunos.grupo_exemplo
+```
+
+Na aba **Painel**, o seletor "Cômodo" mostra uma linha do tempo por cômodo; na aba **Cenários**, a tabela "Por cômodo" separa as métricas.
+
+### E12. Coordenar os cômodos
+
+O problema: a referência acende o cômodo vizinho com qualquer passagem pelo vão, e por isso "espiar a cozinha" (M03) acende a cozinha por 60 s. O `grupo_exemplo` espera o PIR confirmar, o que resolve M03, mas atrasa a luz em 1,7 s na passagem (M01 reprova: o limite é 1 s).
+
+1. Explique, com as linhas do tempo de M01 e M03 dos dois controladores, por que nenhuma das duas estratégias atende os dois cenários.
+2. Implemente um controlador que use o contexto do próprio cômodo para inferir a direção: por exemplo, "se o meu SP viu movimento nos últimos segundos e veio uma passagem pelo vão, a pessoa provavelmente está saindo; se o meu cômodo estava vazio, provavelmente está entrando". A inferência é incerta: declare-a (por exemplo, com um alerta próprio), nunca a trate como certeza (RN09).
+3. Meça em M01, M02 e M03 (e nos 32 cenários de regressão): o falso positivo de M03 cai sem o atraso de M01 passar de 1 s?
+4. Desafio: o que muda se o Rex cruzar o vão logo depois do morador (M06)?
+
+**Entrega:** `alunos/grupoN/` aprovado nas invariantes OR-01 a OR-14, a comparação (CSV da aba Cenários) e uma página de análise.
+
+| Item | Peso sugerido |
+|---|---|
+| E12.1: análise das duas estratégias | 25% |
+| E12.2: controlador coordenado (invariantes e requisitos) | 45% |
+| E12.3: medição em M01–M03 e na regressão | 20% |
+| E12.4: desafio M06 | 10% |

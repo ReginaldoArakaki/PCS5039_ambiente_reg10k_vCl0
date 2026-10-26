@@ -19,11 +19,14 @@ from plataforma.canal import DESCE, SOBE, Canal
 from plataforma.plataforma import Plataforma
 from sim.dispositivos import Atuador, Interruptor, Lampada, SensorPassagem, SensorPresencaPIR
 from sim.modelos import ATUACAO, REDE, SISTEMA, VERDADE, ConfigSala
-from sim.mundo import PONTO_ENTRADA, Ocupante, Sala, mover
+from sim.mundo import Ocupante, mover
+from sim.residencia import Residencia
 
 ACOES_VALIDAS = {
     "ENTRAR", "SAIR", "ANDAR", "ANDAR_ALEATORIO", "PARADO", "MICROGESTOS",
     "GESTO", "PASSAR_PORTA_SEM_ENTRAR", "INTERRUPTOR",
+    # v1dt: circulação entre cômodos
+    "MUDAR_COMODO", "ESPIAR",
 }
 FALHAS_VALIDAS = {
     "SP_SEM_RESPOSTA", "BATERIA_BAIXA", "SP_FALSO_DISPARO", "SA_ESPURIO",
@@ -44,9 +47,10 @@ class Simulacao:
         self.semente = semente
         self.modo = (modo or roteiro.get("modo", "IDEAL")).upper()
         chave_modo = "ideal" if self.modo == "IDEAL" else "realista"
-        self.dt = sala_cfg.get("passo_ms", 100)
+        # v1dt: o ambiente é uma residência (a sala da v0 é uma residência de um cômodo)
+        self.res = Residencia(sala_cfg)
+        self.dt = self.res.passo_ms
         self.duracao = roteiro["duracao_ms"]
-        self.sala = Sala(sala_cfg)
         self.reg = Registro(roteiro["id"], semente)
         self.heap: list = []
         self._ordem = itertools.count()
@@ -55,27 +59,39 @@ class Simulacao:
             return random.Random(f"{semente}:{roteiro['id']}:{nome}")
 
         self.rng_mundo = rng("mundo")
-        disp = sala_cfg["dispositivos"]
+        disp = self.res.dispositivos
         p = lambda nome: dict(disp[nome][chave_modo])
-        self.sa = SensorPassagem(p("SA-01"), rng("SA"), self._emitir)
-        self.sp = SensorPresencaPIR(p("SP-01"), rng("SP"), self._emitir)
-        self.lampada = Lampada(p("LAMP-01"), rng("LAMP"), self._emitir, self._agendar, self._verdade)
-        self.atuador = Atuador(p("ATU-01"), rng("ATU"), self._emitir, self._agendar, self._comutacao, self.lampada)
-        self.interruptor = Interruptor(p("INT-01"), rng("INT"), self._emitir)
+        r = lambda nome: rng(self.res.rng_nome(nome))
+
+        def com_origem(dev, origem):
+            dev.origem = origem
+            return dev
+
+        # SA de cada passagem; SP, lâmpada, atuador e interruptor de cada cômodo
+        self.sas = {ps.sa: com_origem(SensorPassagem(p(ps.sa), r(ps.sa), self._emitir), ps.sa)
+                    for ps in self.res.passagens.values()}
+        self.sps, self.lampadas, self.atuadores, self.interruptores = {}, {}, {}, {}
+        for c in self.res.comodos.values():
+            self.sps[c.id] = com_origem(SensorPresencaPIR(p(c.sp), r(c.sp), self._emitir), c.sp)
+            lamp = Lampada(p(c.lampada), r(c.lampada), self._emitir, self._agendar, self._verdade_luz(c.id))
+            self.lampadas[c.id] = com_origem(lamp, c.lampada)
+            atu = Atuador(p(c.atuador), r(c.atuador), self._emitir, self._agendar, self._comutacao(c.id, c.atuador), lamp)
+            self.atuadores[c.id] = com_origem(atu, c.atuador)
+            self.interruptores[c.id] = com_origem(Interruptor(p(c.interruptor), r(c.interruptor), self._emitir), c.interruptor)
         if self.modo == "REALISTA":
             self.reg.deriva_ppm = rng("relogio").uniform(-50, 50)
 
-        cfg = ConfigSala.de_dict({**sala_cfg.get("controle", {}), **roteiro.get("controle", {})})
-        self.hub = Hub(self.reg, fabrica_controlador, cfg, self.atuador.comando)
-        self.ocupantes = {o["id"]: Ocupante(o["id"], o["tipo"]) for o in sala_cfg["ocupantes"]}
+        cfgs = {cid: ConfigSala.de_dict(self.res.config_comodo(cid, roteiro)) for cid in self.res.ids}
+        self.hub = Hub(self.reg, fabrica_controlador, cfgs, {cid: a.comando for cid, a in self.atuadores.items()}, self.res)
+        self.ocupantes = {o["id"]: Ocupante(o["id"], o["tipo"]) for o in self.res.ocupantes}
 
         # v0dt: canal, plataforma (DTReg10k-R) e agente de sincronização (DTReg10k-L)
-        plat = sala_cfg["plataforma"]
+        plat = self.res.plataforma
         self.modo_rede = (roteiro.get("rede", {}).get("modo") or self.modo).upper()
         chave_rede = "ideal" if self.modo_rede == "IDEAL" else "realista"
         self.canal = Canal(dict(plat["canal"][chave_rede]), rng("canal"), self._agendar, self.reg)
         self.plataforma = Plataforma(self.reg, self.canal, plat, dict(plat["app"][chave_rede]), rng("plataforma"),
-                                     self._agendar, cfg)
+                                     self._agendar, cfgs[self.res.ids[0]], self.res.ids)
         p_agente = {**plat, "reconexao_jitter": plat["reconexao_jitter"][chave_rede]}
         self.agente = AgenteSincronizacao(self.hub, self.reg, self.canal, p_agente, rng("agente"), self.plataforma)
         self.plataforma.agente = self.agente
@@ -85,6 +101,7 @@ class Simulacao:
         self._ia = 0
         self._if = 0
         self._ultimos_presentes: tuple = ()
+        self._ultimos_por_comodo: dict = {}
         self._validar()
 
     # ---------------------------------------------------------------- utilidades
@@ -111,11 +128,28 @@ class Simulacao:
     def _verdade(self, t: float, tipo: str, **dados) -> None:
         self.reg.add(VERDADE, tipo, t, **dados)
 
-    def _comutacao(self, t: float, chave: str, ligado: bool) -> None:
-        self.reg.add(ATUACAO, "COMUTACAO", t, origem="ATU-01", chave=chave, ligado=ligado)
+    def _verdade_luz(self, comodo: str):
+        return lambda t, tipo, **dados: self._verdade(t, tipo, comodo=comodo, **dados)
+
+    def _comutacao(self, comodo: str, atuador: str):
+        def registrar(t: float, chave: str, ligado: bool) -> None:
+            self.reg.add(ATUACAO, "COMUTACAO", t, origem=atuador, chave=chave, ligado=ligado, comodo=comodo)
+        return registrar
 
     def _presentes(self) -> tuple:
         return tuple(sorted(o.id for o in self.ocupantes.values() if o.na_sala))
+
+    def _por_comodo(self) -> dict:
+        return {cid: sorted(o.id for o in self.ocupantes.values() if o.comodo == cid) for cid in self.res.ids}
+
+    def _alvo(self, f: dict, mapa: dict, padrao: str):
+        """Dispositivo-alvo de uma falha: por 'dispositivo', por 'comodo' ou o padrão (1º cômodo)."""
+        if f.get("dispositivo"):
+            for d in mapa.values():
+                if d.origem == f["dispositivo"]:
+                    return d
+            raise ValueError(f"{self.roteiro['id']}: dispositivo desconhecido {f['dispositivo']}")
+        return mapa[f.get("comodo") or padrao]
 
     # -------------------------------------------------------------------- ações
     def _aplicar_acao(self, a: dict) -> None:
@@ -126,26 +160,42 @@ class Simulacao:
         t = a["t_ms"]
         acao = a["acao"]
         vel = float(a.get("vel_m_s", 1.0))
+        ext = self.res.externa
         if acao == "ENTRAR":
             if o.na_sala:
-                raise ValueError(f"{self.roteiro['id']}: {o.id} já está na sala em t={t}")
-            self._verdade(t, "CRUZOU_PORTA", ocupante=o.id, sentido="ENTRADA", vel_m_s=vel)
-            self.sa.estimulo(t, vel)
-            o.pos = PONTO_ENTRADA
-            o.modo, o.alvo, o.vel = "ANDAR", (0.95, 1.0), min(vel, 1.5)
+                raise ValueError(f"{self.roteiro['id']}: {o.id} já está na casa em t={t}")
+            cid = ext.comodos[0]
+            self._verdade(t, "CRUZOU_PORTA", ocupante=o.id, sentido="ENTRADA", vel_m_s=vel, comodo=cid, passagem=ext.id)
+            self.sas[ext.sa].estimulo(t, vel)
+            o.pos, o.comodo = ext.pontos[cid], cid
+            o.modo, o.alvo, o.vel = "ANDAR", ext.alvo.get(cid, self.res.comodos[cid].centro()), min(vel, 1.5)
         elif acao == "SAIR":
             if not o.na_sala:
-                raise ValueError(f"{self.roteiro['id']}: {o.id} não está na sala em t={t}")
-            self._verdade(t, "CRUZOU_PORTA", ocupante=o.id, sentido="SAIDA", vel_m_s=vel)
-            self.sa.estimulo(t, vel)
-            o.pos, o.modo, o.alvo = None, "FORA", None
+                raise ValueError(f"{self.roteiro['id']}: {o.id} não está na casa em t={t}")
+            if o.comodo not in ext.comodos:
+                raise ValueError(f"{self.roteiro['id']}: {o.id} está em {o.comodo} e só sai pela {ext.id} em t={t}")
+            self._verdade(t, "CRUZOU_PORTA", ocupante=o.id, sentido="SAIDA", vel_m_s=vel, comodo=o.comodo, passagem=ext.id)
+            self.sas[ext.sa].estimulo(t, vel)
+            o.pos, o.modo, o.alvo, o.comodo = None, "FORA", None, None
+        elif acao == "MUDAR_COMODO":
+            ps = self.res.passagem_entre(o.comodo, a["para"]) if o.comodo else None
+            if ps is None:
+                raise ValueError(f"{self.roteiro['id']}: não há passagem de {o.comodo} para {a['para']} em t={t}")
+            o.modo, o.alvo, o.vel = "PASSANDO", ps.pontos[o.comodo], vel
+            o.destino = (ps, a["para"], tuple(a["ate"]) if a.get("ate") else None)
+        elif acao == "ESPIAR":
+            ps = self.res.passagem_entre(o.comodo, a["comodo"]) if o.comodo else None
+            if ps is None:
+                raise ValueError(f"{self.roteiro['id']}: não há passagem de {o.comodo} para {a['comodo']} em t={t}")
+            self._verdade(t, "ESPIOU", ocupante=o.id, passagem=ps.id, de=o.comodo, comodo=a["comodo"])
+            self.sas[ps.sa].estimulo(t, vel)
         elif acao == "ANDAR":
             o.modo, o.alvo, o.vel = "ANDAR", tuple(a["ate"]), vel
         elif acao == "ANDAR_ALEATORIO":
             o.modo, o.vel = "ALEATORIO", float(a.get("vel_m_s", 0.8))
             o.area = tuple(a["area"]) if a.get("area") else None
             o.fim_ms = t + a["duracao_ms"]
-            o.alvo = self.sala.ponto_aleatorio(self.rng_mundo, o.area)
+            o.alvo = self.res.comodos[o.comodo].ponto_aleatorio(self.rng_mundo, o.area)
         elif acao == "PARADO":
             o.modo, o.alvo = "PARADO", None
         elif acao == "MICROGESTOS":
@@ -156,18 +206,31 @@ class Simulacao:
             o.gesto_ate = t + a.get("duracao_ms", 1000)
             self._verdade(t, "GESTO", ocupante=o.id)
         elif acao == "PASSAR_PORTA_SEM_ENTRAR":
-            self._verdade(t, "PASSOU_PORTA_SEM_ENTRAR", ocupante=o.id)
-            self.sa.estimulo(t, vel)
+            self._verdade(t, "PASSOU_PORTA_SEM_ENTRAR", ocupante=o.id, passagem=ext.id)
+            self.sas[ext.sa].estimulo(t, vel)
         elif acao == "INTERRUPTOR":
-            self._verdade(t, "INTERRUPTOR_ACIONADO", ocupante=o.id)
-            self.interruptor.acionar(t)
+            cid = a.get("comodo") or o.comodo or self.res.ids[0]
+            self._verdade(t, "INTERRUPTOR_ACIONADO", ocupante=o.id, comodo=cid)
+            self.interruptores[cid].acionar(t)
+
+    def _cruzar(self, t: int, o) -> None:
+        """v1dt: o ocupante chegou ao vão e passa para o outro cômodo."""
+        ps, para, ate = o.destino
+        self._verdade(t, "CRUZOU_PASSAGEM", ocupante=o.id, passagem=ps.id, de=o.comodo, para=para, vel_m_s=o.vel)
+        self.sas[ps.sa].estimulo(t, o.vel)
+        o.comodo, o.pos = para, ps.pontos[para]
+        o.modo, o.alvo = "ANDAR", ate or ps.alvo.get(para, self.res.comodos[para].centro())
+        o.chegou_passagem, o.destino = False, None
 
     def _acao_app(self, a: dict) -> None:
         t = a["t_ms"]
         if a["acao"] == "APP_COMANDO":
-            self.plataforma.app_comando(t, a["comando"])
+            self.plataforma.app_comando(t, a["comando"], a.get("comodo"))
         elif a["acao"] == "APP_PREFERENCIA":
-            self.plataforma.app_preferencia(t, {"t_apagamento_ms": a["t_apagamento_ms"]})
+            par = {"t_apagamento_ms": a["t_apagamento_ms"]}
+            if a.get("comodo"):
+                par["comodo"] = a["comodo"]
+            self.plataforma.app_preferencia(t, par)
         else:
             self.plataforma.app_consulta(t)
 
@@ -194,25 +257,28 @@ class Simulacao:
     def _aplicar_falha(self, f: dict) -> None:
         t, tipo = f["t_ms"], f["tipo"]
         self._verdade(t, "FALHA_INJETADA", falha=tipo, **{k: v for k, v in f.items() if k not in ("t_ms", "tipo")})
+        c0 = self.res.ids[0]
         if tipo == "SP_SEM_RESPOSTA":
-            self.sp.sem_resposta = True
+            sp = self._alvo(f, self.sps, c0)
+            sp.sem_resposta = True
             if f.get("duracao_ms"):
-                self._agendar(t + f["duracao_ms"], lambda tt: setattr(self.sp, "sem_resposta", False))
+                self._agendar(t + f["duracao_ms"], lambda tt, sp=sp: setattr(sp, "sem_resposta", False))
         elif tipo == "BATERIA_BAIXA":
-            self.sp.bateria = f.get("nivel", 12)
+            self._alvo(f, self.sps, c0).bateria = f.get("nivel", 12)
         elif tipo == "SP_FALSO_DISPARO":
-            self.sp.forcar_disparo = True
+            self._alvo(f, self.sps, c0).forcar_disparo = True
         elif tipo == "SA_ESPURIO":
-            self.sa.espurio(t)
+            self._alvo(f, self.sas, self.res.externa.sa).espurio(t)
         elif tipo == "SA_PERDE_PROXIMA":
-            self.sa.perder_proxima = True
+            self._alvo(f, self.sas, self.res.externa.sa).perder_proxima = True
         elif tipo == "LAMPADA_QUEIMADA":
-            self.lampada.queimar(t)
+            self._alvo(f, self.lampadas, c0).queimar(t)
         elif tipo == "ATUADOR_TRAVADO":
-            self.atuador.travado = True
+            self._alvo(f, self.atuadores, c0).travado = True
         elif tipo == "HUB_REINICIO":
             self.hub.desligar(t)
-            self._agendar(t + f.get("duracao_ms", 20_000), lambda tt: self.hub.ligar(int(tt), self.lampada.fisica))
+            self._agendar(t + f.get("duracao_ms", 20_000),
+                          lambda tt: self.hub.ligar(int(tt), {cid: l.fisica for cid, l in self.lampadas.items()}))
         elif tipo == "CANAL_DESCONECTA":
             self._enlace(t, False)
             self._agendar(t + f.get("duracao_ms", 60_000), lambda tt: self._enlace(tt, True))
@@ -247,14 +313,18 @@ class Simulacao:
         ini = self.roteiro.get("estado_inicial", {})
         for item in ini.get("ocupantes_na_sala", []):
             o = self.ocupantes[item["id"]]
-            o.pos = tuple(item.get("pos", (2.5, 2.0)))
+            o.comodo = item.get("comodo", self.res.ids[0])
+            o.pos = tuple(item.get("pos", self.res.comodos[o.comodo].centro() if self.res.multi else (2.5, 2.0)))
             o.modo = "PARADO"
         self.reg.add(VERDADE, "INICIO", 0, roteiro=self.roteiro["id"], modo=self.modo, semente=self.semente,
-                     controlador=self.hub.ctrl.nome)
-        self._verdade(0, "OCUPANTES", presentes=list(self._presentes()))
-        self._verdade(0, "LUZ_FISICA", acesa=False)
-        self._ultimos_presentes = self._presentes()
-        janela = {oid: {"movendo": False, "microgesto": False, "parado": False} for oid in self.ocupantes}
+                     controlador=self.hub.nome_controlador, ambiente=self.res.id, comodos=self.res.ids)
+        self._verdade(0, "OCUPANTES", **self._ocupantes_verdade())
+        for cid in self.res.ids:
+            self._verdade(0, "LUZ_FISICA", acesa=False, comodo=cid)
+        self._ultimos_presentes = (self._presentes(), self._por_comodo())
+        vazia = lambda: {cid: {oid: {"movendo": False, "microgesto": False, "parado": False} for oid in self.ocupantes}
+                         for cid in self.res.ids}
+        janela = vazia()
 
         t = 0
         while t <= self.duracao:
@@ -265,9 +335,13 @@ class Simulacao:
                 self._aplicar_acao(self.acoes[self._ia]); self._ia += 1
 
             for o in self.ocupantes.values():
-                mover(o, self.sala, t, self.dt, self.rng_mundo)
-                if self.sala.coberto_pelo_sp(o.pos):
-                    j = janela[o.id]
+                comodo = self.res.comodos[o.comodo] if o.comodo else None
+                mover(o, comodo, t, self.dt, self.rng_mundo)
+                if o.chegou_passagem:
+                    self._cruzar(t, o)
+                    comodo = self.res.comodos[o.comodo]
+                if comodo is not None and comodo.coberto_pelo_sp(o.pos):
+                    j = janela[comodo.id][o.id]
                     if o.movendo:
                         j["movendo"] = True
                     elif o.microgesto:
@@ -275,12 +349,15 @@ class Simulacao:
                     else:
                         j["parado"] = True
 
-            self.sa.passo(t, self.dt)
-            self.sp.passo(t)
+            for sa in self.sas.values():
+                sa.passo(t, self.dt)
+            for sp in self.sps.values():
+                sp.passo(t)
             if t > 0 and t % 1000 == 0:
-                leituras = [dict(tipo=self.ocupantes[oid].tipo, **j) for oid, j in janela.items()]
-                self.sp.janela(t, leituras)
-                janela = {oid: {"movendo": False, "microgesto": False, "parado": False} for oid in self.ocupantes}
+                for cid, sp in self.sps.items():
+                    leituras = [dict(tipo=self.ocupantes[oid].tipo, **j) for oid, j in janela[cid].items()]
+                    sp.janela(t, leituras)
+                janela = vazia()
 
             while self.heap and self.heap[0][0] <= t:
                 tt, _, fn = heapq.heappop(self.heap)
@@ -291,10 +368,10 @@ class Simulacao:
             self.agente.tick(t)
             self.plataforma.tick(t)
 
-            presentes = self._presentes()
-            if presentes != self._ultimos_presentes:
-                self._verdade(t, "OCUPANTES", presentes=list(presentes))
-                self._ultimos_presentes = presentes
+            atual = (self._presentes(), self._por_comodo())
+            if atual != self._ultimos_presentes:
+                self._verdade(t, "OCUPANTES", **self._ocupantes_verdade())
+                self._ultimos_presentes = atual
             if t % 1000 == 0:
                 self._verdade(t, "POSICOES", ocupantes={
                     o.id: (None if o.pos is None else [round(o.pos[0], 2), round(o.pos[1], 2), int(o.movendo)])
@@ -303,8 +380,12 @@ class Simulacao:
 
         self.reg.add(SISTEMA, "SINCRONIZACAO", self.duracao, modo_rede=self.modo_rede, canal=dict(self.canal.contagem),
                      hub=self.agente.balanco(), plataforma=self.plataforma.balanco())
-        self.reg.add(SISTEMA, "FIM", self.duracao, entregas_ao_controlador=dict(self.hub.entregas))
+        self.reg.add(SISTEMA, "FIM", self.duracao, entregas_ao_controlador=dict(self.hub.entregas),
+                     entregas_por_comodo=self.hub.entregas_por_comodo)
         return self.reg
+
+    def _ocupantes_verdade(self) -> dict:
+        return {"presentes": list(self._presentes()), "por_comodo": self._por_comodo()}
 
 
 def simular(sala_cfg: dict, roteiro: dict, fabrica_controlador, semente: int = 42, modo: str | None = None) -> Registro:

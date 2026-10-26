@@ -1,0 +1,89 @@
+{
+  "id": "M13",
+  "versao": "v1dt",
+  "ambiente": "residencia-v1",
+  "titulo": "Desconexão com circulação entre cômodos",
+  "tipo": "GEMEO_DIGITAL",
+  "modo": "IDEAL",
+  "duracao_ms": 900000,
+  "descricao": "O enlace cai de t=60 s a t=660 s. O morador vai para a cozinha, volta para a sala e sai de casa antes da volta.",
+  "comportamento_ideal": "A casa funciona sem a plataforma; na volta, o gêmeo recebe o estado atual de cada cômodo e registra a divergência da sala.",
+  "comportamento_referencia": "Como a DT05, cômodo a cômodo.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 15000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 40000
+    },
+    {
+      "t_ms": 60000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "cozinha"
+    },
+    {
+      "t_ms": 65000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 225000
+    },
+    {
+      "t_ms": 300000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "sala"
+    },
+    {
+      "t_ms": 305000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 235000
+    },
+    {
+      "t_ms": 545000,
+      "ocupante": "morador",
+      "acao": "ANDAR",
+      "ate": [
+        0.95,
+        1.0
+      ]
+    },
+    {
+      "t_ms": 555000,
+      "ocupante": "morador",
+      "acao": "SAIR"
+    }
+  ],
+  "falhas": [
+    {
+      "t_ms": 60000,
+      "tipo": "CANAL_DESCONECTA",
+      "duracao_ms": 600000
+    }
+  ],
+  "requisitos": [
+    "RF-SYN-04",
+    "RF-SYN-05",
+    "RNF-CON-01",
+    "CF06"
+  ],
+  "regras": [
+    "RN-V1-04",
+    "RN-DT-03"
+  ],
+  "amostras_ms": [
+    30000,
+    400000,
+    665000
+  ]
+}

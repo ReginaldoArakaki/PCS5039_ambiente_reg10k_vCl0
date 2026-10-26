@@ -1,0 +1,55 @@
+{
+  "id": "M04",
+  "versao": "v1dt",
+  "ambiente": "residencia-v1",
+  "titulo": "Rex sozinho na cozinha, morador na sala",
+  "tipo": "NORMAL",
+  "modo": "IDEAL",
+  "duracao_ms": 300000,
+  "descricao": "O morador e o Rex entram; o Rex vai para a cozinha em t=15 s e fica andando; o morador anda na sala.",
+  "comportamento_ideal": "Os dois cômodos ficam acesos: o Rex é ocupante (RN34).",
+  "comportamento_referencia": "Cada controlador mantém o seu cômodo aceso pelas detecções do seu SP.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 8000,
+      "ocupante": "rex",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 285000
+    },
+    {
+      "t_ms": 15000,
+      "ocupante": "rex",
+      "acao": "MUDAR_COMODO",
+      "para": "cozinha"
+    },
+    {
+      "t_ms": 25000,
+      "ocupante": "rex",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 270000
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RN34",
+    "RF-OPR-01"
+  ],
+  "regras": [
+    "RN-V1-02",
+    "RN-I0-01"
+  ]
+}

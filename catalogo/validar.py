@@ -41,6 +41,8 @@ def validar_tudo(com_saida: bool = True) -> list[str]:
     ler = lambda p: json.loads(p.read_text(encoding="utf-8"))
     cen = RAIZ / "cenarios"
     problemas += [f"sala.json: {m}" for m in erros("sala", ler(cen / "sala.json"))]
+    for p in sorted(cen.glob("residencia-*.json")):  # v1dt
+        problemas += [f"{p.name}: {m}" for m in erros("residencia", ler(p))]
     for p in sorted((cen / "roteiros").glob("*.json")):
         problemas += [f"roteiros/{p.name}: {m}" for m in erros("roteiro", ler(p))]
     for p in sorted((cen / "esperado").glob("*.json")):

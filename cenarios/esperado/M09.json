@@ -1,0 +1,74 @@
+{
+  "cenario": "M09",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-02"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "morador apaga a cozinha",
+      "quando": "o interruptor é acionado",
+      "entao": {
+        "tipo": "intencao",
+        "comodo": "cozinha",
+        "acao": "APAGAR",
+        "precedencia": "MANUAL",
+        "entre_ms": [
+          60000,
+          61500
+        ]
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "precedência manual",
+      "quando": "o morador continua se movendo",
+      "entao": {
+        "tipo": "luz_constante",
+        "comodo": "cozinha",
+        "valor": "APAGADA",
+        "entre_ms": [
+          61000,
+          150000
+        ]
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "morador acende de novo",
+      "quando": "t = 152 s",
+      "entao": {
+        "tipo": "luz",
+        "comodo": "cozinha",
+        "valor": "ACESA",
+        "em_ms": 152000
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "sala vazia desde t=10 s",
+      "quando": "o interruptor da cozinha não afeta a sala",
+      "entao": {
+        "tipo": "luz",
+        "comodo": "sala",
+        "valor": "APAGADA",
+        "em_ms": 100000
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

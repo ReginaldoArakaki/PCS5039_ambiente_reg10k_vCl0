@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Simulação Reg10k — v0dta</title>
+<title>Simulação Reg10k — v1dt</title>
 <style>
 :root{
   --bg:#f6f7f9; --panel:#ffffff; --ink:#1d2330; --ink2:#566070; --line:#dfe3ea; --accent:#1f4e8c;
@@ -54,6 +54,7 @@ tr.click{cursor:pointer} tr.click:hover td{background:#f3f6fb} tr.sel td{backgro
 .lightbox.on{display:flex} .lightbox img{max-width:96vw;max-height:90vh;background:#fff;border-radius:8px;padding:10px}
 .anim{display:grid;grid-template-columns:minmax(0,2fr) minmax(300px,1fr);gap:16px;align-items:start}
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.anim.larga{grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr)} .duo.empilha{grid-template-columns:1fr}
 .duo h3{margin:0 0 4px;font-size:13px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;vertical-align:middle}
 .seg button{border:0;background:#fff;padding:2px 9px;font:inherit;font-size:12px;cursor:pointer} .seg button.on{background:var(--accent);color:#fff}
@@ -93,7 +94,7 @@ tr.click{cursor:pointer} tr.click:hover td{background:#f3f6fb} tr.sel td{backgro
 <body>
 <header>
   <div>
-    <h1>Simulação Reg10k — v0dta <span class="small muted" style="font-weight:500">sala do incremento 0 com gêmeo digital e cômodo espelho</span></h1>
+    <h1>Simulação Reg10k — v1dt <span class="small muted" style="font-weight:500">sala e cozinha, com gêmeo digital e espelho</span></h1>
     <div class="sub" id="sub"></div>
   </div>
   <div style="flex:1"></div>
@@ -127,7 +128,7 @@ const fmtT = ms => { if (ms == null) return "—"; const s = ms / 1000, m = Math
 const fmtN = v => v == null ? "—" : (typeof v === "number" ? (Number.isInteger(v) ? v.toLocaleString("pt-BR") : v.toLocaleString("pt-BR", {maximumFractionDigits: 1})) : esc(v));
 const TIPO_NOME = {NORMAL: "Normal", FALSO_POSITIVO: "Falso positivo", FALSO_NEGATIVO: "Falso negativo", FALHA: "Falha", GEMEO_DIGITAL: "Gêmeo digital"};
 const CAMADAS = ["VERDADE","PERCEPCAO","DECISAO","ATUACAO","ESTADO","SISTEMA","REDE","PLATAFORMA"];
-const verTag = c => `<span class="ver${c.versao === "v0dt" ? " dt" : ""}">${c.versao || "v0"}</span>`;
+const verTag = c => `<span class="ver${(c.versao || "").includes("dt") ? " dt" : ""}">${c.versao || "v0"}</span>`;
 const FALHAS_REDE = ["CANAL_DESCONECTA","PLATAFORMA_FORA","CANAL_LATENCIA","CANAL_DUPLICA","CANAL_PERDE"];
 // v0dta: classes de fidelidade do espelho
 const CLASSE = {FIEL: ["#1a7f4b", "espelho fiel"], PERCEPCAO: ["#7c3aed", "erro de percepção"], SINCRONIZACAO: ["#c2410c", "erro de sincronização"], NAO_AFIRMA: ["#64748b", "não afirma"]};
@@ -148,7 +149,7 @@ function limite(c, id) {
 
 const S = {tab: "cenarios", cen: D.cenarios[0].id, ctrl: CTRLS[0], t: 0, playing: false, speed: 20,
            modelSec: "geral", filtroTipo: "", filtroVer: "", busca: "", cmpA: CTRLS[0], cmpB: CTRLS[1] || CTRLS[0],
-           zoom: 1, camadas: new Set(CAMADAS), hb: false, buscaEv: "", visao: "R", visaoAm: "R"};
+           zoom: 1, camadas: new Set(CAMADAS), hb: false, buscaEv: "", visao: "R", visaoAm: "R", comodoP: "todos"};
 
 function ex(cen = S.cen, ctrl = S.ctrl) { return D.execucoes[`${cen}|${ctrl}`]; }
 function lerHash() {
@@ -174,8 +175,36 @@ class Degraus {
 
 // ---------------------------------------------------------- derivação por execução
 const CACHE = {};
-function derivar(cen, ctrl) {
-  const k = `${cen}|${ctrl}`; if (CACHE[k]) return CACHE[k];
+// v1dt: planta do ambiente do cenário e vista de um cômodo (a mesma lógica de avaliacao/residencia.py)
+const planta = (cen = S.cen) => D.ambientes[CEN[cen].ambiente || "sala"].planta;
+const comodos = (cen = S.cen) => planta(cen).comodos.map(c => c.id);
+function vistaComodo(v, cid, pl) {
+  const c = v.camada, room = pl.comodos.find(x => x.id === cid);
+  if (c === "VERDADE") {
+    if (v.tipo === "OCUPANTES") return {...v, presentes: v.por_comodo ? (v.por_comodo[cid] || []) : v.presentes};
+    if (v.tipo === "CRUZOU_PASSAGEM") return v.para === cid ? {...v, tipo: "CRUZOU_PORTA", sentido: "ENTRADA"} : v.de === cid ? {...v, tipo: "CRUZOU_PORTA", sentido: "SAIDA"} : null;
+    if (v.tipo === "ESPIOU") return [v.de, v.comodo].includes(cid) ? v : null;
+    if (v.tipo === "FALHA_INJETADA") {
+      const alvo = v.dispositivo || v.comodo;
+      if (!alvo) return cid === pl.comodos[0].id || !["SP_SEM_RESPOSTA","LAMPADA_QUEIMADA","ATUADOR_TRAVADO","BATERIA_BAIXA"].includes(v.falha) ? v : null;
+      return alvo === cid || [room.sp.id, room.lampada.id].includes(alvo) || !["SP_SEM_RESPOSTA","LAMPADA_QUEIMADA","ATUADOR_TRAVADO","BATERIA_BAIXA"].includes(v.falha) ? v : null;
+    }
+    return v.comodo == null || v.comodo === cid ? v : null;
+  }
+  if (c === "PERCEPCAO") return !v.comodos || v.comodos.includes(cid) ? v : null;
+  if (c === "DECISAO" || c === "ATUACAO" || c === "ESTADO") return v.comodo == null || v.comodo === cid ? v : null;
+  if (c === "SISTEMA") return v.comodo == null || v.comodo === cid ? v : null;
+  if (c === "PLATAFORMA") {
+    if (v.tipo === "APP_CONSULTA") return v.disponivel && v.comodos ? {...v, ...(v.comodos[cid] || {})} : v;
+    if (["CONFIG_VERSAO","APP_PREFERENCIA","CONFIG_REJEITADA"].includes(v.tipo)) return [undefined, null, cid].includes((v.parametros || {}).comodo) ? v : null;
+    if (v.comodos) return v.comodos.includes(cid) ? v : null;
+    if (v.comodo != null) return v.comodo === cid ? v : null;
+  }
+  return v;
+}
+function derivar(cen, ctrl, cid) {
+  const pl = planta(cen); cid = cid || pl.comodos[0].id;
+  const k = `${cen}|${ctrl}|${cid}`; if (CACHE[k]) return CACHE[k];
   const e = ex(cen, ctrl), c = CEN[cen], fim = c.duracao_ms;
   const r = {fim, luz: new Degraus(false), presentes: new Degraus(""), ocup: new Degraus("DESCONHECIDA"),
     luzEst: new Degraus("APAGADA"), prec: new Degraus("AUTOMATICA"), alertas: new Degraus(""),
@@ -184,9 +213,10 @@ function derivar(cen, ctrl) {
     // v0dt: o que a plataforma acha (DTReg10k-R), canal e app
     remotos: [], remOcup: new Degraus(null), remLuz: new Degraus(null), remAtual: new Degraus("SEM_EVIDENCIA"), sessao: new Degraus(false),
     enlaceFora: [], platFora: [], perdas: [], duplicadas: [], app: [], appRes: [], divergencias: [], cmdHub: [], latencia: [],
-    remPass: [], remSp: new Degraus(false), remRes: []};
+    remPass: [], remPassPor: {}, remSp: new Degraus(false), remRes: [], porSA: {}, comodo: cid};
   let hubDesl = null, spMudoIni = null, enlaceIni = null, platIni = null, latIni = null;
-  for (const v of e.eventos) {
+  for (const v0 of e.eventos) {
+    const v = vistaComodo(v0, cid, pl); if (!v) continue;
     const t = v.t_ms;
     if (v.camada === "VERDADE") {
       if (v.tipo === "LUZ_FISICA") r.luz.set(t, !!v.acesa);
@@ -198,7 +228,7 @@ function derivar(cen, ctrl) {
       }
       else if (v.tipo !== "INICIO") r.verdade.push(v);
     } else if (v.camada === "PERCEPCAO") {
-      if (v.tipo === "PASSAGEM") r.passagens.push(t);
+      if (v.tipo === "PASSAGEM") { r.passagens.push(t); (r.porSA[v.origem] = r.porSA[v.origem] || []).push(t); }
       else if (v.tipo === "MOVIMENTO") r.spAlto.set(t, true);
       else if (v.tipo === "FIM_MOVIMENTO") r.spAlto.set(t, false);
       else if (v.tipo === "HEARTBEAT") r.hbs.push(v);
@@ -216,7 +246,7 @@ function derivar(cen, ctrl) {
       else if (v.tipo === "APP_RESULTADO" || v.tipo === "APP_CONFIG") r.appRes.push(v);
       else if (v.tipo.startsWith("APP_")) r.app.push(v);
       else if (v.tipo === "DIVERGENCIA") r.divergencias.push(v);
-      else if (v.tipo === "EVIDENCIA_RECEBIDA") { if (v.evidencia === "PASSAGEM") r.remPass.push(t); else if (v.evidencia === "MOVIMENTO") r.remSp.set(t, true); else if (v.evidencia === "FIM_MOVIMENTO") r.remSp.set(t, false); }
+      else if (v.tipo === "EVIDENCIA_RECEBIDA") { if (v.evidencia === "PASSAGEM") { r.remPass.push(t); (r.remPassPor[v.origem] = r.remPassPor[v.origem] || []).push(t); } else if (v.evidencia === "MOVIMENTO") r.remSp.set(t, true); else if (v.evidencia === "FIM_MOVIMENTO") r.remSp.set(t, false); }
       else if (v.tipo === "RESULTADO_RECEBIDO") r.remRes.push(v);
       else r.app.push(v);
     } else if (v.camada === "REDE") {
@@ -322,8 +352,8 @@ const csv = rows => rows.map(r => r.map(c => { const s = String(c ?? ""); return
 
 // ------------------------------------------------------------------- cabeçalho
 function cabecalho() {
-  const nDt = D.cenarios.filter(c => c.versao === "v0dt").length;
-  $("#sub").textContent = `Sala de 5 × 4 m · morador e cachorro · gêmeo local e remoto · ${D.cenarios.length - nDt} cenários de regressão (v0) e ${nDt} do gêmeo · controladores: ${CTRLS.join(", ")} · gerado em ${D.meta.gerado_em}`;
+  const nV1 = D.cenarios.filter(c => c.versao === "v1dt").length;
+  $("#sub").textContent = `Sala e cozinha (v1dt) · morador e cachorro · gêmeo local e remoto · ${nV1} cenários da residência e ${D.cenarios.length - nV1} de regressão (v0 a v0dta) · controladores: ${CTRLS.join(", ")} · gerado em ${D.meta.gerado_em}`;
   const p = D.meta.problemas;
   $("#status").innerHTML = p.length ? `<span class="pill bad" title="${esc(p.join("\n"))}">${p.length} problema(s) no catálogo</span>`
     : `<span class="pill ok">Catálogo sem problemas</span>`;
@@ -370,6 +400,11 @@ function renderModelo() {
       o que <b>acontece</b> (verdade), o que o <b>hub acha</b> e o que a <b>plataforma acha</b>.</p>
       <p class="muted small">Toda execução registra oito camadas de eventos. A camada de verdade só é lida pelo oráculo; o controlador nunca a vê (OR-06). Os 20 cenários da v0 rodam sem alteração como regressão.</p>
       <table><tr><th>Camada</th><th>Quem gera</th><th>Classe V2</th></tr>${M.camadas.map(c => `<tr><td>${cam(c.id)}</td><td>${esc(c.quem)}</td><td>${esc(c.v2)}</td></tr>`).join("")}</table></div>
+      ${Object.values(D.ambientes).filter(a => a.planta.multi).map(a => `<div class="card"><h2>Residência da v1dt (${esc(a.planta.id)})</h2>
+        <p>Dois cômodos ligados por um vão sem porta. Cada cômodo tem o seu controlador (a mesma interface da v0), os seus parâmetros e o seu atuador. O SA do vão não diz a direção (RN09) e vai aos dois controladores (RN-V1-01); a coordenação entre os cômodos é o exercício E12.
+        Os 32 cenários anteriores continuam no ambiente de um cômodo (<span class="mono">cenarios/sala.json</span>), com as decisões idênticas às da v0dta.</p>
+        <table><tr><th>Cômodo</th><th>Área</th><th>Dispositivos</th></tr>${a.planta.comodos.map(c => `<tr><td><b>${esc(c.nome)}</b></td><td class="small">x ${c.x0}–${c.x0 + c.largura} m · y ${c.y0}–${c.y0 + c.profundidade} m</td><td class="mono small">${c.sp.id} · ${c.lampada.id} · ${c.interruptor.id}${(c.zonas || []).length ? " · zona cega" : ""}</td></tr>`).join("")}
+        ${a.planta.passagens.map(ps => `<tr><td>${esc(ps.id)} <span class="small muted">(${ps.tipo.toLowerCase()})</span></td><td class="small">${ps.comodos.join(" ↔ ")}${ps.tipo === "EXTERNA" ? " ↔ exterior" : ""}</td><td class="mono small">${ps.sa}</td></tr>`).join("")}</table></div>`).join("")}
       <div class="card"><h2>Trilha incremental</h2><p class="small muted">O número da versão acompanha o porte da automação; o sufixo <b>dt</b> indica o gêmeo digital.</p><table><tr><th>Inc.</th><th>Versão</th><th>Dias</th><th>Acrescenta</th></tr>
       ${M.trilha.map(t => `<tr${t.inc === D.meta.incremento ? ' class="sel"' : ""}><td>${t.inc}</td><td class="mono">${t.versao || ""}</td><td>${t.dias}</td><td>${esc(t.acrescenta)}</td></tr>`).join("")}</table></div>`;
     h += `<div class="card"><h2>Sala real × cômodo espelho (v0dta)</h2><p class="small muted">O espelho é desenhado só com o que o gêmeo recebeu. As diferenças são os limites do sistema, e a métrica de fidelidade diz de onde vem cada uma.</p>
@@ -440,12 +475,12 @@ function renderCenarios() {
   const tipos = Object.keys(TIPO_NOME);
   let h = `<div class="card"><div class="controls" style="margin-top:0">
       <label class="small">Tipo <select id="fTipo"><option value="">todos</option>${tipos.map(t => `<option value="${t}"${S.filtroTipo === t ? " selected" : ""}>${TIPO_NOME[t]}</option>`).join("")}</select></label>
-      <label class="small">Versão <select id="fVer"><option value="">todas</option><option value="v0"${S.filtroVer === "v0" ? " selected" : ""}>v0 (regressão)</option><option value="v0dt"${S.filtroVer === "v0dt" ? " selected" : ""}>v0dt (gêmeo)</option></select></label>
+      <label class="small">Versão <select id="fVer"><option value="">todas</option><option value="v0"${S.filtroVer === "v0" ? " selected" : ""}>v0 (regressão)</option><option value="v0dt"${S.filtroVer === "v0dt" ? " selected" : ""}>v0dt (gêmeo)</option><option value="v1dt"${S.filtroVer === "v1dt" ? " selected" : ""}>v1dt (sala e cozinha)</option></select></label>
       <input type="text" id="fBusca" placeholder="Buscar ID, título, requisito ou regra" value="${esc(S.busca)}" style="min-width:280px">
       <span class="small muted">${lista.length} de ${D.cenarios.length} cenários · ${tipos.map(t => `${TIPO_NOME[t]}: ${D.cenarios.filter(x => x.tipo === t).length}`).join(" · ")}</span>
       <span style="flex:1"></span><button class="b" id="csvCat">Exportar CSV</button></div>
     <div class="tablebox" style="max-height:480px"><table><tr><th>ID</th><th>Versão</th><th>Tipo</th><th>Cenário</th><th>Modo</th><th>Duração</th>${CTRLS.map(k => `<th>${esc(k)}</th>`).join("")}</tr>
-    ${lista.map(x => `<tr class="click${x.id === S.cen ? " sel" : ""}" data-c="${x.id}"><td class="mono"><b>${x.id}</b></td><td>${verTag(x)}</td><td>${tipoTag(x.tipo)}</td><td>${esc(x.titulo)}</td><td class="small">${x.modo.toLowerCase()}${x.rede?.modo && x.rede.modo !== x.modo ? `<br>rede ${x.rede.modo.toLowerCase()}` : ""}</td><td class="small">${fmtT(x.duracao_ms)}</td>${CTRLS.map(k => `<td>${resultadoCel(x.id, k)}</td>`).join("")}</tr>`).join("")}
+    ${lista.map(x => `<tr class="click${x.id === S.cen ? " sel" : ""}" data-c="${x.id}"><td class="mono"><b>${x.id}</b></td><td>${verTag(x)}</td><td>${tipoTag(x.tipo)}</td><td>${esc(x.titulo)}</td><td class="small">${x.modo.toLowerCase()}${x.rede?.modo && x.rede.modo !== x.modo ? `<br>rede ${x.rede.modo.toLowerCase()}` : ""}${x.ambiente && x.ambiente !== "sala" ? `<br>${esc(x.ambiente)}` : ""}</td><td class="small">${fmtT(x.duracao_ms)}</td>${CTRLS.map(k => `<td>${resultadoCel(x.id, k)}</td>`).join("")}</tr>`).join("")}
     </table></div></div>`;
 
   // Detalhe do cenário selecionado
@@ -530,13 +565,13 @@ function renderCenarios() {
 }
 
 // ------------------------------------------------------------- editor de roteiro
-const ACOES = ["ENTRAR","SAIR","ANDAR","ANDAR_ALEATORIO","PARADO","MICROGESTOS","GESTO","PASSAR_PORTA_SEM_ENTRAR","INTERRUPTOR"];
+const ACOES = ["ENTRAR","SAIR","ANDAR","ANDAR_ALEATORIO","PARADO","MICROGESTOS","GESTO","PASSAR_PORTA_SEM_ENTRAR","INTERRUPTOR","MUDAR_COMODO","ESPIAR"];
 const ACOES_APP = ["APP_COMANDO","APP_PREFERENCIA","APP_CONSULTA"];
 const FALHAS = ["SP_SEM_RESPOSTA","BATERIA_BAIXA","SP_FALSO_DISPARO","SA_ESPURIO","SA_PERDE_PROXIMA","LAMPADA_QUEIMADA","ATUADOR_TRAVADO","HUB_REINICIO","RELOGIO_SALTO", ...FALHAS_REDE];
-const ED = {id: "X01", titulo: "Novo cenário", tipo: "NORMAL", modo: "IDEAL", rede: "", duracao_s: 180, descricao: "", requisitos: "", linhas: [
+const ED = {id: "X01", titulo: "Novo cenário", tipo: "NORMAL", modo: "IDEAL", rede: "", ambiente: "residencia-v1", duracao_s: 180, descricao: "", requisitos: "", linhas: [
   {t: 5, quem: "morador", o: "ENTRAR", p: ""}, {t: 10, quem: "morador", o: "ANDAR_ALEATORIO", p: '{"duracao_ms": 60000}'}, {t: 75, quem: "morador", o: "SAIR", p: ""}]};
 function carregarNoEditor(c) {
-  Object.assign(ED, {id: c.id + "b", titulo: c.titulo + " (variação)", tipo: c.tipo, modo: c.modo, rede: c.rede?.modo || "", duracao_s: c.duracao_ms / 1000,
+  Object.assign(ED, {id: c.id + "b", titulo: c.titulo + " (variação)", tipo: c.tipo, modo: c.modo, rede: c.rede?.modo || "", ambiente: c.ambiente || "sala", duracao_s: c.duracao_ms / 1000,
     descricao: c.descricao || "", requisitos: (c.requisitos || []).join(", "),
     linhas: [...c.acoes.map(a => { const {t_ms, ocupante, acao, ...r} = a; return {t: t_ms / 1000, quem: ocupante, o: acao, p: Object.keys(r).length ? JSON.stringify(r) : ""}; }),
              ...c.falhas.map(f => { const {t_ms, tipo, ...r} = f; return {t: t_ms / 1000, quem: "falha", o: tipo, p: Object.keys(r).length ? JSON.stringify(r) : ""}; })].sort((a, b) => a.t - b.t)});
@@ -551,6 +586,7 @@ function editorHTML() {
       <label class="small">Título <input type="text" id="edTit" value="${esc(ED.titulo)}" size="34"></label>
       <label class="small">Tipo <select id="edTipo">${Object.keys(TIPO_NOME).map(t => `<option${t === ED.tipo ? " selected" : ""}>${t}</option>`).join("")}</select></label>
       <label class="small">Modo <select id="edModo">${["IDEAL","REALISTA"].map(t => `<option${t === ED.modo ? " selected" : ""}>${t}</option>`).join("")}</select></label>
+      <label class="small">Ambiente <select id="edAmb">${Object.keys(D.ambientes).map(k => `<option${k === ED.ambiente ? " selected" : ""}>${k}</option>`).join("")}</select></label>
       <label class="small">Rede <select id="edRede">${[["", "como o modo"], ["IDEAL", "IDEAL"], ["REALISTA", "REALISTA"]].map(([v, t]) => `<option value="${v}"${v === ED.rede ? " selected" : ""}>${t}</option>`).join("")}</select></label>
       <label class="small">Duração (s) <input type="number" id="edDur" value="${ED.duracao_s}" min="10" style="width:90px"></label></div>
     <div class="controls"><label class="small" style="flex:1">Descrição <input type="text" id="edDesc" value="${esc(ED.descricao)}" style="width:100%"></label>
@@ -573,12 +609,15 @@ function roteiroDoEditor() {
     if (l.quem === "falha") falhas.push({t_ms, tipo: l.o, ...p}); else {
       if (l.o === "ANDAR" && !p.ate) erros.push(`linha ${i + 1}: ANDAR exige {"ate": [x, y]}`);
       if (l.o === "ANDAR_ALEATORIO" && !p.duracao_ms) erros.push(`linha ${i + 1}: ANDAR_ALEATORIO exige {"duracao_ms": ...}`);
+      if (l.o === "MUDAR_COMODO" && !p.para) erros.push(`linha ${i + 1}: MUDAR_COMODO exige {"para": "cozinha"}`);
+      if (l.o === "ESPIAR" && !p.comodo) erros.push(`linha ${i + 1}: ESPIAR exige {"comodo": "cozinha"}`);
       if (l.o === "APP_COMANDO" && !["ACENDER", "APAGAR"].includes(p.comando)) erros.push(`linha ${i + 1}: APP_COMANDO exige {"comando": "ACENDER"} ou "APAGAR"`);
       if (l.o === "APP_PREFERENCIA" && !p.t_apagamento_ms) erros.push(`linha ${i + 1}: APP_PREFERENCIA exige {"t_apagamento_ms": ...}`);
       acoes.push({t_ms, ocupante: l.quem, acao: l.o, ...p}); }
   });
   if (!/^[A-Z]{1,2}[0-9]{2}[A-Za-z0-9_-]*$/.test(ED.id)) erros.push("ID deve seguir o padrão do catálogo (ex.: X01, FN06)");
-  const r = {id: ED.id, ...(ED.tipo === "GEMEO_DIGITAL" || ED.rede || ED.linhas.some(l => l.quem === "app" || FALHAS_REDE.includes(l.o)) ? {versao: "v0dt"} : {}),
+  const multi = ED.ambiente !== "sala";
+  const r = {id: ED.id, ...(multi ? {versao: "v1dt", ambiente: ED.ambiente} : ED.tipo === "GEMEO_DIGITAL" || ED.rede || ED.linhas.some(l => l.quem === "app" || FALHAS_REDE.includes(l.o)) ? {versao: "v0dt"} : {}),
     titulo: ED.titulo, tipo: ED.tipo, modo: ED.modo, ...(ED.rede ? {rede: {modo: ED.rede}} : {}), duracao_ms: Math.round(ED.duracao_s * 1000), descricao: ED.descricao,
     comportamento_ideal: "", comportamento_referencia: "", estado_inicial: {ocupantes_na_sala: [], luz: "APAGADA"},
     acoes: acoes.sort((a, b) => a.t_ms - b.t_ms), falhas: falhas.sort((a, b) => a.t_ms - b.t_ms),
@@ -586,7 +625,7 @@ function roteiroDoEditor() {
   return {r, erros};
 }
 function ligarEditor() {
-  const ler = () => { ED.id = $("#edId").value.trim(); ED.titulo = $("#edTit").value; ED.tipo = $("#edTipo").value; ED.modo = $("#edModo").value; ED.rede = $("#edRede").value;
+  const ler = () => { ED.id = $("#edId").value.trim(); ED.titulo = $("#edTit").value; ED.tipo = $("#edTipo").value; ED.modo = $("#edModo").value; ED.rede = $("#edRede").value; ED.ambiente = $("#edAmb").value;
     ED.duracao_s = Number($("#edDur").value); ED.descricao = $("#edDesc").value; ED.requisitos = $("#edReq").value;
     document.querySelectorAll("#edLinhas .editor-row").forEach(row => { const l = ED.linhas[row.dataset.i]; row.querySelectorAll("[data-k]").forEach(inp => l[inp.dataset.k] = inp.value);
       const lista = l.quem === "falha" ? FALHAS : l.quem === "app" ? ACOES_APP : ACOES; if (!lista.includes(l.o)) l.o = lista[0]; }); };
@@ -605,35 +644,63 @@ function ligarEditor() {
 }
 
 // ===================================================================== ANIMAÇÃO
+// v1dt: a planta vem do ambiente do cenário (um cômodo na v0, sala e cozinha na v1dt)
 const PX = 100, M0 = 40;
-const X = x => M0 + x * PX, Y = y => M0 + (D.sala.profundidade_m - y) * PX;
+let PLA = null;
+const X = x => M0 + x * PX, Y = y => M0 + (PLA.profundidade - y) * PX;
 let A = null; // elementos da animação
+const NOMES_C = id => (PLA.comodos.find(c => c.id === id) || {nome: id}).nome;
+function conePath(c) {
+  const r = c.sp.alcance * PX, cx = X(c.sp.x), cy = Y(c.sp.y);
+  const sx = c.x0 + c.largura / 2 >= c.sp.x ? 1 : -1, sy = Y(c.y0 + c.profundidade / 2) >= cy ? 1 : -1;
+  return `M${cx},${cy} L${cx + sx * r},${cy} A${r},${r} 0 0 ${sx * sy > 0 ? 1 : 0} ${cx},${cy + sy * r} Z`;
+}
+function plantaSVG(p, espelho) {
+  // p: prefixo dos ids ("" na casa real, "e-" no espelho)
+  let h = `<defs>${PLA.comodos.map(c => `<clipPath id="${p}clip-${c.id}"><rect x="${X(c.x0)}" y="${Y(c.y0 + c.profundidade)}" width="${c.largura * PX}" height="${c.profundidade * PX}"/></clipPath>`).join("")}</defs>`;
+  for (const c of PLA.comodos) {
+    const x0 = X(c.x0), y0 = Y(c.y0 + c.profundidade), w = c.largura * PX, hh = c.profundidade * PX;
+    const spdx = c.sp.x > c.x0 + c.largura / 2 ? -12 : 12, spdy = Y(c.sp.y) < Y(c.y0 + c.profundidade / 2) ? 12 : -12;
+    h += `<rect id="${p}piso-${c.id}" x="${x0}" y="${y0}" width="${w}" height="${hh}" fill="var(--dark)"/>
+      <circle id="${p}brilho-${c.id}" cx="${X(c.lampada.x)}" cy="${Y(c.lampada.y)}" r="330" fill="url(#glow)" clip-path="url(#${p}clip-${c.id})" opacity="0"/>
+      <path id="${p}cone-${c.id}" d="${conePath(c)}" fill="#0e7490" opacity=".10" clip-path="url(#${p}clip-${c.id})"/>
+      ${(c.zonas || []).map(z => `<rect x="${X(z.x0)}" y="${Y(z.y1)}" width="${(z.x1 - z.x0) * PX}" height="${(z.y1 - z.y0) * PX}" fill="url(#hatch)" opacity=".55"/>
+        <text x="${X((z.x0 + z.x1) / 2)}" y="${Y(z.y1) + 16}" text-anchor="middle" font-size="12" fill="#cbd5e1" class="zLabel">zona cega ${esc(z.id || "")}</text>`).join("")}
+      ${espelho ? `<ellipse id="${p}mancha-${c.id}" cx="${x0 + w / 2}" cy="${Y(c.y0 + c.profundidade / 2 - 0.7)}" rx="${Math.min(1.7, c.largura / 3) * PX}" ry="${1.15 * PX}" fill="#22a06b" opacity="0"/>
+        <text id="${p}manchaTxt-${c.id}" x="${x0 + w / 2}" y="${Y(c.y0 + c.profundidade / 2 - 0.7) + 5}" text-anchor="middle" font-size="15" font-weight="700" fill="#065f46" display="none">presença</text>
+        <text id="${p}q-${c.id}" x="${x0 + w / 2}" y="${Y(c.y0 + c.profundidade / 2 - 0.7) + 18}" text-anchor="middle" font-size="54" font-weight="700" fill="#f5a524" display="none">?</text>` : ""}
+      <rect x="${x0}" y="${y0}" width="${w}" height="${hh}" fill="none" stroke="#334155" stroke-width="6"/>
+      <text class="nomeC" x="${x0 + 10}" y="${y0 + 22}" font-size="14" font-weight="700" fill="#cbd5e1" id="${p}nome-${c.id}">${esc(c.nome)}</text>
+      <g><circle cx="${X(c.sp.x) + spdx}" cy="${Y(c.sp.y) + spdy}" r="10" fill="#0e7490"/><text x="${X(c.sp.x) + spdx}" y="${Y(c.sp.y) + spdy + 4}" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">SP</text></g>
+      <text id="${p}spX-${c.id}" x="${X(c.sp.x) + spdx}" y="${Y(c.sp.y) + spdy * 3.3}" text-anchor="middle" font-size="22" fill="#ef4444" font-weight="700" display="none">✕</text>
+      <rect id="${p}int-${c.id}" x="${X(c.interruptor.x) - 7}" y="${Y(c.interruptor.y) - (c.interruptor.y === 0 ? 16 : 6)}" width="14" height="12" rx="2" fill="#e2e8f0" stroke="#334155"/>
+      <circle id="${p}lamp-${c.id}" cx="${X(c.lampada.x)}" cy="${Y(c.lampada.y)}" r="13" fill="#475569" stroke="#0f172a" stroke-width="2"/>
+      <text id="${p}lampTxt-${c.id}" x="${X(c.lampada.x)}" y="${Y(c.lampada.y) + 30}" text-anchor="middle" font-size="12" fill="#cbd5e1">${espelho ? "" : "lâmpada"}</text>
+      ${espelho ? `<rect id="${p}velado-${c.id}" x="${x0}" y="${y0}" width="${w}" height="${hh}" fill="url(#velado)" display="none"/>` : ""}`;
+  }
+  for (const ps of PLA.passagens) {
+    if (ps.x_inicio != null) {  // porta na parede horizontal
+      h += `<line x1="${X(ps.x_inicio)}" y1="${Y(ps.y)}" x2="${X(ps.x_fim)}" y2="${Y(ps.y)}" stroke="#ffffff" stroke-width="8"/>
+        <line id="${p}sa-${ps.sa}" x1="${X(ps.x_inicio)}" y1="${Y(ps.y)}" x2="${X(ps.x_fim)}" y2="${Y(ps.y)}" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6 5"/>
+        <rect x="${X(ps.x_inicio) - 7}" y="${Y(ps.y) - 7}" width="10" height="14" fill="#0f172a"/><rect x="${X(ps.x_fim) - 3}" y="${Y(ps.y) - 7}" width="10" height="14" fill="#0f172a"/>
+        ${espelho ? "" : `<text x="${X((ps.x_inicio + ps.x_fim) / 2)}" y="${Y(ps.y) + 20}" text-anchor="middle" font-size="12" fill="#334155">porta · ${ps.sa}</text>`}`;
+    } else {  // vão na parede vertical
+      h += `<line x1="${X(ps.x)}" y1="${Y(ps.y_inicio)}" x2="${X(ps.x)}" y2="${Y(ps.y_fim)}" stroke="#64748b" stroke-width="8"/>
+        <line id="${p}sa-${ps.sa}" x1="${X(ps.x)}" y1="${Y(ps.y_inicio)}" x2="${X(ps.x)}" y2="${Y(ps.y_fim)}" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6 5"/>
+        ${espelho ? "" : `<text x="${X(ps.x)}" y="${Y(ps.y_inicio) + 18}" text-anchor="middle" font-size="11" fill="#e2e8f0" stroke="#2c3240" stroke-width="3" paint-order="stroke">vão · ${ps.sa}</text>`}`;
+    }
+  }
+  return h;
+}
 function montarAnimacao() {
-  const s = D.sala, W = s.largura_m, H = s.profundidade_m, z = s.zonas_cegas[0], porta = s.porta, sp = s.dispositivos["SP-01"];
+  PLA = planta();
+  const W = PLA.largura, H = PLA.profundidade;
   const largura = X(W) + M0, altura = Y(0) + 150;
   const yN = Y(0) + 105, xH = X(0) + 40, xP = X(W / 2) + 10, xA = X(W) - 30; // faixa hub ↔ plataforma ↔ app
-  const r = sp.alcance_m * PX, cx = X(sp.x), cy = Y(sp.y);
-  const arco = `M${cx},${cy} L${cx - r},${cy} A${r},${r} 0 0 0 ${cx},${cy + r} Z`;
-  const svg = `<svg viewBox="0 0 ${largura} ${altura}" id="cena" role="img" aria-label="Planta da sala">
-    <defs><radialGradient id="glow"><stop offset="0" stop-color="#ffe680" stop-opacity=".95"/><stop offset=".55" stop-color="#ffe680" stop-opacity=".35"/><stop offset="1" stop-color="#ffe680" stop-opacity="0"/></radialGradient>
+  const defs = `<defs><radialGradient id="glow"><stop offset="0" stop-color="#ffe680" stop-opacity=".95"/><stop offset=".55" stop-color="#ffe680" stop-opacity=".35"/><stop offset="1" stop-color="#ffe680" stop-opacity="0"/></radialGradient>
       <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="#94a3b8" stroke-width="3"/></pattern>
-      <clipPath id="room"><rect x="${X(0)}" y="${Y(H)}" width="${W * PX}" height="${H * PX}"/></clipPath></defs>
-    <rect id="piso" x="${X(0)}" y="${Y(H)}" width="${W * PX}" height="${H * PX}" fill="var(--dark)"/>
-    <circle id="brilho" cx="${X(s.lampada.x)}" cy="${Y(s.lampada.y)}" r="330" fill="url(#glow)" clip-path="url(#room)" opacity="0"/>
-    <path id="cone" d="${arco}" fill="#0e7490" opacity=".10" clip-path="url(#room)"/>
-    <rect x="${X(z.x0)}" y="${Y(z.y1)}" width="${(z.x1 - z.x0) * PX}" height="${(z.y1 - z.y0) * PX}" fill="url(#hatch)" opacity=".55"/>
-    <text x="${X((z.x0 + z.x1) / 2)}" y="${Y(z.y1) + 16}" text-anchor="middle" font-size="12" fill="#cbd5e1" id="zLabel">zona cega Z1</text>
-    <g stroke="#334155" stroke-width="6" fill="none" stroke-linecap="square">
-      <path d="M${X(porta.x_inicio)},${Y(0)} L${X(0)},${Y(0)} L${X(0)},${Y(H)} L${X(W)},${Y(H)} L${X(W)},${Y(0)} L${X(porta.x_fim)},${Y(0)}"/></g>
-    <line id="sa" x1="${X(porta.x_inicio)}" y1="${Y(0)}" x2="${X(porta.x_fim)}" y2="${Y(0)}" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6 5"/>
-    <rect x="${X(porta.x_inicio) - 7}" y="${Y(0) - 7}" width="10" height="14" fill="#0f172a"/><rect x="${X(porta.x_fim) - 3}" y="${Y(0) - 7}" width="10" height="14" fill="#0f172a"/>
-    <text x="${X((porta.x_inicio + porta.x_fim) / 2)}" y="${Y(0) + 20}" text-anchor="middle" font-size="12" fill="#334155">porta · SA</text>
-    <rect id="int" x="${X(s.interruptor.x) - 7}" y="${Y(0) - 16}" width="14" height="12" rx="2" fill="#e2e8f0" stroke="#334155"/>
-    <text x="${X(s.interruptor.x) + 12}" y="${Y(0) + 20}" font-size="12" fill="#334155">interruptor</text>
-    <g id="spIcon"><circle cx="${cx - 12}" cy="${cy + 12}" r="10" fill="#0e7490"/><text x="${cx - 12}" y="${cy + 16}" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">SP</text></g>
-    <text id="spX" x="${cx - 12}" y="${cy + 40}" text-anchor="middle" font-size="22" fill="#ef4444" font-weight="700" display="none">✕</text>
-    <g id="lamp"><circle cx="${X(s.lampada.x)}" cy="${Y(s.lampada.y)}" r="13" fill="#475569" stroke="#0f172a" stroke-width="2"/>
-      <text x="${X(s.lampada.x)}" y="${Y(s.lampada.y) + 30}" text-anchor="middle" font-size="12" id="lampTxt" fill="#cbd5e1">lâmpada</text></g>
+      <pattern id="velado" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="10" stroke="#e2e8f0" stroke-width="3" opacity=".6"/></pattern></defs>`;
+  const svg = `<svg viewBox="0 0 ${largura} ${altura}" id="cena" role="img" aria-label="Planta da casa">${defs}${plantaSVG("", false)}
     <text x="${X(0)}" y="${Y(0) + 48}" font-size="12" fill="#64748b">EXTERIOR</text>
     <g id="ocup">${D.sala.ocupantes.map(o => `<g id="o-${o.id}" display="none"><circle r="${o.tipo === "CACHORRO" ? 12 : 14}" fill="${o.tipo === "CACHORRO" ? "var(--dog)" : "var(--person)"}" stroke="#fff" stroke-width="2.5"/>
       <circle class="mov" r="22" fill="none" stroke="${o.tipo === "CACHORRO" ? "var(--dog)" : "var(--person)"}" stroke-width="2" opacity=".6"/>
@@ -651,10 +718,17 @@ function montarAnimacao() {
       <text id="appTxt" x="${xA - 10}" y="${yN + 38}" text-anchor="middle" font-size="11" fill="#334155"></text>
     </g>
   </svg>`;
+  const esp = `<svg viewBox="0 0 ${largura} ${Y(0) + 110}" id="espelho" role="img" aria-label="Cômodo espelho">${plantaSVG("e-", true)}
+    <text id="e-selo" x="${X(0)}" y="${Y(H) - 14}" font-size="13" font-weight="700" fill="#334155"></text>
+    <text id="e-dados" x="${X(0)}" y="${Y(0) + 24}" font-size="13" fill="#334155"></text>
+    <text id="e-dados2" x="${X(0)}" y="${Y(0) + 44}" font-size="13" fill="#334155"></text>
+    <rect id="e-classe" x="${X(0)}" y="${Y(0) + 56}" width="${W * PX}" height="30" rx="6" fill="#64748b"/>
+    <text id="e-classeTxt" x="${X(0) + 12}" y="${Y(0) + 76}" font-size="14" font-weight="700" fill="#fff"></text></svg>`;
   const c = CEN[S.cen];
-  $("#tab-animacao").innerHTML = `<div class="anim"><div class="card" style="padding:10px"><div class="duo"><div><h3>Sala real (verdade)</h3>${svg}</div>
-      <div><h3>Cômodo espelho <span class="seg" id="visao"><button data-v="R" class="${S.visao === "R" ? "on" : ""}">plataforma (R)</button><button data-v="L" class="${S.visao === "L" ? "on" : ""}">hub (L)</button></span></h3>${svgEspelho()}
-      <div class="small muted" style="margin-top:4px">Só o que o gêmeo recebeu: presença sem identidade nem posição (RN09), luz com o nível de evidência, sinais quando chegam.</div></div></div>
+  const multi = PLA.multi;
+  $("#tab-animacao").innerHTML = `<div class="anim${multi ? " larga" : ""}"><div class="card" style="padding:10px"><div class="duo${multi ? " empilha" : ""}"><div><h3>${multi ? "Casa real" : "Sala real"} (verdade)</h3>${svg}</div>
+      <div><h3>${multi ? "Casa espelho" : "Cômodo espelho"} <span class="seg" id="visao"><button data-v="R" class="${S.visao === "R" ? "on" : ""}">plataforma (R)</button><button data-v="L" class="${S.visao === "L" ? "on" : ""}">hub (L)</button></span></h3>${esp}
+      <div class="small muted" style="margin-top:4px">Só o que o gêmeo recebeu: presença sem identidade nem posição (RN09), luz com o nível de evidência, sinais quando chegam${multi ? "; um estado por cômodo" : ""}.</div></div></div>
       <div class="controls"><button class="b pri" id="play">▶</button><button class="b" id="back" title="−1 s (←)">⟨ 1 s</button><button class="b" id="fwd" title="+1 s (→)">1 s ⟩</button>
         <label class="small">Velocidade <select id="vel">${[1, 5, 20, 60, 120].map(v => `<option value="${v}"${v === S.speed ? " selected" : ""}>${v}×</option>`).join("")}</select></label>
         <span class="mono small" id="tTxt"></span></div>
@@ -663,84 +737,65 @@ function montarAnimacao() {
       <p class="small muted" style="margin:6px 0 0">Atalhos: espaço = tocar/pausar, ← → = 1 s (com Shift, 10 s). Marcas na régua: ▲ acender, ▼ apagar, ■ falha.</p></div>
     <div><div class="card"><h2>${c.id} — ${esc(c.titulo)}</h2><div class="views" id="vistas"></div><div class="kv" id="estado"></div></div>
       <div class="card"><h2>Eventos recentes</h2><div class="ticker" id="ticker"></div></div></div></div>`;
-  A = {cen: S.cen, ctrl: S.ctrl, d: derivar(S.cen, S.ctrl), pos: D.posicoes[S.cen]};
+  A = {cen: S.cen, ctrl: S.ctrl, dd: Object.fromEntries(PLA.comodos.map(k => [k.id, derivar(S.cen, S.ctrl, k.id)])), pos: D.posicoes[S.cen]};
+  A.d = A.dd[PLA.comodos[0].id];
   document.querySelectorAll("#visao button").forEach(b => b.onclick = () => { S.visao = b.dataset.v; document.querySelectorAll("#visao button").forEach(x => x.classList.toggle("on", x.dataset.v === S.visao)); quadro(); });
   $("#play").onclick = () => tocar(!S.playing);
   $("#back").onclick = () => passo(-1000); $("#fwd").onclick = () => passo(1000);
   $("#vel").onchange = e => S.speed = Number(e.target.value);
   $("#tSlider").oninput = e => { S.t = Number(e.target.value); quadro(); };
-  // marcas na régua
-  const d = A.d, w = 1000;
+  // marcas na régua (todas as decisões da casa)
+  const w = 1000, fim = c.duracao_ms;
+  const ints = Object.values(A.dd).flatMap(d => d.intencoes), fals = A.d.falhas;
   $("#marks").setAttribute("viewBox", `0 0 ${w} 12`); $("#marks").setAttribute("preserveAspectRatio", "none");
-  $("#marks").innerHTML = d.intencoes.map(i => `<text x="${i.t_ms / d.fim * w}" y="11" font-size="11" text-anchor="middle" fill="${i.precedencia === "REMOTA" ? "#0f766e" : i.acao === "ACENDER" ? "#a16207" : "#334155"}">${i.acao === "ACENDER" ? "▲" : "▼"}</text>`).join("") +
-    d.falhas.map(f => `<rect x="${f.t_ms / d.fim * w - 3}" y="2" width="6" height="8" fill="var(--bad)"/>`).join("");
+  $("#marks").innerHTML = ints.map(i => `<text x="${i.t_ms / fim * w}" y="11" font-size="11" text-anchor="middle" fill="${i.precedencia === "REMOTA" ? "#0f766e" : i.acao === "ACENDER" ? "#a16207" : "#334155"}">${i.acao === "ACENDER" ? "▲" : "▼"}</text>`).join("") +
+    fals.map(f => `<rect x="${f.t_ms / fim * w - 3}" y="2" width="6" height="8" fill="var(--bad)"/>`).join("");
   quadro();
 }
-function svgEspelho() {
-  const s = D.sala, W = s.largura_m, H = s.profundidade_m, z = s.zonas_cegas[0], porta = s.porta, sp = s.dispositivos["SP-01"];
-  const largura = X(W) + M0, altura = Y(0) + 150, r = sp.alcance_m * PX, cx = X(sp.x), cy = Y(sp.y);
-  return `<svg viewBox="0 0 ${largura} ${altura}" id="espelho" role="img" aria-label="Cômodo espelho">
-    <defs><clipPath id="room2"><rect x="${X(0)}" y="${Y(H)}" width="${W * PX}" height="${H * PX}"/></clipPath>
-      <pattern id="hatch2" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="#94a3b8" stroke-width="3"/></pattern>
-      <pattern id="velado" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="10" stroke="#e2e8f0" stroke-width="3" opacity=".6"/></pattern></defs>
-    <rect id="e-piso" x="${X(0)}" y="${Y(H)}" width="${W * PX}" height="${H * PX}" fill="var(--dark)"/>
-    <circle id="e-brilho" cx="${X(s.lampada.x)}" cy="${Y(s.lampada.y)}" r="330" fill="url(#glow)" clip-path="url(#room2)" opacity="0"/>
-    <path id="e-cone" d="M${cx},${cy} L${cx - r},${cy} A${r},${r} 0 0 0 ${cx},${cy + r} Z" fill="#0e7490" opacity=".10" clip-path="url(#room2)"/>
-    <rect x="${X(z.x0)}" y="${Y(z.y1)}" width="${(z.x1 - z.x0) * PX}" height="${(z.y1 - z.y0) * PX}" fill="url(#hatch2)" opacity=".55"/>
-    <ellipse id="e-mancha" cx="${X(W / 2)}" cy="${Y(H / 2 - 0.7)}" rx="${1.7 * PX}" ry="${1.15 * PX}" fill="#22a06b" opacity="0"/>
-    <text id="e-manchaTxt" x="${X(W / 2)}" y="${Y(H / 2 - 0.7) + 5}" text-anchor="middle" font-size="15" font-weight="700" fill="#065f46" display="none">presença</text>
-    <text id="e-q" x="${X(W / 2)}" y="${Y(H / 2 - 0.7) + 18}" text-anchor="middle" font-size="54" font-weight="700" fill="#f5a524" display="none">?</text>
-    <g stroke="#334155" stroke-width="6" fill="none" stroke-linecap="square"><path d="M${X(porta.x_inicio)},${Y(0)} L${X(0)},${Y(0)} L${X(0)},${Y(H)} L${X(W)},${Y(H)} L${X(W)},${Y(0)} L${X(porta.x_fim)},${Y(0)}"/></g>
-    <line id="e-sa" x1="${X(porta.x_inicio)}" y1="${Y(0)}" x2="${X(porta.x_fim)}" y2="${Y(0)}" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6 5"/>
-    <g><circle cx="${cx - 12}" cy="${cy + 12}" r="10" fill="#0e7490"/><text x="${cx - 12}" y="${cy + 16}" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">SP</text></g>
-    <circle id="e-lamp" cx="${X(s.lampada.x)}" cy="${Y(s.lampada.y)}" r="13" fill="#475569" stroke="#0f172a" stroke-width="2"/>
-    <text id="e-nivel" x="${X(s.lampada.x)}" y="${Y(s.lampada.y) + 30}" text-anchor="middle" font-size="12" fill="#cbd5e1"></text>
-    <rect id="e-velado" x="${X(0)}" y="${Y(H)}" width="${W * PX}" height="${H * PX}" fill="url(#velado)" display="none"/>
-    <text id="e-selo" x="${X(0)}" y="${Y(H) - 14}" font-size="13" font-weight="700" fill="#334155"></text>
-    <text id="e-idade" x="${X(W)}" y="${Y(H) - 14}" text-anchor="end" font-size="13" fill="#334155" class="mono"></text>
-    <text id="e-dados" x="${X(0)}" y="${Y(0) + 24}" font-size="13" fill="#334155"></text>
-    <text id="e-dados2" x="${X(0)}" y="${Y(0) + 44}" font-size="13" fill="#334155"></text>
-    <rect id="e-classe" x="${X(0)}" y="${Y(0) + 62}" width="${W * PX}" height="30" rx="6" fill="#64748b"/>
-    <text id="e-classeTxt" x="${X(0) + 12}" y="${Y(0) + 82}" font-size="14" font-weight="700" fill="#fff"></text>
-  </svg>`;
-}
 function segEm(segs, t) { for (const sg of segs || []) if (t >= sg[0] && t < sg[1]) return sg[2]; const u = (segs || []).slice(-1)[0]; return u ? u[2] : "NAO_AFIRMA"; }
-function quadroEspelho(d, t) {
-  if (!$("#espelho")) return;
-  const R = S.visao === "R", e = ex();
-  let ocup, luz, afirma, nivel, sa, spOn, selo, idadeTxt = "", linha2 = "";
-  if (R) {
+function vistaEspelho(d, t) {
+  // O que o espelho (R ou L) mostra de um cômodo no instante t
+  if (S.visao === "R") {
     const plat = d.platFora.some(([a, b]) => t >= a && t < b);
-    ocup = d.remOcup.at(t); luz = d.remLuz.at(t); afirma = d.remAtual.at(t) === "ATUAL" && !plat;
-    nivel = (d.remRes.filter(v => v.t_ms <= t).pop() || {}).nivel;
-    sa = d.remPass.some(p => t >= p && t < p + 700); spOn = d.remSp.at(t);
     const reg = d.remotos.filter(v => v.t_ms <= t).pop();
-    if (reg && reg.recepcao_ms != null && !plat) idadeTxt = `idade ${Math.round((t - reg.recepcao_ms) / 1000)} s`;
-    selo = plat ? "PLATAFORMA FORA" : `${d.remAtual.at(t)} · ${d.sessao.at(t) ? "conectado" : "sem sessão"}`;
-    const app = d.appRes.filter(v => v.t_ms <= t).pop();
-    linha2 = app ? `App: ${app.chave || ("config v" + app.versao)} → ${app.nivel || app.estado}` : "";
-  } else {
-    const off = d.hubOff.some(([a, b]) => t >= a && t < b);
-    ocup = off ? null : d.ocup.at(t); luz = off ? null : d.luzEst.at(t); afirma = !off;
-    nivel = (d.resultados.filter(v => v.t_ms <= t).pop() || {}).nivel;
-    sa = d.passagens.some(p => t >= p && t < p + 700); spOn = d.spAlto.at(t);
-    selo = off ? "HUB DESLIGADO" : "DTReg10k-L · sempre atual no hub";
+    return {ocup: d.remOcup.at(t), luz: d.remLuz.at(t), afirma: d.remAtual.at(t) === "ATUAL" && !plat, plat,
+            nivel: (d.remRes.filter(v => v.t_ms <= t).pop() || {}).nivel, sa: d.remPass.some(p => t >= p && t < p + 700), sp: d.remSp.at(t),
+            idade: reg && reg.recepcao_ms != null && !plat ? Math.round((t - reg.recepcao_ms) / 1000) : null, atual: d.remAtual.at(t)};
   }
-  const acesa = luz === "ACESA_AUTO" || luz === "ACESA_MANUAL";
-  $("#e-piso").setAttribute("fill", acesa ? "#fdf6dc" : "var(--dark)"); $("#e-brilho").setAttribute("opacity", acesa ? 1 : 0);
-  $("#e-lamp").setAttribute("fill", acesa ? "#facc15" : "#475569");
-  $("#e-nivel").textContent = nivel ? nivel.toLowerCase().replace("_", " ") : ""; $("#e-nivel").setAttribute("fill", acesa ? "#334155" : "#cbd5e1");
-  $("#e-mancha").setAttribute("opacity", ocup === "OCUPADA" ? 0.38 : 0); $("#e-manchaTxt").setAttribute("display", ocup === "OCUPADA" ? "inline" : "none");
-  $("#e-q").setAttribute("display", ocup === "DESCONHECIDA" ? "inline" : "none");
-  $("#e-sa").setAttribute("stroke", sa ? "#ef4444" : "#94a3b8"); $("#e-sa").setAttribute("stroke-width", sa ? 7 : 3);
-  $("#e-cone").setAttribute("opacity", spOn ? 0.32 : 0.10);
-  $("#e-velado").setAttribute("display", afirma ? "none" : "inline");
-  $("#e-selo").textContent = selo; $("#e-selo").setAttribute("fill", afirma ? "#0f766e" : "#b42318");
-  $("#e-idade").textContent = idadeTxt;
-  $("#e-dados").textContent = `Ocupação: ${ocup ?? "—"} · luz: ${luz ?? "—"}`;
-  $("#e-dados2").textContent = linha2;
-  const c = segEm(e.espelho?.segmentos?.[S.visao], t);
-  $("#e-classe").setAttribute("fill", CLASSE[c][0]); $("#e-classeTxt").textContent = `${CLASSE[c][1]} — comparado com a sala real`;
+  const off = d.hubOff.some(([a, b]) => t >= a && t < b);
+  return {ocup: off ? null : d.ocup.at(t), luz: off ? null : d.luzEst.at(t), afirma: !off, nivel: (d.resultados.filter(v => v.t_ms <= t).pop() || {}).nivel,
+          sa: d.passagens.some(p => t >= p && t < p + 700), sp: d.spAlto.at(t), idade: null, atual: off ? "HUB DESLIGADO" : "DTReg10k-L"};
+}
+function quadroEspelho(t) {
+  if (!$("#espelho")) return;
+  const e = ex(), multi = PLA.multi, linhas = [];
+  for (const c of PLA.comodos) {
+    const m = vistaEspelho(A.dd[c.id], t), acesa = m.luz === "ACESA_AUTO" || m.luz === "ACESA_MANUAL";
+    $(`#e-piso-${c.id}`).setAttribute("fill", acesa ? "#fdf6dc" : "var(--dark)"); $(`#e-brilho-${c.id}`).setAttribute("opacity", acesa ? 1 : 0);
+    $(`#e-lamp-${c.id}`).setAttribute("fill", acesa ? "#facc15" : "#475569");
+    $(`#e-lampTxt-${c.id}`).textContent = m.nivel ? m.nivel.toLowerCase().replace("_", " ") : ""; $(`#e-lampTxt-${c.id}`).setAttribute("fill", acesa ? "#334155" : "#cbd5e1");
+    $(`#e-nome-${c.id}`).setAttribute("fill", acesa ? "#334155" : "#cbd5e1");
+    $(`#e-mancha-${c.id}`).setAttribute("opacity", m.ocup === "OCUPADA" ? 0.38 : 0); $(`#e-manchaTxt-${c.id}`).setAttribute("display", m.ocup === "OCUPADA" ? "inline" : "none");
+    $(`#e-q-${c.id}`).setAttribute("display", m.ocup === "DESCONHECIDA" ? "inline" : "none");
+    $(`#e-cone-${c.id}`).setAttribute("opacity", m.sp ? 0.32 : 0.10);
+    $(`#e-velado-${c.id}`).setAttribute("display", m.afirma ? "none" : "inline");
+    linhas.push(`${multi ? c.nome + ": " : "Ocupação: "}${m.ocup ?? "—"} · luz ${m.luz ?? "—"}${m.idade != null ? ` · ${m.idade} s` : ""}`);
+  }
+  // SA de cada passagem, quando a evidência chega ao gêmeo
+  for (const ps of PLA.passagens) {
+    const d = A.dd[ps.comodos[0]];
+    const lista = S.visao === "R" ? (d.remPassPor[ps.sa] || []) : (d.porSA[ps.sa] || []);
+    const on = lista.some(p => t >= p && t < p + 700);
+    $(`#e-sa-${ps.sa}`).setAttribute("stroke", on ? "#ef4444" : "#94a3b8"); $(`#e-sa-${ps.sa}`).setAttribute("stroke-width", on ? 7 : 3);
+  }
+  const d0 = A.d, sessao = d0.sessao.at(t), plat = d0.platFora.some(([a, b]) => t >= a && t < b);
+  const m0 = vistaEspelho(d0, t);
+  $("#e-selo").textContent = S.visao === "R" ? (plat ? "PLATAFORMA FORA" : `${m0.atual} · ${sessao ? "conectado" : "sem sessão"}`) : m0.atual;
+  $("#e-selo").setAttribute("fill", m0.afirma ? "#0f766e" : "#b42318");
+  $("#e-dados").textContent = linhas[0] || ""; $("#e-dados2").textContent = linhas[1] || "";
+  if (!multi && S.visao === "R") { const app = d0.appRes.filter(v => v.t_ms <= t).pop(); $("#e-dados2").textContent = app ? `App: ${app.chave || ("config v" + app.versao)} → ${app.nivel || app.estado}` : ""; }
+  const cl = segEm(e.espelho?.segmentos?.[S.visao], t);
+  $("#e-classe").setAttribute("fill", CLASSE[cl][0]); $("#e-classeTxt").textContent = `${CLASSE[cl][1]} — comparado com a ${multi ? "casa" : "sala"} real${multi ? " (o cômodo mais grave)" : ""}`;
 }
 function posicao(oid, t) {
   const p = A.pos, arr = p.o[oid]; if (!arr) return null;
@@ -751,78 +806,80 @@ function posicao(oid, t) {
 }
 function quadro() {
   if (!A || A.cen !== S.cen || A.ctrl !== S.ctrl) return;
-  const d = A.d, t = S.t, c = CEN[S.cen];
-  const acesa = d.luz.at(t);
-  $("#piso").setAttribute("fill", acesa ? "#fdf6dc" : "var(--dark)");
-  $("#brilho").setAttribute("opacity", acesa ? 1 : 0);
-  $("#lamp circle").setAttribute("fill", acesa ? "#facc15" : (d.queimada != null && t >= d.queimada ? "#7f1d1d" : "#475569"));
-  $("#lampTxt").textContent = d.queimada != null && t >= d.queimada ? "lâmpada queimada" : "lâmpada";
-  $("#lampTxt").setAttribute("fill", acesa ? "#334155" : "#cbd5e1"); $("#zLabel").setAttribute("fill", acesa ? "#475569" : "#cbd5e1");
-  const mudo = d.spMudo.some(([a, b]) => t >= a && t < b), alto = d.spAlto.at(t) && !mudo;
-  $("#cone").setAttribute("opacity", mudo ? 0.03 : alto ? 0.32 : 0.10); $("#spX").setAttribute("display", mudo ? "inline" : "none");
-  const passou = d.passagens.some(p => t >= p && t < p + 700);
-  $("#sa").setAttribute("stroke", passou ? "#ef4444" : "#94a3b8"); $("#sa").setAttribute("stroke-width", passou ? 7 : 3);
-  $("#int").setAttribute("fill", d.interruptores.some(p => t >= p && t < p + 800) ? "#facc15" : "#e2e8f0");
-  const fora = [];
+  const t = S.t, c = CEN[S.cen], multi = PLA.multi;
+  for (const k of PLA.comodos) {
+    const d = A.dd[k.id], acesa = d.luz.at(t), queimada = d.queimada != null && t >= d.queimada;
+    $(`#piso-${k.id}`).setAttribute("fill", acesa ? "#fdf6dc" : "var(--dark)");
+    $(`#brilho-${k.id}`).setAttribute("opacity", acesa ? 1 : 0);
+    $(`#lamp-${k.id}`).setAttribute("fill", acesa ? "#facc15" : (queimada ? "#7f1d1d" : "#475569"));
+    $(`#lampTxt-${k.id}`).textContent = queimada ? "lâmpada queimada" : "lâmpada";
+    $(`#lampTxt-${k.id}`).setAttribute("fill", acesa ? "#334155" : "#cbd5e1");
+    $(`#nome-${k.id}`).setAttribute("fill", acesa ? "#334155" : "#cbd5e1");
+    const mudo = d.spMudo.some(([a, b]) => t >= a && t < b), alto = d.spAlto.at(t) && !mudo;
+    $(`#cone-${k.id}`).setAttribute("opacity", mudo ? 0.03 : alto ? 0.32 : 0.10); $(`#spX-${k.id}`).setAttribute("display", mudo ? "inline" : "none");
+    $(`#int-${k.id}`).setAttribute("fill", d.interruptores.some(p => t >= p && t < p + 800) ? "#facc15" : "#e2e8f0");
+  }
+  document.querySelectorAll("#cena .zLabel").forEach(z => z.setAttribute("fill", "#cbd5e1"));
+  for (const ps of PLA.passagens) {
+    const lista = A.dd[ps.comodos[0]].porSA[ps.sa] || [], passou = lista.some(p => t >= p && t < p + 700);
+    $(`#sa-${ps.sa}`).setAttribute("stroke", passou ? "#ef4444" : "#94a3b8"); $(`#sa-${ps.sa}`).setAttribute("stroke-width", passou ? 7 : 3);
+  }
   for (const o of D.sala.ocupantes) {
     const g = $(`#o-${o.id}`), p = posicao(o.id, t);
-    if (!p) { g.setAttribute("display", "none"); fora.push(o.nome || o.id); continue; }
+    if (!p) { g.setAttribute("display", "none"); continue; }
     g.setAttribute("display", "inline"); g.setAttribute("transform", `translate(${X(p[0])},${Y(p[1])})`);
     g.querySelector(".mov").setAttribute("display", p[2] ? "inline" : "none");
   }
   $("#relogio").textContent = `t = ${fmtT(t)} / ${fmtT(c.duracao_ms)}`;
-  quadroEspelho(d, t);
+  quadroEspelho(t);
   $("#tTxt").textContent = `${fmtT(t)} / ${fmtT(c.duracao_ms)}`;
   $("#tSlider").value = t; $("#play").textContent = S.playing ? "❚❚" : "▶";
-  // painel de estado
-  const presentes = d.presentes.at(t).split(",").filter(Boolean);
-  const ocup = d.ocup.at(t), luzEst = d.luzEst.at(t), prec = d.prec.at(t), alertas = d.alertas.at(t);
-  const hubOff = d.hubOff.some(([a, b]) => t >= a && t < b);
-  const ultP = d.passagens.filter(p => p <= t).pop();
-  const hb = d.hbs.filter(h => h.t_ms <= t).pop();
-  const ultI = d.intencoes.filter(i => i.t_ms <= t).pop();
-  const res = ultI && d.resultados.find(r => r.chave === ultI.chave && r.t_ms <= t);
-  const ultApp = d.app.filter(v => v.t_ms <= t && v.tipo.startsWith("APP_")).pop(), ultRes = d.appRes.filter(v => v.t_ms <= t).pop();
-  const pillOcup = {OCUPADA: "ok", VAZIA: "n", DESCONHECIDA: "warn"}[ocup];
-  const verdadeTxt = D.sala.ocupantes.map(o => { const p = posicao(o.id, t); return `${esc(o.nome || o.id)}: ${p ? (p[2] ? "na sala, em movimento" : "na sala, parado") : "fora"}`; }).join("<br>");
-  const real = presentes.length > 0, inferido = ocup === "OCUPADA";
-  const confere = ocup === "DESCONHECIDA" ? '<span class="pill warn">incerto</span>' : (real === inferido ? '<span class="pill ok">confere</span>' : '<span class="pill bad">diverge da verdade</span>');
-  $("#estado").innerHTML = `
-    <div><b>Verdade</b></div><div>${verdadeTxt}</div>
-    <div>SA (porta)</div><div>${ultP != null ? `última passagem há ${((t - ultP) / 1000).toFixed(1)} s` : "nenhuma passagem"}</div>
-    <div>SP (PIR)</div><div>${mudo ? '<span class="pill bad">sem resposta</span>' : alto ? '<span class="pill ok">detectando</span>' : '<span class="pill n">repouso</span>'}${hb ? ` <span class="small muted">bateria ${hb.bateria}%</span>` : ""}</div>
-    <div><b>Controle</b></div><div>${hubOff ? '<span class="pill bad">hub desligado</span>' : `<span class="pill ${pillOcup}">${ocup}</span> ${confere}`}</div>
-    <div>Luz (controle)</div><div class="mono">${hubOff ? "—" : luzEst}${prec !== "AUTOMATICA" ? ` <span class="pill warn">precedência ${prec.toLowerCase()}</span>` : ""}</div>
-    <div>Lâmpada (física)</div><div>${acesa ? '<span class="pill" style="background:#fff3bf;color:#7a5b00">acesa</span>' : '<span class="pill n">apagada</span>'}</div>
-    <div>Alertas</div><div>${alertas ? alertas.split(", ").map(a => `<span class="pill bad">${a}</span>`).join(" ") : '<span class="muted">nenhum</span>'}</div>
-    <div>Última decisão</div><div class="small">${ultI ? `${fmtT(ultI.t_ms)} <b>${ultI.acao}</b> por ${ultI.causa} (${ultI.regra})${res ? ` → <span class="mono">${res.nivel}</span>` : ""}` : "—"}</div>
+  // três pontos de vista, cômodo a cômodo
+  const d0 = A.d, hubOff = d0.hubOff.some(([a, b]) => t >= a && t < b), plat = d0.platFora.some(([a, b]) => t >= a && t < b);
+  const pill = {OCUPADA: "ok", VAZIA: "n", DESCONHECIDA: "warn"};
+  const selo = {ATUAL: '<span class="pill ok">atual</span>', DESATUALIZADO: '<span class="pill warn">desatualizado</span>', SEM_EVIDENCIA: '<span class="pill n">sem evidência</span>'};
+  let real = "", hub = "", rem = "", kv = "";
+  for (const k of PLA.comodos) {
+    const d = A.dd[k.id], pres = d.presentes.at(t).split(",").filter(Boolean), acesa = d.luz.at(t);
+    const ocup = d.ocup.at(t), luzEst = d.luzEst.at(t), prec = d.prec.at(t), rOc = d.remOcup.at(t), rLz = d.remLuz.at(t), rAt = d.remAtual.at(t);
+    const confere = ocup === "DESCONHECIDA" ? '<span class="pill warn">incerto</span>' : ((pres.length > 0) === (ocup === "OCUPADA") ? '<span class="pill ok">confere</span>' : '<span class="pill bad">diverge da verdade</span>');
+    const reg = d.remotos.filter(v => v.t_ms <= t).pop(), idade = reg && reg.recepcao_ms != null ? t - reg.recepcao_ms : null;
+    const confereR = plat ? '<span class="pill n">plataforma fora</span>' : rAt !== "ATUAL" ? '<span class="pill n">não afirma</span>'
+      : (hubOff ? '<span class="pill warn">hub desligado</span>' : (rOc === ocup && rLz === luzEst ? '<span class="pill ok">confere com o hub</span>' : '<span class="pill warn">sincronizando</span>'));
+    const tit = multi ? `<div class="small" style="font-weight:700;margin-top:4px">${esc(k.nome)}</div>` : "";
+    real += `${tit}<div class="big">${pres.length ? pres.map(o => esc(NOMES[o] || o)).join(" e ") : (multi ? "vazio" : "Sala vazia")}</div><div>lâmpada ${acesa ? "acesa" : "apagada"}</div>`;
+    hub += `${tit}${hubOff ? '<div class="big">hub desligado</div>' : `<div class="big">${ocup}</div><div class="mono">${luzEst}</div>${confere}`}`;
+    rem += `${tit}${plat ? '<div class="big">indisponível</div>' : `<div class="big">${rOc ?? "—"}</div><div class="mono">${rLz ?? "—"}</div>${selo[rAt] || ""}${idade != null ? ` <span class="small muted">idade ${(idade / 1000).toFixed(0)} s</span>` : ""}<div>${confereR}</div>`}`;
+    const mudo = d.spMudo.some(([a, b]) => t >= a && t < b), alto = d.spAlto.at(t) && !mudo, hb = d.hbs.filter(h => h.t_ms <= t).pop();
+    const ultI = d.intencoes.filter(i => i.t_ms <= t).pop(), res = ultI && d.resultados.find(r => r.chave === ultI.chave && r.t_ms <= t), alertas = d.alertas.at(t);
+    const nm = multi ? ` (${esc(k.nome.toLowerCase())})` : "";
+    kv += `<div>SP${nm}</div><div>${mudo ? '<span class="pill bad">sem resposta</span>' : alto ? '<span class="pill ok">detectando</span>' : '<span class="pill n">repouso</span>'}${hb ? ` <span class="small muted">bateria ${hb.bateria}%</span>` : ""}</div>
+      <div><b>Controle${nm}</b></div><div>${hubOff ? '<span class="pill bad">hub desligado</span>' : `<span class="pill ${pill[ocup]}">${ocup}</span> <span class="mono small">${luzEst}</span>${prec !== "AUTOMATICA" ? ` <span class="pill warn">precedência ${prec.toLowerCase()}</span>` : ""}`}</div>
+      <div>Alertas${nm}</div><div>${alertas ? alertas.split(", ").map(a => `<span class="pill bad">${a}</span>`).join(" ") : '<span class="muted">nenhum</span>'}</div>
+      <div>Última decisão${nm}</div><div class="small">${ultI ? `${fmtT(ultI.t_ms)} <b>${ultI.acao}</b> por ${ultI.causa} (${ultI.regra})${res ? ` → <span class="mono">${res.nivel}</span>` : ""}` : "—"}</div>`;
+  }
+  $("#vistas").innerHTML = `<div class="view"><h4>O que acontece</h4>${real}</div><div class="view"><h4>O que o hub acha (L)</h4>${hub}</div><div class="view"><h4>O que a plataforma acha (R)</h4>${rem}</div>`;
+  const pas = PLA.passagens.map(ps => { const l = (A.dd[ps.comodos[0]].porSA[ps.sa] || []).filter(p => p <= t).pop(); return `${ps.sa}: ${l != null ? `há ${((t - l) / 1000).toFixed(1)} s` : "nenhuma"}`; }).join(" · ");
+  const verdadeTxt = D.sala.ocupantes.map(o => { const p = posicao(o.id, t); const onde = p ? (multi ? `em ${esc(NOMES_C(PLA.comodos.find(k => p[0] >= k.x0 && p[0] <= k.x0 + k.largura)?.id))}` : "na sala") : "fora"; return `${esc(o.nome || o.id)}: ${onde}${p ? (p[2] ? ", em movimento" : ", parado") : ""}`; }).join("<br>");
+  const ultApp = d0.app.filter(v => v.t_ms <= t && v.tipo.startsWith("APP_")).pop(), ultRes = d0.appRes.filter(v => v.t_ms <= t).pop();
+  $("#estado").innerHTML = `<div><b>Verdade</b></div><div>${verdadeTxt}</div><div>Última passagem</div><div class="small">${pas}</div>${kv}
     <div>Último app</div><div class="small">${ultApp ? `${fmtT(ultApp.t_ms)} ${esc(desc(ultApp))}` : "—"}${ultRes ? `<br>${fmtT(ultRes.t_ms)} ${esc(desc(ultRes))}` : ""}</div>`;
-  // Três pontos de vista
-  const remReg = d.remotos.filter(v => v.t_ms <= t).pop();
-  const platFora = d.platFora.some(([a, b]) => t >= a && t < b), enlaceFora = d.enlaceFora.some(([a, b]) => t >= a && t < b);
-  const sessao = d.sessao.at(t), rAt = d.remAtual.at(t), rOc = d.remOcup.at(t), rLz = d.remLuz.at(t);
-  const idade = remReg && remReg.recepcao_ms != null ? t - remReg.recepcao_ms : null;
-  const selo = {ATUAL: '<span class="pill ok">atual</span>', DESATUALIZADO: '<span class="pill warn">desatualizado</span>', SEM_EVIDENCIA: '<span class="pill n">sem evidência</span>'}[rAt];
-  const confereR = platFora ? '<span class="pill n">plataforma fora</span>' : rAt !== "ATUAL" ? '<span class="pill n">não afirma o estado atual</span>'
-    : (hubOff ? '<span class="pill warn">hub desligado</span>' : (rOc === ocup && rLz === luzEst ? '<span class="pill ok">confere com o hub</span>' : '<span class="pill warn">sincronizando</span>'));
-  $("#vistas").innerHTML = `
-    <div class="view"><h4>O que acontece</h4><div class="big">${presentes.length ? presentes.map(o => esc(NOMES[o] || o)).join(" e ") + " na sala" : "Sala vazia"}</div><div>lâmpada ${acesa ? "acesa" : "apagada"}</div></div>
-    <div class="view"><h4>O que o hub acha (L)</h4>${hubOff ? '<div class="big">hub desligado</div>' : `<div class="big">${ocup}</div><div class="mono">${luzEst}</div>${confere}`}</div>
-    <div class="view"><h4>O que a plataforma acha (R)</h4>${platFora ? '<div class="big">indisponível</div>' : `<div class="big">${rOc ?? "—"}</div><div class="mono">${rLz ?? "—"}</div>${selo}${idade != null ? ` <span class="small muted">idade ${(idade / 1000).toFixed(0)} s</span>` : ""}<div>${confereR}</div>`}</div>`;
   // Faixa hub ↔ plataforma ↔ app
-  const cor = platFora ? "#94a3b8" : sessao ? "#0f766e" : "#dc2626";
+  const sessao = d0.sessao.at(t), enlaceFora = d0.enlaceFora.some(([a, b]) => t >= a && t < b);
+  const cor = plat ? "#94a3b8" : sessao ? "#0f766e" : "#dc2626";
   $("#lkHP").setAttribute("stroke", cor); $("#lkHP").setAttribute("stroke-dasharray", sessao ? "" : "6 5");
-  $("#lkTxt").textContent = platFora ? "plataforma fora do ar" : sessao ? (d.latencia.some(([a, b]) => t >= a && t < b) ? "conectado, rede lenta" : "conectado") : enlaceFora ? "enlace fora" : hubOff ? "hub desligado" : "sem sessão";
+  $("#lkTxt").textContent = plat ? "plataforma fora do ar" : sessao ? (d0.latencia.some(([a, b]) => t >= a && t < b) ? "conectado, rede lenta" : "conectado") : enlaceFora ? "enlace fora" : hubOff ? "hub desligado" : "sem sessão";
   $("#lkTxt").setAttribute("fill", cor);
-  $("#platBox").setAttribute("opacity", platFora ? 0.35 : 1);
+  $("#platBox").setAttribute("opacity", plat ? 0.35 : 1);
   const flash = (l, w = 1500) => l.filter(v => v.t_ms <= t && t - v.t_ms < w);
-  const pd = flash(d.perdas), dp = flash(d.duplicadas);
+  const pd = flash(d0.perdas), dp = flash(d0.duplicadas);
   $("#msgTxt").textContent = [pd.length ? `${pd.length} msg perdida(s)` : "", dp.length ? `${dp.length} duplicada(s)` : ""].filter(Boolean).join(" · ");
-  const ap = flash(d.app, 2500).pop(), ar = flash(d.appRes, 4000).pop();
+  const apps = PLA.comodos.flatMap(k => A.dd[k.id].app), ress = PLA.comodos.flatMap(k => A.dd[k.id].appRes);
+  const ap = flash(apps, 2500).pop(), ar = flash(ress, 4000).pop();
   $("#appBox").setAttribute("stroke", ap || ar ? "#be185d" : "#334155");
   $("#appTxt").textContent = ar ? (ar.nivel || ar.estado || "") : ap ? ap.tipo.replace("APP_", "").toLowerCase() : "";
-  const evs = ex().eventos.filter(v => v.t_ms <= t && v.tipo !== "HEARTBEAT" && v.camada !== "ESTADO" && !(v.tipo === "ESTADO_REMOTO" && !v.mudanca && v.origem === "RESUMO")).slice(-10).reverse();
-  $("#ticker").innerHTML = evs.map(v => `<div><span class="mono">${fmtT(v.t_ms)}</span> ${cam(v.camada)}${esc(desc(v))}</div>`).join("");
+  const evs = ex().eventos.filter(v => v.t_ms <= t && v.tipo !== "HEARTBEAT" && v.camada !== "ESTADO" && !(v.tipo === "ESTADO_REMOTO" && v.origem === "RESUMO")).slice(-10).reverse();
+  $("#ticker").innerHTML = evs.map(v => `<div><span class="mono">${fmtT(v.t_ms)}</span> ${cam(v.camada)}${multi && (v.comodo || (v.comodos && v.comodos.length === 1 ? v.comodos[0] : null)) ? `<span class="small muted">[${esc(NOMES_C(v.comodo || v.comodos[0]))}]</span> ` : ""}${esc(desc(v))}</div>`).join("");
 }
 function tocar(on) { S.playing = on; if (on && S.t >= CEN[S.cen].duracao_ms) S.t = 0; ultimoQuadro = performance.now(); quadro(); }
 function passo(dt) { S.playing = false; S.t = Math.max(0, Math.min(CEN[S.cen].duracao_ms, S.t + dt)); quadro(); if (S.tab === "painel") cursorPainel(); }
@@ -859,11 +916,16 @@ function renderPainel() {
     return `<tr><td class="mono">${a.id}</td><td class="small">${req ? "requisito" : "caracterização"}</td><td>${esc(a.dado)} → ${esc(a.quando)}</td><td class="mono small">${esc(entaoTxt(a.entao))}</td><td><span class="pill ${cls}">${txt}</span> <span class="small muted">${esc(r.detalhe)}</span></td></tr>`; }).join("");
   const inv = Object.entries(e.invariantes).map(([k, v]) => v.aplica === false ? `<span class="pill n" title="Sem execução pareada neste cenário">${k} n/a</span>`
     : `<span class="pill ${v.ok ? "ok" : "bad"}" title="${esc(v.violacoes.join("\n"))}">${k} ${v.ok ? "✓" : "✗"}</span>`).join(" ");
+  // v1dt: métricas por cômodo
+  const MC = ["desperdicio_s", "escuro_com_ocupante_s", "apagamentos_indevidos", "atraso_percebido_ms_max", "desperdicio_por_saida_s_max", "espelho_fiel_s", "erro_de_percepcao_s"];
+  const porComodo = e.comodos ? `<h3>Por cômodo</h3><div class="tablebox"><table><tr><th>Métrica</th>${Object.keys(e.comodos).map(k => `<th>${esc(planta().comodos.find(x => x.id === k)?.nome || k)}</th>`).join("")}<th>Residência</th></tr>
+    ${MC.map(k => `<tr><td>${esc((D.modelo.metricas.find(x => x.id === k) || {nome: k}).nome)}</td>${Object.values(e.comodos).map(cm => `<td>${fmtN(cm.metricas[k])}</td>`).join("")}<td><b>${fmtN(m[k])}</b></td></tr>`).join("")}</table></div>` : "";
   const dist = e.distribuicao ? `<h3>Distribuição no modo realista (${Object.values(e.distribuicao)[0]?.n || 0} sementes)</h3><table><tr><th>Métrica</th><th>mín.</th><th>média</th><th>mediana</th><th>p95</th><th>máx.</th></tr>
     ${Object.entries(e.distribuicao).map(([k, s]) => `<tr><td>${esc((D.modelo.metricas.find(x => x.id === k) || {nome: k}).nome)}</td>${["min","media","mediana","p95","max"].map(q => `<td>${fmtN(s[q])}</td>`).join("")}</tr>`).join("")}</table>` : "";
   $("#tab-painel").innerHTML = `
     <div class="card"><div class="controls" style="margin-top:0"><h2 style="margin:0">${c.id} — ${esc(c.titulo)}</h2><span class="small">${verTag(c)} ${tipoTag(c.tipo)} · controlador <b>${esc(S.ctrl)}</b> · semente ${e.semente} · ${e.modo.toLowerCase()}${e.modo_rede && e.modo_rede !== e.modo ? ` · rede ${e.modo_rede.toLowerCase()}` : ""}</span>
-      <span style="flex:1"></span><label class="small noprint">Zoom <select id="zoom">${[1, 2, 4, 8, 16].map(z => `<option value="${z}"${z === S.zoom ? " selected" : ""}>${z}×</option>`).join("")}</select></label>
+      <span style="flex:1"></span>${planta().multi ? `<label class="small noprint">Cômodo <select id="comodoP"><option value="todos"${S.comodoP === "todos" ? " selected" : ""}>todos</option>${planta().comodos.map(k => `<option value="${k.id}"${S.comodoP === k.id ? " selected" : ""}>${esc(k.nome)}</option>`).join("")}</select></label>` : ""}
+      <label class="small noprint">Zoom <select id="zoom">${[1, 2, 4, 8, 16].map(z => `<option value="${z}"${z === S.zoom ? " selected" : ""}>${z}×</option>`).join("")}</select></label>
       <button class="b noprint" id="pdf">Imprimir / PDF</button></div>
       <div class="tl-wrap" id="tl"></div>
       <div class="legend small" style="margin-top:6px"><span><i style="background:#22a06b"></i>ocupada</span><span><i style="background:#f5a524"></i>desconhecida</span><span><i style="background:#cbd5e1"></i>vazia / apagada</span>
@@ -872,7 +934,7 @@ function renderPainel() {
         <span><i style="background:repeating-linear-gradient(45deg,#475569 0 2px,transparent 2px 5px)"></i>R desatualizado</span><span><i style="background:#99d5cb"></i>sessão ativa</span><span><i style="background:#fecaca"></i>sem sessão</span><span><i style="background:#94a3b8"></i>plataforma fora</span>
         ${Object.values(CLASSE).map(([cor, n]) => `<span><i style="background:${cor}"></i>${n}</span>`).join("")}</div>
       <p class="small muted noprint" style="margin:4px 0 0">Clique na linha do tempo para posicionar o cursor (compartilhado com a animação). ← → movem 1 s.</p></div>
-    <div class="card"><h2>Métricas</h2><div class="metrics">${met}</div>${dist}
+    <div class="card"><h2>Métricas${planta().multi ? " da residência" : ""}</h2>${planta().multi ? '<p class="small muted" style="margin-top:0">Tempos somados entre os cômodos (cômodo·segundo); máximos e p95 pelo maior cômodo.</p>' : ""}<div class="metrics">${met}</div>${porComodo}${dist}
       <h3>Invariantes</h3><div>${inv}</div>
       <h3>Asserções</h3><div class="tablebox"><table><tr><th>ID</th><th>Nível</th><th>Dado → quando</th><th>Então</th><th>Resultado</th></tr>${asserts}</table></div>
       <p class="small muted">Hash do registro (semente ${e.semente}): <span class="mono">${e.hash_eventos.slice(0, 16)}…</span> · ${e.n_eventos.toLocaleString("pt-BR")} eventos ·
@@ -883,6 +945,7 @@ function renderPainel() {
         <span style="flex:1"></span><span class="small muted" id="nEv"></span><button class="b" id="csvEv">Exportar CSV</button></div>
       <div class="tablebox" id="evBox"></div></div>`;
   desenharLinhaDoTempo(); tabelaEventos();
+  if ($("#comodoP")) $("#comodoP").onchange = ev => { S.comodoP = ev.target.value; desenharLinhaDoTempo(); tabelaEventos(); };
   $("#zoom").onchange = ev => { S.zoom = Number(ev.target.value); desenharLinhaDoTempo(); };
   $("#pdf").onclick = () => window.print();
   document.querySelectorAll("[data-cam]").forEach(cb => cb.onchange = () => { cb.checked ? S.camadas.add(cb.dataset.cam) : S.camadas.delete(cb.dataset.cam); tabelaEventos(); });
@@ -896,25 +959,35 @@ function janela() {
   let ini = Math.max(0, Math.min(fim - w, S.t - w / 2)); return [ini, ini + w];
 }
 function desenharLinhaDoTempo() {
-  const d = derivar(S.cen, S.ctrl), [w0, w1] = janela();
+  // v1dt: uma linha do tempo por cômodo (ou só a do cômodo escolhido)
+  const pl = planta(), ids = pl.comodos.map(c => c.id);
+  if (!ids.includes(S.comodoP) && S.comodoP !== "todos") S.comodoP = "todos";
+  const lista = !pl.multi ? [ids[0]] : (S.comodoP === "todos" ? ids : [S.comodoP]);
+  $("#tl").innerHTML = lista.map((cid, i) => `${pl.multi ? `<div class="small" style="font-weight:700;padding:6px 10px 0">${esc(pl.comodos.find(c => c.id === cid).nome)}</div>` : ""}<div id="tl-${i}"></div>`).join("");
+  lista.forEach((cid, i) => umaLinhaDoTempo(cid, i));
+  cursorPainel();
+}
+function umaLinhaDoTempo(cid, idx) {
+  const d = derivar(S.cen, S.ctrl, cid), [w0, w1] = janela();
   const W = Math.max(700, $("#tl").clientWidth || 1100), L = 182, R = 12, lane = 24, gap = 6;
   const x = t => L + (Math.max(w0, Math.min(w1, t)) - w0) / (w1 - w0) * (W - L - R);
-  const lanes = ["Verdade · Morador", "Verdade · Rex", "SA (porta)", "SP (PIR)", "Ocupação · hub (L)", "Decisões", "Luz · hub (L)", "Lâmpada (física)",
+  const lanes = ["Verdade · Morador", "Verdade · Rex", planta().multi ? "SA (passagens)" : "SA (porta)", "SP (PIR)", "Ocupação · hub (L)", "Decisões", "Luz · hub (L)", "Lâmpada (física)",
                  "Ocupação · plataforma (R)", "Luz · plataforma (R)", "Canal", "App", "Fidelidade do espelho (R)", "Sistema e falhas"];
   const LS = 13; // faixa "Sistema e falhas"
   const yl = i => 22 + i * (lane + gap);
-  let s = `<svg width="${W}" height="${yl(lanes.length) + 4}" id="tlsvg" style="display:block;cursor:crosshair">`;
+  let s = `<svg width="${W}" height="${yl(lanes.length) + 4}" id="tlsvg-${idx}" style="display:block;cursor:crosshair">`;
   // grade de tempo
   const passoT = [1000, 5000, 10000, 30000, 60000, 120000, 300000, 600000].find(p => (w1 - w0) / p <= 12) || 600000;
   for (let t = Math.ceil(w0 / passoT) * passoT; t <= w1; t += passoT) s += `<line x1="${x(t)}" x2="${x(t)}" y1="16" y2="${yl(lanes.length)}" stroke="#eef1f5"/><text x="${x(t)}" y="12" font-size="10.5" text-anchor="middle" fill="#64748b">${fmtT(t)}</text>`;
   lanes.forEach((n, i) => s += `<text x="8" y="${yl(i) + 16}" font-size="12" fill="#334155">${n}</text><rect x="${L}" y="${yl(i)}" width="${W - L - R}" height="${lane}" fill="#fafbfc" stroke="#eef1f5"/>`);
   const bar = (i, a, b, cor, tit, op = 1, h = lane) => b > w0 && a < w1 ? `<rect x="${x(a)}" y="${yl(i) + (lane - h) / 2}" width="${Math.max(1, x(b) - x(a))}" height="${h}" fill="${cor}" opacity="${op}"><title>${esc(tit)}</title></rect>` : "";
-  // verdade: presença por ocupante (das posições)
+  // verdade: presença por ocupante (das posições; na residência, só dentro deste cômodo)
+  const plR = planta(), sala = plR.multi ? plR.comodos.find(k => k.id === cid) : null;
   D.sala.ocupantes.forEach((o, k) => {
     const arr = D.posicoes[S.cen].o[o.id] || [], ts = D.posicoes[S.cen].t; let ini = null, mov = null;
     for (let j = 0; j <= arr.length; j++) {
       const v = arr[j]; const tj = j < ts.length ? ts[j] : d.fim;
-      const dentro = !!v, mv = v ? v[2] : null;
+      const dentro = !!v && (!sala || (v[0] >= sala.x0 && v[0] <= sala.x0 + sala.largura)), mv = dentro ? v[2] : null;
       if (ini == null && dentro) { ini = tj; mov = mv; }
       else if (ini != null && (!dentro || mv !== mov)) { s += bar(k, ini, tj, o.tipo === "CACHORRO" ? "var(--dog)" : "var(--person)", `${o.nome}: ${mov ? "em movimento" : "parado"} ${fmtT(ini)}–${fmtT(tj)}`, mov ? 0.9 : 0.4); ini = dentro ? tj : null; mov = mv; }
     }
@@ -950,29 +1023,30 @@ function desenharLinhaDoTempo() {
     const forma = v.tipo === "APP_COMANDO" ? `<path d="M${cx - 6},${y0 + 17} L${cx + 6},${y0 + 17} L${cx},${y0 + 5}Z"` : v.tipo === "APP_PREFERENCIA" ? `<rect x="${cx - 5}" y="${y0 + 6}" width="10" height="10"` : `<circle cx="${cx}" cy="${y0 + 11}" r="4.5"`;
     s += `${forma} fill="#be185d"><title>${fmtT(v.t_ms)} ${esc(desc(v))}</title>${forma.startsWith("<path") ? "</path>" : forma.startsWith("<rect") ? "</rect>" : "</circle>"}`; });
   d.appRes.forEach(v => s += v.t_ms >= w0 && v.t_ms <= w1 ? `<rect x="${x(v.t_ms) - 3}" y="${yl(11) + 17}" width="6" height="6" fill="${COR_NIVEL[v.nivel || v.estado] || "#334155"}"><title>${fmtT(v.t_ms)} ${esc(desc(v))}</title></rect>` : "");
-  (ex().espelho?.segmentos?.R || []).forEach(([a, b, c]) => s += bar(12, a, b, CLASSE[c][0], `${CLASSE[c][1]} ${fmtT(a)}–${fmtT(b)}`, 0.85));
+  (ex().espelho?.segmentos?.por_comodo?.[cid]?.R || ex().espelho?.segmentos?.R || []).forEach(([a, b, c]) => s += bar(12, a, b, CLASSE[c][0], `${CLASSE[c][1]} ${fmtT(a)}–${fmtT(b)}`, 0.85));
   d.hubOff.forEach(([a, b]) => s += bar(LS, a, b, "#fecaca", `hub desligado ${fmtT(a)}–${fmtT(b)}`));
   d.falhas.forEach(f => s += f.t_ms >= w0 && f.t_ms <= w1 ? `<rect x="${x(f.t_ms) - 4}" y="${yl(LS) + 6}" width="8" height="12" fill="var(--bad)"><title>${fmtT(f.t_ms)} falha ${f.falha}</title></rect>` : "");
   d.sistema.filter(v => v.tipo === "ALERTA" && v.ativo || v.tipo === "RETENTATIVA" || v.tipo === "RELOGIO_SALTO").forEach(v => s += v.t_ms >= w0 && v.t_ms <= w1 ? `<circle cx="${x(v.t_ms)}" cy="${yl(LS) + 12}" r="5" fill="#f59e0b" stroke="#fff"><title>${fmtT(v.t_ms)} ${esc(desc(v))}</title></circle>` : "");
   d.cmdHub.forEach(v => s += v.t_ms >= w0 && v.t_ms <= w1 ? `<circle cx="${x(v.t_ms)}" cy="${yl(LS) + 12}" r="4" fill="${v.decisao === "ACEITO" || v.tipo === "CONFIG_APLICADA" ? "#0f766e" : "#b42318"}" stroke="#fff"><title>${fmtT(v.t_ms)} ${esc(desc(v))}</title></circle>` : "");
   s += `<defs><pattern id="hatchR" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#dc2626" stroke-width="2.5"/></pattern>
     <pattern id="hatchG" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#475569" stroke-width="2" opacity=".55"/></pattern></defs>`;
-  s += `<line id="cursor" y1="16" y2="${yl(lanes.length)}" stroke="#1f4e8c" stroke-width="1.5"/></svg>`;
-  $("#tl").innerHTML = s;
-  const svg = $("#tlsvg");
+  s += `<line class="cursorTL" y1="16" y2="${yl(lanes.length)}" stroke="#1f4e8c" stroke-width="1.5"/></svg>`;
+  $(`#tl-${idx}`).innerHTML = s;
+  const svg = $(`#tlsvg-${idx}`);
   svg.onclick = ev => { const r = svg.getBoundingClientRect(), px = ev.clientX - r.left; if (px < L) return;
     S.t = Math.round(w0 + (px - L) / (W - L - R) * (w1 - w0)); if (S.zoom > 1) desenharLinhaDoTempo(); else cursorPainel(); quadro(); };
-  A_TL = {w0, w1, W, L, R}; cursorPainel();
+  A_TL = {w0, w1, W, L, R};
 }
 let A_TL = null;
 function cursorPainel() {
-  if (!A_TL || !$("#cursor")) return; const {w0, w1, W, L, R} = A_TL;
+  if (!A_TL || !document.querySelector(".cursorTL")) return; const {w0, w1, W, L, R} = A_TL;
   if (S.t < w0 || S.t > w1) { desenharLinhaDoTempo(); return; }
-  const xx = L + (S.t - w0) / (w1 - w0) * (W - L - R); $("#cursor").setAttribute("x1", xx); $("#cursor").setAttribute("x2", xx);
+  const xx = L + (S.t - w0) / (w1 - w0) * (W - L - R); document.querySelectorAll(".cursorTL").forEach(l => { l.setAttribute("x1", xx); l.setAttribute("x2", xx); });
 }
 function eventosFiltrados() {
-  const b = S.buscaEv.toLowerCase();
-  return ex().eventos.filter(v => S.camadas.has(v.camada) && (S.hb || v.tipo !== "HEARTBEAT") && (!b || (desc(v) + " " + v.tipo + " " + JSON.stringify(v)).toLowerCase().includes(b)));
+  const b = S.buscaEv.toLowerCase(), pl = planta();
+  const base = pl.multi && S.comodoP && S.comodoP !== "todos" ? ex().eventos.map(v => vistaComodo(v, S.comodoP, pl)).filter(Boolean) : ex().eventos;
+  return base.filter(v => S.camadas.has(v.camada) && (S.hb || v.tipo !== "HEARTBEAT") && (!b || (desc(v) + " " + v.tipo + " " + JSON.stringify(v)).toLowerCase().includes(b)));
 }
 function tabelaEventos() {
   const l = eventosFiltrados(), LIM = 3000;

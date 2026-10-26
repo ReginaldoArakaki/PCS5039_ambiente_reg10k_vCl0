@@ -33,8 +33,22 @@ def _lat(rng: random.Random, faixa) -> float:
     return a if a == b else rng.uniform(a, b)
 
 
+class RepresentacaoComodo:
+    """Estado de um cômodo no DTReg10k-R (EstadoComodo da V2; RN-V1-04)."""
+
+    def __init__(self, comodo: str):
+        self.comodo = comodo
+        self.estado: Optional[dict] = None
+        self.n_aplicado = 0
+        self.recepcao: Optional[float] = None
+        self.aguarda = True   # após queda da sessão, só um estado novo restabelece a atualidade
+        self.atualidade = SEM_EVIDENCIA
+        self.ultimo_log = None
+
+
 class Plataforma:
-    def __init__(self, reg, canal, p: dict, p_app: dict, rng: random.Random, agendar, config_inicial: ConfigSala):
+    def __init__(self, reg, canal, p: dict, p_app: dict, rng: random.Random, agendar, config_inicial: ConfigSala,
+                 comodos: Optional[list[str]] = None):
         self.reg = reg
         self.canal = canal
         self.p = p
@@ -44,17 +58,13 @@ class Plataforma:
         self.agente = None
         self.fora = False
         self.sessao = False
-        # DTReg10k-R
-        self.estado: Optional[dict] = None
-        self.n_aplicado = 0
-        self.recepcao_estado: Optional[float] = None
+        # DTReg10k-R: uma representação por cômodo
+        self.comodos = list(comodos or ["sala"])
+        self.r = {cid: RepresentacaoComodo(cid) for cid in self.comodos}
         self.ultima_evidencia: Optional[float] = None
-        self.atualidade = SEM_EVIDENCIA
-        self.aguarda_estado = True   # após queda da sessão, só um estado novo restabelece a atualidade
         self.recebidas: set[int] = set()
         self.duplicadas = 0
         self.historico_fora_de_ordem = 0
-        self._ultimo_log = None
         # comandos
         self.n_cmd = 0
         self.comandos: dict[str, dict] = {}
@@ -63,6 +73,15 @@ class Plataforma:
         self.versoes = {1: {"parametros": {"t_apagamento_ms": config_inicial.t_apagamento_ms},
                             "estado": "APLICADA", "criada_ms": 0}}
         self.versao_aplicada_hub = 1
+
+    # Compatibilidade com a v0dt (um cômodo)
+    @property
+    def estado(self) -> Optional[dict]:
+        return self.r[self.comodos[0]].estado
+
+    @property
+    def atualidade(self) -> str:
+        return self.r[self.comodos[0]].atualidade
 
     # ============================================================== sessão
     def sessao_estabelecida(self, t: float) -> None:
@@ -75,14 +94,16 @@ class Plataforma:
         if self.fora:
             return
         self.sessao = False
-        self.aguarda_estado = True
+        for rc in self.r.values():
+            rc.aguarda = True
         self._atualizar(t)
 
     def cair(self, t: float) -> None:
         """Falha PLATAFORMA_FORA: a plataforma para; o estado persistido fica."""
         self.reg.add(REDE, "PLATAFORMA_FORA", t)
         self.sessao = False
-        self.aguarda_estado = True
+        for rc in self.r.values():
+            rc.aguarda = True
         self._atualizar(t)   # último registro antes de parar: nada mais é "atual"
         self.fora = True
 
@@ -108,8 +129,9 @@ class Plataforma:
             return
         self.recebidas.add(n)
         if tipo == "RESUMO":
-            if msg.get("estado") is not None:
-                self._aplicar_estado(t, n, msg["estado"], msg["ref_seq"], "RESUMO", msg.get("reconexao", False))
+            for cid, estado in (msg.get("comodos") or {}).items():
+                if estado is not None and cid in self.r:
+                    self._aplicar_estado(t, n, estado, msg["ref_seq"], "RESUMO", msg.get("reconexao", False), cid)
             self._conferir_config(t, msg["versao_config"])
         elif tipo == "EVENTO":
             self._evento(t, n, msg)
@@ -121,69 +143,80 @@ class Plataforma:
     def _evento(self, t: float, n: int, msg: dict) -> None:
         d = msg["dados"]
         if msg["camada"] == "ESTADO":
+            cid = d.get("comodo", self.comodos[0])
             estado = {k: d.get(k) for k in ("ocupacao", "luz", "precedencia", "idade_evidencia_ms", "alertas")}
-            self._aplicar_estado(t, n, estado, msg["ref_seq"], "EVENTO", False)
+            self._aplicar_estado(t, n, estado, msg["ref_seq"], "EVENTO", False, cid)
         elif msg["camada"] == "PERCEPCAO":
+            cids = d.get("comodos") or [self.comodos[0]]
             if msg["evento"] in ("PASSAGEM", "MOVIMENTO", "INTERRUPTOR"):
                 self.ultima_evidencia = max(self.ultima_evidencia or 0, t)
             if msg["evento"] in ("PASSAGEM", "MOVIMENTO", "FIM_MOVIMENTO", "INTERRUPTOR"):
                 # v0dta: o espelho mostra o sinal quando ele CHEGA à plataforma
                 self.reg.add(PLATAFORMA, "EVIDENCIA_RECEBIDA", t, origem=d.get("origem"), evidencia=msg["evento"],
                              t_origem_ms=msg["t_origem"], atraso_ms=int(t - msg["t_origem"]),
-                             historico=n < self.n_aplicado)
+                             historico=any(n < self.r[c].n_aplicado for c in cids if c in self.r), comodos=cids)
         elif msg["camada"] == "ATUACAO" and msg["evento"] == "RESULTADO":
+            cid = d.get("comodo", self.comodos[0])
             self.reg.add(PLATAFORMA, "RESULTADO_RECEBIDO", t, chave=d.get("chave"), acao=d.get("acao"),
-                         nivel=d.get("nivel"), t_origem_ms=msg["t_origem"], historico=n < self.n_aplicado)
+                         nivel=d.get("nivel"), t_origem_ms=msg["t_origem"],
+                         historico=n < self.r[cid].n_aplicado if cid in self.r else False, comodo=cid)
 
-    def _aplicar_estado(self, t: float, n: int, estado: dict, ref_seq: int, origem: str, reconexao: bool) -> None:
-        if n <= self.n_aplicado:
+    def _aplicar_estado(self, t: float, n: int, estado: dict, ref_seq: int, origem: str, reconexao: bool,
+                        cid: str) -> None:
+        rc = self.r[cid]
+        if n <= rc.n_aplicado:
             # OR-09: histórico ou mensagem atrasada não substitui estado mais recente
             self.historico_fora_de_ordem += 1
             return
-        anterior = self.estado
+        anterior = rc.estado
         if reconexao and anterior is not None:
             for k in ("ocupacao", "luz"):
                 if anterior.get(k) != estado.get(k):
                     # RF-SYN-05: divergência resolvida pela autoridade do hub (RN27)
                     self.reg.add(PLATAFORMA, "DIVERGENCIA", t, atributo=k, valor_remoto=anterior.get(k),
-                                 valor_local=estado.get(k), autoridade="DTReg10k-L", resolucao="ADOTA_LOCAL")
-        self.estado = dict(estado)
-        self.n_aplicado = n
-        self.recepcao_estado = t
-        self.aguarda_estado = False
-        self._atualizar(t, ref_seq=ref_seq, origem=origem, forcar=(origem == "RESUMO"))
+                                 valor_local=estado.get(k), autoridade="DTReg10k-L", resolucao="ADOTA_LOCAL",
+                                 comodo=cid)
+        rc.estado = dict(estado)
+        rc.n_aplicado = n
+        rc.recepcao = t
+        rc.aguarda = False
+        self._atualizar_comodo(t, rc, ref_seq=ref_seq, origem=origem, forcar=(origem == "RESUMO"))
 
     # =========================================================== atualidade
-    def _idade(self, t: float) -> Optional[int]:
-        return None if self.recepcao_estado is None else int(t - self.recepcao_estado)
+    def _idade(self, t: float, cid: Optional[str] = None) -> Optional[int]:
+        rc = self.r[cid or self.comodos[0]]
+        return None if rc.recepcao is None else int(t - rc.recepcao)
 
-    def _atualizar(self, t: float, ref_seq: Optional[int] = None, origem: Optional[str] = None,
-                   forcar: bool = False) -> None:
+    def _atualizar(self, t: float) -> None:
+        for rc in self.r.values():
+            self._atualizar_comodo(t, rc)
+
+    def _atualizar_comodo(self, t: float, rc: RepresentacaoComodo, ref_seq: Optional[int] = None,
+                          origem: Optional[str] = None, forcar: bool = False) -> None:
         if self.fora:
             return
-        idade = self._idade(t)
-        if self.estado is None:
+        idade = None if rc.recepcao is None else int(t - rc.recepcao)
+        if rc.estado is None:
             atual = SEM_EVIDENCIA
-        elif self.sessao and not self.aguarda_estado and idade is not None \
-                and idade <= self.p["limite_atualidade_ms"]:
+        elif self.sessao and not rc.aguarda and idade is not None and idade <= self.p["limite_atualidade_ms"]:
             atual = ATUAL
         else:
             atual = DESATUALIZADO
-        self.atualidade = atual
-        e = self.estado or {}
+        rc.atualidade = atual
+        e = rc.estado or {}
         chave = (e.get("ocupacao"), e.get("luz"), e.get("precedencia"), tuple(e.get("alertas") or ()),
                  atual, self.sessao)
         # Registra quando algo muda e a cada resumo recebido (para a idade exibida)
-        if chave != self._ultimo_log or forcar:
+        if chave != rc.ultimo_log or forcar:
             campos = {"ocupacao": e.get("ocupacao"), "luz": e.get("luz"), "precedencia": e.get("precedencia"),
                       "alertas": list(e.get("alertas") or []), "atualidade": atual,
                       "conexao": "CONECTADO" if self.sessao else "DESCONECTADO",
-                      "recepcao_ms": None if self.recepcao_estado is None else int(self.recepcao_estado),
-                      "mudanca": chave != self._ultimo_log}
+                      "recepcao_ms": None if rc.recepcao is None else int(rc.recepcao),
+                      "mudanca": chave != rc.ultimo_log, "comodo": rc.comodo}
             if ref_seq is not None:
-                campos.update(ref_seq=ref_seq, origem=origem, n=self.n_aplicado)
+                campos.update(ref_seq=ref_seq, origem=origem, n=rc.n_aplicado)
             self.reg.add(PLATAFORMA, "ESTADO_REMOTO", t, **campos)
-            self._ultimo_log = chave
+            rc.ultimo_log = chave
 
     def tick(self, t: float) -> None:
         if self.fora:
@@ -205,43 +238,47 @@ class Plataforma:
                     self._enviar_config(t, v)
 
     # ============================================================== comandos
-    def app_comando(self, t: float, acao: str) -> None:
+    def app_comando(self, t: float, acao: str, comodo: Optional[str] = None) -> None:
+        """RN-V1-03: o comando indica o cômodo (padrão: o primeiro)."""
+        cid = comodo or self.comodos[0]
         self.n_cmd += 1
         chave = f"CMD-{self.n_cmd:03d}"
-        self.reg.add(PLATAFORMA, "APP_COMANDO", t, chave=chave, acao=acao)
+        self.reg.add(PLATAFORMA, "APP_COMANDO", t, chave=chave, acao=acao, comodo=cid)
         if self.fora:
             self._mostrar(t + _lat(self.rng, self.p_app["latencia_ms"]), chave, REJEITADA,
-                          "PLATAFORMA_INDISPONIVEL", True, t)
+                          "PLATAFORMA_INDISPONIVEL", True, t, cid)
             return
-        self.agendar(t + _lat(self.rng, self.p_app["latencia_ms"]), lambda tt: self._criar_comando(tt, chave, acao, t))
+        self.agendar(t + _lat(self.rng, self.p_app["latencia_ms"]),
+                     lambda tt: self._criar_comando(tt, chave, acao, t, cid))
 
-    def _criar_comando(self, t: float, chave: str, acao: str, t_app: float) -> None:
+    def _criar_comando(self, t: float, chave: str, acao: str, t_app: float, cid: str) -> None:
         if self.fora:
-            self._mostrar(t, chave, REJEITADA, "PLATAFORMA_INDISPONIVEL", True, t_app)
+            self._mostrar(t, chave, REJEITADA, "PLATAFORMA_INDISPONIVEL", True, t_app, cid)
             return
         if not self.sessao:
             # RN-DT-06: recusa imediata, com a última evidência e a idade; nada fica pendente
-            idade = self._idade(t)
+            idade = self._idade(t, cid)
             self.reg.add(PLATAFORMA, "COMANDO_RECUSADO", t, chave=chave, acao=acao, motivo="HUB_DESCONECTADO",
                          ultima_evidencia_ms=None if self.ultima_evidencia is None else int(self.ultima_evidencia),
-                         idade_estado_ms=idade)
+                         idade_estado_ms=idade, comodo=cid)
             self.comandos[chave] = {"chave": chave, "acao": acao, "t_app": t_app, "criado_ms": t,
                                     "valida_ate_ms": t, "final": True, "provisorio": True, "ack": True,
-                                    "enviado_ms": t}
+                                    "enviado_ms": t, "comodo": cid}
             self._ao_app(t, chave, REJEITADA, "HUB_DESCONECTADO", final=True)
             return
         valida = int(t + self.p["validade_comando_ms"])
         c = {"chave": chave, "acao": acao, "t_app": t_app, "criado_ms": t, "valida_ate_ms": valida,
-             "final": False, "provisorio": False, "ack": False, "enviado_ms": t}
+             "final": False, "provisorio": False, "ack": False, "enviado_ms": t, "comodo": cid}
         self.comandos[chave] = c
         self.reg.add(PLATAFORMA, "COMANDO_CRIADO", t, chave=chave, acao=acao, valida_ate_ms=valida,
-                     solicitante="titular")
+                     solicitante="titular", comodo=cid)
         self._enviar_comando(t, c)
 
     def _enviar_comando(self, t: float, c: dict) -> None:
         c["enviado_ms"] = t
         self.canal.enviar(t, DESCE, {"tipo": "COMANDO", "chave": c["chave"], "acao": c["acao"],
-                                     "valida_ate_ms": c["valida_ate_ms"], "solicitante": "titular"},
+                                     "valida_ate_ms": c["valida_ate_ms"], "solicitante": "titular",
+                                     "comodo": c["comodo"]},
                           self.agente.receber)
 
     def _resultado_comando(self, t: float, msg: dict) -> None:
@@ -250,19 +287,19 @@ class Plataforma:
             return
         c["ack"] = True
         self.reg.add(PLATAFORMA, "COMANDO_RESULTADO", t, chave=msg["chave"], nivel=msg["nivel"],
-                     motivo=msg.get("motivo"))
+                     motivo=msg.get("motivo"), comodo=c["comodo"])
         if not c["final"]:
             c["final"] = True
             self._ao_app(t, msg["chave"], msg["nivel"], msg.get("motivo"), final=True)
 
     def _ao_app(self, t: float, chave: str, nivel: str, motivo: Optional[str], final: bool) -> None:
         c = self.comandos[chave]
-        self._mostrar(t + _lat(self.rng, self.p_app["latencia_ms"]), chave, nivel, motivo, final, c["t_app"])
+        self._mostrar(t + _lat(self.rng, self.p_app["latencia_ms"]), chave, nivel, motivo, final, c["t_app"], c["comodo"])
 
-    def _mostrar(self, t: float, chave: str, nivel: str, motivo, final: bool, t_app: float) -> None:
+    def _mostrar(self, t: float, chave: str, nivel: str, motivo, final: bool, t_app: float, cid: str) -> None:
         def registrar(tt):
             self.reg.add(PLATAFORMA, "APP_RESULTADO", tt, chave=chave, nivel=nivel, motivo=motivo, final=final,
-                         latencia_ms=int(tt - t_app))
+                         latencia_ms=int(tt - t_app), comodo=cid)
         self.agendar(t, registrar)
 
     # ========================================================== configuração
@@ -334,12 +371,14 @@ class Plataforma:
             self.reg.add(PLATAFORMA, "APP_CONSULTA", t, disponivel=False)
             return
         self._atualizar(t)
-        e = self.estado or {}
         v = self.versoes[self.versao_vigente]
-        self.reg.add(PLATAFORMA, "APP_CONSULTA", t, disponivel=True, ocupacao=e.get("ocupacao"), luz=e.get("luz"),
-                     atualidade=self.atualidade, idade_ms=self._idade(t),
+        por_comodo = {cid: {"ocupacao": (rc.estado or {}).get("ocupacao"), "luz": (rc.estado or {}).get("luz"),
+                            "atualidade": rc.atualidade, "idade_ms": self._idade(t, cid)}
+                      for cid, rc in self.r.items()}
+        # Os campos do topo são os do primeiro cômodo (compatibilidade com a v0dt)
+        self.reg.add(PLATAFORMA, "APP_CONSULTA", t, disponivel=True, **por_comodo[self.comodos[0]],
                      conexao="CONECTADO" if self.sessao else "DESCONECTADO",
-                     config_versao=self.versao_vigente, config_estado=v["estado"])
+                     config_versao=self.versao_vigente, config_estado=v["estado"], comodos=por_comodo)
 
     def balanco(self) -> dict:
         return {"recebidas_unicas": len(self.recebidas), "duplicadas_descartadas": self.duplicadas,

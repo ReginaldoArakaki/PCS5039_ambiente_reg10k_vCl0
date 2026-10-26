@@ -1,0 +1,63 @@
+{
+  "id": "M10",
+  "versao": "v1dt",
+  "ambiente": "residencia-v1",
+  "titulo": "Sai pela rua com a cozinha acesa e vazia",
+  "tipo": "NORMAL",
+  "modo": "IDEAL",
+  "duracao_ms": 300000,
+  "descricao": "O morador sai da cozinha em t=65 s, atravessa a sala e sai pela porta em t=76 s.",
+  "comportamento_ideal": "Cada cômodo apaga sozinho, no máximo 90 s depois de ficar vazio.",
+  "comportamento_referencia": "A cozinha apaga 60 s depois da última detecção, mesmo sem o morador passar de novo pelo vão.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "cozinha"
+    },
+    {
+      "t_ms": 15000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 45000
+    },
+    {
+      "t_ms": 65000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "sala"
+    },
+    {
+      "t_ms": 70000,
+      "ocupante": "morador",
+      "acao": "ANDAR",
+      "ate": [
+        0.95,
+        1.0
+      ]
+    },
+    {
+      "t_ms": 76000,
+      "ocupante": "morador",
+      "acao": "SAIR"
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-01",
+    "PS05"
+  ],
+  "regras": [
+    "RN-V1-02"
+  ]
+}

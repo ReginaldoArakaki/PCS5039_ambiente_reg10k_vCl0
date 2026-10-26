@@ -1,0 +1,407 @@
+{
+  "id": "RES-V1",
+  "descricao": "Residência da v1dt: sala 5 x 4 m e cozinha 3,5 x 4 m ligadas por um vão sem porta",
+  "passo_ms": 100,
+  "comodos": [
+    {
+      "id": "sala",
+      "nome": "Sala",
+      "x0": 0.0,
+      "y0": 0.0,
+      "largura_m": 5.0,
+      "profundidade_m": 4.0,
+      "zonas_cegas": [
+        {
+          "id": "Z1",
+          "x0": 4.0,
+          "y0": 0.0,
+          "x1": 5.0,
+          "y1": 2.0
+        }
+      ],
+      "sp": "SP-01",
+      "atuador": "ATU-01",
+      "lampada": {
+        "id": "LAMP-01",
+        "x": 2.5,
+        "y": 2.0
+      },
+      "interruptor": {
+        "id": "INT-01",
+        "x": 1.6,
+        "y": 0.0
+      },
+      "controle": {}
+    },
+    {
+      "id": "cozinha",
+      "nome": "Cozinha",
+      "x0": 5.0,
+      "y0": 0.0,
+      "largura_m": 3.5,
+      "profundidade_m": 4.0,
+      "zonas_cegas": [],
+      "sp": "SP-02",
+      "atuador": "ATU-02",
+      "lampada": {
+        "id": "LAMP-02",
+        "x": 6.75,
+        "y": 2.0
+      },
+      "interruptor": {
+        "id": "INT-02",
+        "x": 5.0,
+        "y": 2.2
+      },
+      "controle": {}
+    }
+  ],
+  "passagens": [
+    {
+      "id": "PORTA-01",
+      "tipo": "EXTERNA",
+      "comodos": [
+        "sala"
+      ],
+      "sa": "SA-01",
+      "x_inicio": 0.5,
+      "x_fim": 1.4,
+      "y": 0.0,
+      "pontos": {
+        "sala": [
+          0.95,
+          0.4
+        ]
+      },
+      "alvo": {
+        "sala": [
+          0.95,
+          1.0
+        ]
+      }
+    },
+    {
+      "id": "VAO-01",
+      "tipo": "INTERNA",
+      "comodos": [
+        "sala",
+        "cozinha"
+      ],
+      "sa": "SA-02",
+      "x": 5.0,
+      "y_inicio": 2.6,
+      "y_fim": 3.5,
+      "pontos": {
+        "sala": [
+          4.6,
+          3.05
+        ],
+        "cozinha": [
+          5.4,
+          3.05
+        ]
+      },
+      "alvo": {
+        "sala": [
+          3.8,
+          3.0
+        ],
+        "cozinha": [
+          6.2,
+          3.0
+        ]
+      }
+    }
+  ],
+  "ocupantes": [
+    {
+      "id": "morador",
+      "tipo": "PESSOA",
+      "nome": "Morador"
+    },
+    {
+      "id": "rex",
+      "tipo": "CACHORRO",
+      "nome": "Rex",
+      "porte": "GRANDE"
+    }
+  ],
+  "dispositivos": {
+    "SA-01": {
+      "tipo": "SENSOR_PASSAGEM",
+      "descricao": "Feixe no batente da porta externa (sala); sem direção",
+      "ideal": {
+        "p_deteccao": 1.0,
+        "p_deteccao_rapida": 1.0,
+        "rearme_ms": 2000,
+        "latencia_ms": [
+          50,
+          50
+        ],
+        "espurio_por_hora": 0
+      },
+      "realista": {
+        "p_deteccao": 0.98,
+        "p_deteccao_rapida": 0.85,
+        "rearme_ms": 2000,
+        "latencia_ms": [
+          50,
+          150
+        ],
+        "espurio_por_hora": 0.25
+      }
+    },
+    "SP-01": {
+      "tipo": "SENSOR_PRESENCA_PIR",
+      "descricao": "PIR no canto nordeste, aponta para sudoeste",
+      "x": 5.0,
+      "y": 4.0,
+      "alcance_m": 6.5,
+      "abertura_graus": 90,
+      "ideal": {
+        "p_movimento": 1.0,
+        "p_parado": 0.0,
+        "p_microgesto": 0.0,
+        "retencao_ms": 5000,
+        "latencia_ms": [
+          500,
+          500
+        ],
+        "falso_disparo_por_hora": 0,
+        "heartbeat_ms": 10000,
+        "fator_bateria_baixa": 0.6,
+        "fator_cachorro": 1.0
+      },
+      "realista": {
+        "p_movimento": 0.95,
+        "p_parado": 0.01,
+        "p_microgesto": 0.3,
+        "retencao_ms": 5000,
+        "latencia_ms": [
+          500,
+          1500
+        ],
+        "falso_disparo_por_hora": 0.1667,
+        "heartbeat_ms": 10000,
+        "fator_bateria_baixa": 0.6,
+        "fator_cachorro": 1.0
+      }
+    },
+    "ATU-01": {
+      "tipo": "ATUADOR",
+      "descricao": "Relé da lâmpada",
+      "ideal": {
+        "latencia_ms": [
+          100,
+          100
+        ]
+      },
+      "realista": {
+        "latencia_ms": [
+          100,
+          300
+        ]
+      }
+    },
+    "LAMP-01": {
+      "tipo": "LAMPADA",
+      "descricao": "Lâmpada com sensor de efeito (fotodiodo)",
+      "capacidade": "EFEITO_OBSERVADO",
+      "ideal": {
+        "latencia_ms": [
+          200,
+          200
+        ]
+      },
+      "realista": {
+        "latencia_ms": [
+          200,
+          600
+        ]
+      }
+    },
+    "INT-01": {
+      "tipo": "INTERRUPTOR",
+      "descricao": "Interruptor ao lado da porta",
+      "ideal": {
+        "latencia_ms": [
+          50,
+          50
+        ]
+      },
+      "realista": {
+        "latencia_ms": [
+          50,
+          100
+        ]
+      }
+    },
+    "SA-02": {
+      "tipo": "SENSOR_PASSAGEM",
+      "descricao": "Feixe no vão entre sala e cozinha; sem direção (A14)",
+      "ideal": {
+        "p_deteccao": 1.0,
+        "p_deteccao_rapida": 1.0,
+        "rearme_ms": 2000,
+        "latencia_ms": [
+          50,
+          50
+        ],
+        "espurio_por_hora": 0
+      },
+      "realista": {
+        "p_deteccao": 0.98,
+        "p_deteccao_rapida": 0.85,
+        "rearme_ms": 2000,
+        "latencia_ms": [
+          50,
+          150
+        ],
+        "espurio_por_hora": 0.25
+      }
+    },
+    "SP-02": {
+      "tipo": "SENSOR_PRESENCA_PIR",
+      "descricao": "PIR no canto sudeste da cozinha, aponta para noroeste",
+      "x": 8.5,
+      "y": 0.0,
+      "alcance_m": 6.5,
+      "abertura_graus": 90,
+      "ideal": {
+        "p_movimento": 1.0,
+        "p_parado": 0.0,
+        "p_microgesto": 0.0,
+        "retencao_ms": 5000,
+        "latencia_ms": [
+          500,
+          500
+        ],
+        "falso_disparo_por_hora": 0,
+        "heartbeat_ms": 10000,
+        "fator_bateria_baixa": 0.6,
+        "fator_cachorro": 1.0
+      },
+      "realista": {
+        "p_movimento": 0.95,
+        "p_parado": 0.01,
+        "p_microgesto": 0.3,
+        "retencao_ms": 5000,
+        "latencia_ms": [
+          500,
+          1500
+        ],
+        "falso_disparo_por_hora": 0.1667,
+        "heartbeat_ms": 10000,
+        "fator_bateria_baixa": 0.6,
+        "fator_cachorro": 1.0
+      }
+    },
+    "ATU-02": {
+      "tipo": "ATUADOR",
+      "descricao": "Relé da lâmpada da cozinha",
+      "ideal": {
+        "latencia_ms": [
+          100,
+          100
+        ]
+      },
+      "realista": {
+        "latencia_ms": [
+          100,
+          300
+        ]
+      }
+    },
+    "LAMP-02": {
+      "tipo": "LAMPADA",
+      "descricao": "Lâmpada da cozinha com sensor de efeito",
+      "capacidade": "EFEITO_OBSERVADO",
+      "ideal": {
+        "latencia_ms": [
+          200,
+          200
+        ]
+      },
+      "realista": {
+        "latencia_ms": [
+          200,
+          600
+        ]
+      }
+    },
+    "INT-02": {
+      "tipo": "INTERRUPTOR",
+      "descricao": "Interruptor da cozinha, ao lado do vão",
+      "ideal": {
+        "latencia_ms": [
+          50,
+          50
+        ]
+      },
+      "realista": {
+        "latencia_ms": [
+          50,
+          100
+        ]
+      }
+    }
+  },
+  "plataforma": {
+    "descricao": "v0dt: canal hub ↔ plataforma, DTReg10k-R, comandos remotos, configuração versionada e app",
+    "canal": {
+      "ideal": {
+        "latencia_ms": [
+          100,
+          100
+        ],
+        "p_perda": 0,
+        "p_duplicacao": 0
+      },
+      "realista": {
+        "latencia_ms": [
+          50,
+          400
+        ],
+        "p_perda": 0.01,
+        "p_duplicacao": 0.005
+      }
+    },
+    "app": {
+      "ideal": {
+        "latencia_ms": [
+          150,
+          150
+        ]
+      },
+      "realista": {
+        "latencia_ms": [
+          100,
+          400
+        ]
+      }
+    },
+    "resumo_ms": 30000,
+    "limite_atualidade_ms": 60000,
+    "validade_comando_ms": 30000,
+    "prazo_resultado_ms": 10000,
+    "reenvio_ms": 3000,
+    "reconexao_min_ms": 1000,
+    "reconexao_max_ms": 30000,
+    "reconexao_jitter": {
+      "ideal": 0,
+      "realista": 0.2
+    },
+    "t_apagamento_limites_ms": [
+      30000,
+      1800000
+    ]
+  },
+  "controle": {
+    "t_apagamento_ms": 60000,
+    "t_manual_ms": 900000,
+    "t_heartbeat_falha_ms": 30000,
+    "t_confirmacao_ms": 10000,
+    "t_retentativa_ms": 2000,
+    "validade_evidencia_ms": 10000
+  }
+}

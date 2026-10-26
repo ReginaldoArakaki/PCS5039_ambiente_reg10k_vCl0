@@ -8,7 +8,7 @@ import pytest
 
 from avaliacao.espelho import ROTULOS, amostras, svg_amostra
 from avaliacao.oraculo import CLASSES_ESPELHO, Analise, _assinatura, avaliar
-from catalogo.executar import carregar_esperado, carregar_roteiros, carregar_sala, descobrir_controladores
+from catalogo.executar import carregar_esperado, carregar_roteiros, ambiente_de, carregar_sala, descobrir_controladores
 from hub.controlador import ControladorReferencia
 from sim.motor import simular
 
@@ -19,8 +19,11 @@ CTRLS = descobrir_controladores()
 ASSINATURAS = json.loads((Path(__file__).parent / "dados" / "assinaturas-v0dt.json").read_text())["assinaturas"]
 
 
+ANTIGOS = [r for r in ROTEIROS if "ambiente" not in r]
+
+
 @pytest.mark.parametrize("nome", list(CTRLS))
-@pytest.mark.parametrize("roteiro", ROTEIROS, ids=[r["id"] for r in ROTEIROS])
+@pytest.mark.parametrize("roteiro", ANTIGOS, ids=[r["id"] for r in ANTIGOS])
 def test_decisoes_e_atuacoes_identicas_as_da_v0dt(roteiro, nome):
     """CP-DTA-01: o espelho não muda nada na sala."""
     a = _assinatura(simular(SALA, roteiro, CTRLS[nome], 42).eventos)

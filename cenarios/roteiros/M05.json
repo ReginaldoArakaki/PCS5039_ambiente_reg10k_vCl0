@@ -1,0 +1,36 @@
+{
+  "id": "M05",
+  "versao": "v1dt",
+  "ambiente": "residencia-v1",
+  "titulo": "Morador parado na cozinha",
+  "tipo": "FALSO_NEGATIVO",
+  "modo": "IDEAL",
+  "duracao_ms": 300000,
+  "descricao": "O morador vai para a cozinha em t=8 s e fica parado lá até o fim.",
+  "comportamento_ideal": "A cozinha continua acesa enquanto ele está lá.",
+  "comportamento_referencia": "Limitação conhecida da v0, agora na cozinha: sem movimento, o PIR não detecta e a luz apaga 60 s depois.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 8000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "cozinha"
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-01"
+  ],
+  "regras": [
+    "RN-V1-02"
+  ]
+}

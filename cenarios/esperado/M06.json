@@ -1,0 +1,79 @@
+{
+  "cenario": "M06",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "CV15",
+    "RN09"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "dois entram na cozinha",
+      "quando": "o cenário segue",
+      "entao": {
+        "tipo": "luz_constante",
+        "comodo": "cozinha",
+        "valor": "ACESA",
+        "entre_ms": [
+          32000,
+          240000
+        ]
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "CARACTERIZACAO",
+      "dado": "duas travessias em menos de 2 s",
+      "quando": "o SA-02 rearma",
+      "entao": {
+        "tipo": "evento",
+        "comodo": "cozinha",
+        "camada": "PERCEPCAO",
+        "evento": "PASSAGEM",
+        "campos": {
+          "origem": "SA-02"
+        },
+        "entre_ms": [
+          30000,
+          34000
+        ],
+        "max": 1
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "morador volta à sala",
+      "quando": "cruza o vão",
+      "entao": {
+        "tipo": "luz",
+        "comodo": "sala",
+        "valor": "ACESA",
+        "desde_ms": 125000,
+        "ate_ms": 130000
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "ocupantes sempre presentes",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "apagamentos_indevidos",
+        "igual": 0
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

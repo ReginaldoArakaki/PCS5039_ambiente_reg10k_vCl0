@@ -1,0 +1,75 @@
+{
+  "cenario": "M08",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RN01",
+    "RF-OPR-09"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "SP-02 mudo",
+      "quando": "30 s sem heartbeat",
+      "entao": {
+        "tipo": "alerta",
+        "comodo": "cozinha",
+        "alerta": "SP_SEM_RESPOSTA",
+        "entre_ms": [
+          80000,
+          110000
+        ]
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "SP-02 mudo",
+      "quando": "t = 150 s",
+      "entao": {
+        "tipo": "ocupacao",
+        "comodo": "cozinha",
+        "valor": "DESCONHECIDA",
+        "em_ms": 150000
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "ocupação desconhecida",
+      "quando": "o cenário segue",
+      "entao": {
+        "tipo": "sem_intencao",
+        "comodo": "cozinha",
+        "acao": "APAGAR",
+        "entre_ms": [
+          60000,
+          300000
+        ]
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "sala sem falha",
+      "quando": "o morador volta",
+      "entao": {
+        "tipo": "luz",
+        "comodo": "sala",
+        "valor": "ACESA",
+        "desde_ms": 205000,
+        "ate_ms": 210000
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

@@ -94,7 +94,9 @@
               "INTERRUPTOR",
               "APP_COMANDO",
               "APP_PREFERENCIA",
-              "APP_CONSULTA"
+              "APP_CONSULTA",
+              "MUDAR_COMODO",
+              "ESPIAR"
             ]
           },
           "ate": {
@@ -138,6 +140,12 @@
           "t_apagamento_ms": {
             "type": "integer",
             "minimum": 0
+          },
+          "para": {
+            "type": "string"
+          },
+          "comodo": {
+            "type": "string"
           }
         },
         "allOf": [
@@ -222,6 +230,34 @@
                 }
               }
             }
+          },
+          {
+            "if": {
+              "properties": {
+                "acao": {
+                  "const": "MUDAR_COMODO"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "para"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "acao": {
+                  "const": "ESPIAR"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "comodo"
+              ]
+            }
           }
         ]
       }
@@ -291,6 +327,12 @@
               "RESULTADO_COMANDO",
               "RESULTADO_CONFIG"
             ]
+          },
+          "dispositivo": {
+            "type": "string"
+          },
+          "comodo": {
+            "type": "string"
           }
         },
         "allOf": [
@@ -338,7 +380,7 @@
       "type": "array",
       "items": {
         "type": "string",
-        "pattern": "^RN-(I0|DT)-0[1-9]$"
+        "pattern": "^RN-(I0|DT|V1)-0[1-9]$"
       }
     },
     "controle": {
@@ -352,7 +394,8 @@
       "enum": [
         "v0",
         "v0dt",
-        "v0dta"
+        "v0dta",
+        "v1dt"
       ],
       "description": "Versão em que o cenário entrou (v0dt: gêmeo digital)"
     },
@@ -378,6 +421,22 @@
       "minItems": 3,
       "maxItems": 3,
       "description": "v0dta: instantes das amostras início, meio e fim do cômodo espelho (padrão: 1ª ação + 5 s, metade, fim − 1 s)"
+    },
+    "ambiente": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "v1dt: arquivo de ambiente em cenarios/ (padrão: sala)"
+    },
+    "controle_comodos": {
+      "type": "object",
+      "description": "v1dt: parâmetros por cômodo",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
     }
   }
 }

@@ -1,0 +1,52 @@
+{
+  "id": "M03",
+  "versao": "v1dt",
+  "ambiente": "residencia-v1",
+  "titulo": "Espia a cozinha pelo vão sem entrar",
+  "tipo": "FALSO_POSITIVO",
+  "modo": "IDEAL",
+  "duracao_ms": 180000,
+  "descricao": "O morador vai até o vão em t=10 s, espia a cozinha em t=20 s e volta para a sala.",
+  "comportamento_ideal": "A cozinha não deveria acender: ninguém entrou.",
+  "comportamento_referencia": "Limitação conhecida (DQ1-09): o SA do vão é detecção para os dois cômodos, e a cozinha acende por 60 s.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR",
+      "ate": [
+        4.3,
+        3.0
+      ]
+    },
+    {
+      "t_ms": 20000,
+      "ocupante": "morador",
+      "acao": "ESPIAR",
+      "comodo": "cozinha"
+    },
+    {
+      "t_ms": 25000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 150000
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RN09",
+    "RF-OPR-01"
+  ],
+  "regras": [
+    "RN-V1-01"
+  ]
+}

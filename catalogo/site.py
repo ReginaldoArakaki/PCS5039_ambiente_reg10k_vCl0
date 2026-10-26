@@ -6,7 +6,8 @@ import datetime as dt
 import json
 from pathlib import Path
 
-from avaliacao.espelho import NOMES_ROTULO, svg_amostra
+from avaliacao.espelho import NOMES_ROTULO, svg
+from sim.residencia import Residencia
 
 RAIZ = Path(__file__).resolve().parent.parent
 MODELO = Path(__file__).resolve().parent / "modelo.json"
@@ -32,7 +33,8 @@ def _compactar_eventos(eventos: list[dict]) -> tuple[list[dict], dict]:
         if e["camada"] == "PERCEPCAO" and e["tipo"] == "HEARTBEAT":
             # mantém, mas enxuto
             saida.append({"t_ms": e["t_ms"], "seq": e["seq"], "camada": "PERCEPCAO", "tipo": "HEARTBEAT",
-                          "origem": e.get("origem"), "bateria": e.get("bateria"), "alto": e.get("alto")})
+                          "origem": e.get("origem"), "bateria": e.get("bateria"), "alto": e.get("alto"),
+                          "comodos": e.get("comodos")})
             continue
         c = {k: v for k, v in e.items() if k not in _OMITIR}
         if c.get("relogio_confiavel") is True:
@@ -58,9 +60,34 @@ def _titulo(e: dict, a: dict) -> str:
     return f"{e['cenario']} — {NOMES_ROTULO[a['rotulo']]} (t = {int(t // 60)}:{t % 60:04.1f}) · {e['controlador']}"
 
 
+def planta(cfg: dict) -> dict:
+    """v1dt: geometria de um ambiente para a página (cômodos, passagens e dispositivos)."""
+    res = Residencia(cfg)
+    comodos = []
+    for c in res.comodos.values():
+        sp = res.dispositivos[c.sp]
+        comodos.append({"id": c.id, "nome": c.nome, "x0": c.x0, "y0": c.y0, "largura": c.largura,
+                        "profundidade": c.profundidade, "zonas": c.zonas_cegas,
+                        "lampada": {"id": c.lampada, "x": c.lampada_pos[0], "y": c.lampada_pos[1]},
+                        "interruptor": {"id": c.interruptor, "x": c.interruptor_pos[0], "y": c.interruptor_pos[1]},
+                        "sp": {"id": c.sp, "x": sp["x"], "y": sp["y"], "alcance": sp["alcance_m"]}})
+    passagens = []
+    for ps in res.passagens.values():
+        g = dict(ps.cfg)
+        if res.legado:  # a porta da sala da v0
+            g.update(cfg["porta"])
+            g["y"] = cfg["porta"]["y"]
+        passagens.append({"id": ps.id, "tipo": ps.tipo, "sa": ps.sa, "comodos": ps.comodos,
+                          **{k: g[k] for k in ("x_inicio", "x_fim", "y", "x", "y_inicio", "y_fim") if k in g}})
+    return {"id": res.id, "comodos": comodos, "passagens": passagens, "multi": res.multi,
+            "largura": max(c["x0"] + c["largura"] for c in comodos),
+            "profundidade": max(c["y0"] + c["profundidade"] for c in comodos)}
+
+
 def montar_dados(cat: dict) -> dict:
     modelo = json.loads(MODELO.read_text(encoding="utf-8"))
     roteiros = cat["_roteiros"]
+    amb = {c["id"]: c.get("ambiente", "sala") for c in cat["cenarios"]}
     execucoes, posicoes = {}, {}
     for e in cat["execucoes"]:
         chave = f"{e['cenario']}|{e['controlador']}"
@@ -73,8 +100,9 @@ def montar_dados(cat: dict) -> dict:
                                  "requisitos_ok", "aprovado")},
             "determinismo_ok": e.get("determinismo_ok"),
             # v0dta: segmentos de fidelidade, amostras e os mesmos SVG gravados em saida/.../espelho/
-            "espelho": {**e["espelho"], "svg": {v: [svg_amostra(cat["sala"], a, _titulo(e, a), v)
+            "espelho": {**e["espelho"], "svg": {v: [svg(cat["ambientes"][amb[e["cenario"]]], a, _titulo(e, a), v)
                                                     for a in e["espelho"]["amostras"]] for v in ("R", "L")}},
+            "comodos": e.get("comodos"),
             "distribuicao": e.get("distribuicao"),
             "eventos": evs,
         }
@@ -92,6 +120,7 @@ def montar_dados(cat: dict) -> dict:
             "problemas": cat["problemas"],
         },
         "sala": cat["sala"],
+        "ambientes": {k: {**v, "planta": planta(v)} for k, v in cat["ambientes"].items()},
         "modelo": {**modelo, "diagramas": _diagramas(modelo)},
         "cenarios": cenarios,
         "execucoes": execucoes,

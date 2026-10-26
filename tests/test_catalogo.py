@@ -2,7 +2,7 @@
 import pytest
 
 from avaliacao.oraculo import avaliar
-from catalogo.executar import (carregar_esperado, carregar_roteiros, carregar_sala,
+from catalogo.executar import (carregar_esperado, carregar_roteiros, ambiente_de, carregar_sala,
                                descobrir_controladores)
 from hub.controlador import Controlador, ControladorReferencia
 from sim.motor import simular
@@ -13,19 +13,24 @@ IDS = [r["id"] for r in ROTEIROS]
 CTRLS = descobrir_controladores()
 
 
-def test_catalogo_tem_20_cenarios_da_v0_e_12_do_gemeo():
-    tipos = [r["tipo"] for r in ROTEIROS]
-    assert len(ROTEIROS) == 32
+def test_catalogo_tem_32_cenarios_de_regressao_e_14_da_v1dt():
+    antigos = [r for r in ROTEIROS if not r["id"].startswith("M")]
+    tipos = [r["tipo"] for r in antigos]
+    assert len(antigos) == 32
     assert tipos.count("NORMAL") == 6 and tipos.count("FALSO_POSITIVO") == 3
     assert tipos.count("FALSO_NEGATIVO") == 5 and tipos.count("FALHA") == 6
     assert tipos.count("GEMEO_DIGITAL") == 12
-    assert all(r.get("versao", "v0") == "v0" for r in ROTEIROS if not r["id"].startswith("DT"))
+    novos = [r for r in ROTEIROS if r["id"].startswith("M")]
+    assert len(novos) == 14 and all(r["versao"] == "v1dt" and r["ambiente"] == "residencia-v1" for r in novos)
+    assert all("ambiente" not in r for r in antigos)
+    assert all(r.get("versao", "v0") == "v0" for r in ROTEIROS if r["id"][0] not in "DM")
     assert all(r["versao"] == "v0dt" for r in ROTEIROS if r["id"].startswith("DT"))
 
 
 @pytest.mark.parametrize("roteiro", ROTEIROS, ids=IDS)
 def test_referencia_passa_em_todas_as_assercoes(roteiro):
-    res = avaliar(simular(SALA, roteiro, ControladorReferencia, 42).eventos, roteiro, SALA,
+    amb = ambiente_de(roteiro)
+    res = avaliar(simular(amb, roteiro, ControladorReferencia, 42).eventos, roteiro, amb,
                   carregar_esperado(roteiro["id"]))
     falhas = {k: v["detalhe"] for k, v in res["assercoes"].items() if not v["ok"]}
     assert not falhas, falhas
@@ -35,7 +40,8 @@ def test_referencia_passa_em_todas_as_assercoes(roteiro):
 @pytest.mark.parametrize("nome", [n for n in CTRLS if n != "referencia"])
 @pytest.mark.parametrize("roteiro", ROTEIROS, ids=IDS)
 def test_controladores_dos_alunos_respeitam_invariantes(roteiro, nome):
-    res = avaliar(simular(SALA, roteiro, CTRLS[nome], 42).eventos, roteiro, SALA, None)
+    amb = ambiente_de(roteiro)
+    res = avaliar(simular(amb, roteiro, CTRLS[nome], 42).eventos, roteiro, amb, None)
     violadas = {k: v["violacoes"] for k, v in res["invariantes"].items() if not v["ok"]}
     assert not violadas, violadas
 

@@ -1,0 +1,85 @@
+{
+  "cenario": "M12",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-07",
+    "RF-SYN-06",
+    "INV-14"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "preferência da cozinha",
+      "quando": "o hub confirma",
+      "entao": {
+        "tipo": "config",
+        "comodo": "cozinha",
+        "versao": 2,
+        "estado": "APLICADA"
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "versão aplicada",
+      "quando": "só na cozinha",
+      "entao": {
+        "tipo": "evento",
+        "comodo": "cozinha",
+        "camada": "SISTEMA",
+        "evento": "CONFIG_APLICADA",
+        "campos": {
+          "versao": 2,
+          "comodo": "cozinha"
+        }
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "T_apagamento da cozinha = 120 s",
+      "quando": "85 s depois de ela ficar vazia",
+      "entao": {
+        "tipo": "luz",
+        "comodo": "cozinha",
+        "valor": "ACESA",
+        "em_ms": 180000
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "T_apagamento da cozinha = 120 s",
+      "quando": "145 s depois",
+      "entao": {
+        "tipo": "luz",
+        "comodo": "cozinha",
+        "valor": "APAGADA",
+        "em_ms": 240000
+      }
+    },
+    {
+      "id": "A5",
+      "nivel": "REQUISITO",
+      "dado": "T_apagamento da sala = 60 s",
+      "quando": "70 s depois da saída",
+      "entao": {
+        "tipo": "luz",
+        "comodo": "sala",
+        "valor": "APAGADA",
+        "em_ms": 230000
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "id": "M01",
+  "versao": "v1dt",
+  "ambiente": "residencia-v1",
+  "titulo": "Morador vai da sala à cozinha e volta",
+  "tipo": "NORMAL",
+  "modo": "IDEAL",
+  "duracao_ms": 240000,
+  "descricao": "O morador entra, anda na sala, passa pelo vão para a cozinha em t=40 s e volta para a sala em t=120 s.",
+  "comportamento_ideal": "A luz acompanha o morador: acende no cômodo em que ele entra e apaga no que ficou vazio.",
+  "comportamento_referencia": "O SA do vão chega aos dois controladores: acende a cozinha e renova o tempo da sala; a sala apaga 60 s depois.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 25000
+    },
+    {
+      "t_ms": 40000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "cozinha"
+    },
+    {
+      "t_ms": 45000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 70000
+    },
+    {
+      "t_ms": 120000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "sala"
+    },
+    {
+      "t_ms": 125000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 110000
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-01",
+    "RNF-DES-03"
+  ],
+  "regras": [
+    "RN-V1-01",
+    "RN-V1-02"
+  ]
+}

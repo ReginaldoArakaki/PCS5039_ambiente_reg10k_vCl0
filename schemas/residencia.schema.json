@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ReginaldoArakaki/PCS5039_ambiente_reg10k_vCl0/schemas/residencia.schema.json",
+  "title": "Residência com cômodos e passagens (v1dt)",
+  "type": "object",
+  "required": [
+    "id",
+    "passo_ms",
+    "comodos",
+    "passagens",
+    "ocupantes",
+    "dispositivos",
+    "plataforma",
+    "controle"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "descricao": {
+      "type": "string"
+    },
+    "passo_ms": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "comodos": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "x0",
+          "y0",
+          "largura_m",
+          "profundidade_m",
+          "sp",
+          "atuador",
+          "lampada",
+          "interruptor"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z]+$"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "x0": {
+            "type": "number"
+          },
+          "y0": {
+            "type": "number"
+          },
+          "largura_m": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "profundidade_m": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "zonas_cegas": {
+            "type": "array"
+          },
+          "sp": {
+            "type": "string"
+          },
+          "atuador": {
+            "type": "string"
+          },
+          "lampada": {
+            "type": "object",
+            "required": [
+              "id",
+              "x",
+              "y"
+            ]
+          },
+          "interruptor": {
+            "type": "object",
+            "required": [
+              "id",
+              "x",
+              "y"
+            ]
+          },
+          "controle": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "passagens": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "tipo",
+          "comodos",
+          "sa",
+          "pontos"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tipo": {
+            "enum": [
+              "EXTERNA",
+              "INTERNA"
+            ]
+          },
+          "comodos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 2
+          },
+          "sa": {
+            "type": "string"
+          },
+          "pontos": {
+            "type": "object"
+          },
+          "alvo": {
+            "type": "object"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "tipo": {
+                  "const": "INTERNA"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "comodos": {
+                  "minItems": 2
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "ocupantes": {
+      "type": "array"
+    },
+    "dispositivos": {
+      "type": "object"
+    },
+    "plataforma": {
+      "$ref": "sala.schema.json#/properties/plataforma"
+    },
+    "controle": {
+      "type": "object"
+    }
+  }
+}

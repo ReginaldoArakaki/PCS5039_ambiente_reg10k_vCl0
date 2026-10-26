@@ -27,7 +27,7 @@ METRICAS_NUMERICAS = (
     # v0dta
     "espelho_fiel_s", "erro_de_percepcao_s", "erro_de_sincronizacao_s", "espelho_nao_afirma_s",
 )
-VERSAO = "v0dta"
+VERSAO = "v1dt"
 
 
 # --------------------------------------------------------------- carregamento
@@ -39,10 +39,22 @@ def carregar_sala() -> dict:
     return ler_json(CENARIOS / "sala.json")
 
 
+_AMBIENTES: dict = {}
+
+
+def ambiente_de(roteiro: dict) -> dict:
+    """v1dt: arquivo de ambiente do roteiro (padrão: a sala da v0)."""
+    nome = roteiro.get("ambiente", "sala")
+    if nome not in _AMBIENTES:
+        _AMBIENTES[nome] = ler_json(CENARIOS / f"{nome}.json")
+    return _AMBIENTES[nome]
+
+
 def carregar_roteiros(ids: Optional[Iterable[str]] = None) -> list[dict]:
     todos = [ler_json(p) for p in sorted((CENARIOS / "roteiros").glob("*.json"))]
     ordem = {"NORMAL": 0, "FALSO_POSITIVO": 1, "FALSO_NEGATIVO": 2, "FALHA": 3, "GEMEO_DIGITAL": 4}
-    todos.sort(key=lambda r: (ordem.get(r["tipo"], 9), r["id"]))
+    versoes = {"v0": 0, "v0dt": 0, "v0dta": 0, "v1dt": 1}
+    todos.sort(key=lambda r: (versoes.get(r.get("versao", "v0"), 9), ordem.get(r["tipo"], 9), r["id"]))
     if ids:
         ids = set(ids)
         todos = [r for r in todos if r["id"] in ids]
@@ -85,7 +97,7 @@ def descobrir_controladores() -> dict[str, Callable[[], object]]:
 # ------------------------------------------------------------------ execução
 def executar(roteiro: dict, fabrica, semente: int = SEMENTE_REFERENCIA, sala: Optional[dict] = None,
              salvar: bool = True) -> dict:
-    sala = sala or carregar_sala()
+    sala = sala or ambiente_de(roteiro)
     reg = simular(sala, roteiro, fabrica, semente)
     nome = getattr(fabrica, "nome", "controlador")
     esperado = carregar_esperado(roteiro["id"])
@@ -137,11 +149,11 @@ def distribuicao(roteiro: dict, fabrica, n: int, sala: dict) -> dict:
 
 def gerar_catalogo(controladores: dict[str, Callable[[], object]], ids=None, n_sementes: int = 30,
                    verificar_determinacao: bool = True, log=print) -> dict:
-    sala = carregar_sala()
     roteiros = carregar_roteiros(ids)
     execucoes: list[dict] = []
     problemas: list[str] = []
     for r in roteiros:
+        sala = ambiente_de(r)
         for nome, fab in controladores.items():
             res = executar(r, fab, SEMENTE_REFERENCIA, sala)
             if verificar_determinacao:
@@ -167,13 +179,15 @@ def gerar_catalogo(controladores: dict[str, Callable[[], object]], ids=None, n_s
             execucoes.append(res)
     catalogo = {
         "versao": VERSAO,
-        "incremento": 1,
-        "sala": sala,
+        "incremento": 2,
+        "sala": carregar_sala(),
+        "ambientes": {r.get("ambiente", "sala"): ambiente_de(r) for r in roteiros},
         "cenarios": [
             {"versao": r.get("versao", "v0"),
              **{k: r[k] for k in ("id", "titulo", "tipo", "modo", "duracao_ms", "descricao",
                                   "comportamento_ideal", "comportamento_referencia", "requisitos", "regras", "rede", "amostras_ms")
                 if k in r},
+             "ambiente": r.get("ambiente", "sala"),
              "esperado": carregar_esperado(r["id"])}
             for r in roteiros
         ],

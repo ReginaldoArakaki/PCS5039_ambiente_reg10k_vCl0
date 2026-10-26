@@ -1,0 +1,90 @@
+{
+  "id": "M06",
+  "versao": "v1dt",
+  "ambiente": "residencia-v1",
+  "titulo": "Morador e Rex cruzam o vão juntos",
+  "tipo": "NORMAL",
+  "modo": "IDEAL",
+  "duracao_ms": 240000,
+  "descricao": "Os dois param perto do vão e o cruzam quase juntos em t=30 s; depois o morador volta para a sala e o Rex fica.",
+  "comportamento_ideal": "A cozinha acende e continua acesa com o Rex; o SA conta uma passagem para dois ocupantes (CV15).",
+  "comportamento_referencia": "O rearme de 2 s do SA-02 faz as duas travessias virarem uma só evidência; nada mais muda.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 7000,
+      "ocupante": "rex",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 15000,
+      "ocupante": "morador",
+      "acao": "ANDAR",
+      "ate": [
+        4.4,
+        3.0
+      ]
+    },
+    {
+      "t_ms": 15000,
+      "ocupante": "rex",
+      "acao": "ANDAR",
+      "ate": [
+        4.4,
+        3.2
+      ]
+    },
+    {
+      "t_ms": 30000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "cozinha"
+    },
+    {
+      "t_ms": 30300,
+      "ocupante": "rex",
+      "acao": "MUDAR_COMODO",
+      "para": "cozinha"
+    },
+    {
+      "t_ms": 35000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 85000
+    },
+    {
+      "t_ms": 35000,
+      "ocupante": "rex",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 200000
+    },
+    {
+      "t_ms": 125000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "sala"
+    },
+    {
+      "t_ms": 130000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 105000
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "CV15",
+    "RN09"
+  ],
+  "regras": [
+    "RN-V1-01"
+  ]
+}

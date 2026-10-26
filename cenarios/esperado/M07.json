@@ -1,0 +1,56 @@
+{
+  "cenario": "M07",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RN01",
+    "RF-OPR-01"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "SA-02 mudo",
+      "quando": "o morador entra na cozinha",
+      "entao": {
+        "tipo": "luz",
+        "comodo": "cozinha",
+        "valor": "ACESA",
+        "desde_ms": 40000,
+        "ate_ms": 47000
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "CARACTERIZACAO",
+      "dado": "só o PIR detecta",
+      "quando": "a cozinha acende",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "atraso_percebido_ms_max",
+        "max": 3000,
+        "comodo": "cozinha"
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "morador sempre presente",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "apagamentos_indevidos",
+        "igual": 0
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

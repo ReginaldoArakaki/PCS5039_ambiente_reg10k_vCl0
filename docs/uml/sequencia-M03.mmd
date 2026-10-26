@@ -1,0 +1,16 @@
+sequenceDiagram
+    autonumber
+    actor M as Morador (na sala)
+    participant SA as SA-02 (vão)
+    participant CS as Controlador da sala
+    participant CC as Controlador da cozinha
+    participant SP as SP-02 (cozinha)
+    participant LC as Lâmpada da cozinha
+    M->>SA: espia a cozinha sem entrar
+    SA->>CS: PASSAGEM (sem direção)
+    SA->>CC: PASSAGEM (sem direção)
+    CS->>CS: renova o tempo da sala
+    CC->>LC: ACENDER (PASSAGEM_SA)
+    Note over SP: nenhum movimento na cozinha
+    CC->>LC: APAGAR 60 s depois (AUSENCIA)
+    Note over CS,CC: Sem coordenação, a cozinha acende por engano. E12 usa o SP de cada lado para inferir a direção

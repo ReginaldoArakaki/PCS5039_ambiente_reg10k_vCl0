@@ -1,0 +1,93 @@
+{
+  "cenario": "M11",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RF-OPR-03",
+    "RNF-DES-02"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "REQUISITO",
+      "dado": "sessão ativa",
+      "quando": "o titular toca em acender a cozinha",
+      "entao": {
+        "tipo": "comando",
+        "comodo": "cozinha",
+        "indice": 1,
+        "nivel": "EFEITO_OBSERVADO",
+        "latencia_max_ms": 3000
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "REQUISITO",
+      "dado": "comando aceito",
+      "quando": "o atuador da cozinha executa",
+      "entao": {
+        "tipo": "luz",
+        "comodo": "cozinha",
+        "valor": "ACESA",
+        "desde_ms": 70000,
+        "ate_ms": 73000
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "comando só da cozinha",
+      "quando": "o cenário segue",
+      "entao": {
+        "tipo": "luz_constante",
+        "comodo": "sala",
+        "valor": "APAGADA",
+        "entre_ms": [
+          0,
+          180000
+        ]
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "comando executado",
+      "quando": "o titular consulta o app",
+      "entao": {
+        "tipo": "app_consulta",
+        "comodo": "cozinha",
+        "indice": 1,
+        "campos": {
+          "atualidade": "ATUAL",
+          "luz": "ACESA_MANUAL"
+        }
+      }
+    },
+    {
+      "id": "A5",
+      "nivel": "CARACTERIZACAO",
+      "dado": "comando remoto",
+      "quando": "o controlador da cozinha decide",
+      "entao": {
+        "tipo": "intencao",
+        "comodo": "cozinha",
+        "acao": "ACENDER",
+        "causa": "COMANDO_REMOTO",
+        "precedencia": "REMOTA",
+        "entre_ms": [
+          70000,
+          72000
+        ]
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}

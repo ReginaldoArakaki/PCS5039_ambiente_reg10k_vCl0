@@ -1,0 +1,60 @@
+{
+  "id": "M14",
+  "versao": "v1dt",
+  "ambiente": "residencia-v1",
+  "titulo": "Espelho da residência",
+  "tipo": "GEMEO_DIGITAL",
+  "modo": "IDEAL",
+  "duracao_ms": 300000,
+  "descricao": "O morador anda na sala; o Rex vai para a cozinha, anda e deita em t=100 s.",
+  "comportamento_ideal": "O espelho mostra os dois cômodos; a cozinha deixa de ser fiel quando o Rex fica parado.",
+  "comportamento_referencia": "As amostras mostram a sala fiel e a cozinha com erro de percepção (o hub acha a cozinha vazia).",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 7000,
+      "ocupante": "rex",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 280000
+    },
+    {
+      "t_ms": 12000,
+      "ocupante": "rex",
+      "acao": "MUDAR_COMODO",
+      "para": "cozinha"
+    },
+    {
+      "t_ms": 20000,
+      "ocupante": "rex",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 80000
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RN-V1-04",
+    "RN34"
+  ],
+  "regras": [
+    "RN-V1-04",
+    "RN-I0-01"
+  ],
+  "amostras_ms": [
+    60000,
+    150000,
+    250000
+  ]
+}

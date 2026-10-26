@@ -1,0 +1,71 @@
+{
+  "id": "M09",
+  "versao": "v1dt",
+  "ambiente": "residencia-v1",
+  "titulo": "Interruptor da cozinha",
+  "tipo": "NORMAL",
+  "modo": "IDEAL",
+  "duracao_ms": 240000,
+  "descricao": "Na cozinha, o morador apaga a luz no interruptor em t=60 s e acende de novo em t=150 s; depois volta para a sala.",
+  "comportamento_ideal": "O interruptor da cozinha só mexe na cozinha, com precedência manual de 15 min.",
+  "comportamento_referencia": "Como a N04 da v0, no cômodo certo (OR-14).",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "cozinha"
+    },
+    {
+      "t_ms": 15000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 45000
+    },
+    {
+      "t_ms": 60000,
+      "ocupante": "morador",
+      "acao": "INTERRUPTOR"
+    },
+    {
+      "t_ms": 61000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 89000
+    },
+    {
+      "t_ms": 150000,
+      "ocupante": "morador",
+      "acao": "INTERRUPTOR"
+    },
+    {
+      "t_ms": 160000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "sala"
+    },
+    {
+      "t_ms": 165000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 70000
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-02"
+  ],
+  "regras": [
+    "RN-I0-05",
+    "RN-V1-02"
+  ]
+}

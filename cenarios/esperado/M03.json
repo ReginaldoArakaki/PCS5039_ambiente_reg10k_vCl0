@@ -1,0 +1,86 @@
+{
+  "cenario": "M03",
+  "modo": "IDEAL",
+  "semente_referencia": 42,
+  "requisitos": [
+    "RN09",
+    "RF-OPR-01"
+  ],
+  "assercoes": [
+    {
+      "id": "A1",
+      "nivel": "CARACTERIZACAO",
+      "dado": "o SA do vão dispara",
+      "quando": "a referência decide",
+      "entao": {
+        "tipo": "intencao",
+        "comodo": "cozinha",
+        "acao": "ACENDER",
+        "causa": "PASSAGEM_SA",
+        "entre_ms": [
+          20000,
+          22000
+        ]
+      }
+    },
+    {
+      "id": "A2",
+      "nivel": "CARACTERIZACAO",
+      "dado": "cozinha acesa e vazia",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "desperdicio_s",
+        "min": 55,
+        "comodo": "cozinha"
+      }
+    },
+    {
+      "id": "A3",
+      "nivel": "REQUISITO",
+      "dado": "morador sempre na sala",
+      "quando": "o cenário segue",
+      "entao": {
+        "tipo": "luz_constante",
+        "comodo": "sala",
+        "valor": "ACESA",
+        "entre_ms": [
+          6000,
+          180000
+        ]
+      }
+    },
+    {
+      "id": "A4",
+      "nivel": "REQUISITO",
+      "dado": "ninguém na cozinha",
+      "quando": "90 s depois",
+      "entao": {
+        "tipo": "luz",
+        "comodo": "cozinha",
+        "valor": "APAGADA",
+        "em_ms": 110000
+      }
+    },
+    {
+      "id": "A5",
+      "nivel": "REQUISITO",
+      "dado": "morador sempre presente",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "apagamentos_indevidos",
+        "igual": 0
+      }
+    },
+    {
+      "id": "INV",
+      "nivel": "REQUISITO",
+      "dado": "qualquer execução",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "invariantes"
+      }
+    }
+  ]
+}
