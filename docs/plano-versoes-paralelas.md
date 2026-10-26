@@ -1,6 +1,6 @@
 # Plano das versões paralelas V0–V4 e do núcleo Reg10k
 
-**Versão do documento:** v03 | **Data:** 26/10/2026 | **Situação:** aprovado; Fases 1 e 2a entregues
+**Versão do documento:** v04 | **Data:** 26/10/2026 | **Situação:** aprovado; Fases 1, 2a e 2c entregues
 **Responsável:** Reginaldo Arakaki (EPUSP)
 **Linha de pesquisa:** Laboratório de Digital Twin de Arquitetura de Sistemas de Software (EPUSP) e GLIP USP
 **Base:** repositório `PCS5039_ambiente_reg10k_vCl0` na v1dtb; guia de convenções v03; trilha do plano do ambiente (v02, §2.1)
@@ -10,6 +10,7 @@
 | v01 | 26/10/2026 | Primeira versão, com as decisões de 26/10: núcleo e repositórios de versão, V4 como plataforma inicial, nomes |
 | v02 | 26/10/2026 | Aprovado (as propostas da §9 valem); acesso ao GitHub resolvido; Fase 1 entregue (§11), com ◆ nos ajustes |
 | v03 | 26/10/2026 | Fase 2a entregue (§12): repositórios V0 e V1 publicados, com a primeira rodada de dados |
+| v04 | 26/10/2026 | Fase 2c entregue (§13): `nucleo-v1.1` (gerador por planta, janela relativa) e V2 (Casa A) |
 
 ---
 
@@ -125,7 +126,7 @@ A abertura de cada mudança segue a skill `incremento-simulacao`. Mudança no n�
 | 1 | Núcleo: N1, N2, N4 e a parte mínima de N3; tag `nucleo-v1.0` | Não (é a base) | ✔ 26/10 (§11) |
 | 2a | V0 e V1: migrar os cenários; mesmas assinaturas, como prova de que a migração não mudou nada | Sim | ✔ 26/10 (§12) |
 | 2b | V1: v1dt.1, com N5 no núcleo | Sim | 2 dias |
-| 2c | V2: Casa A, com o resto de N3 | Sim | 2 dias |
+| 2c | V2: Casa A, com o resto de N3 | Sim | ✔ 26/10 (§13) |
 | 2d | V4.0: N6 no núcleo, com R1, R2 e R3 | Sim; depende de 2b para R3 | 2–3 dias |
 | 3 | V3: Casa B e N7 | Depois de 2c | 3 dias |
 | 4 | Rodada de experimentos com tags congeladas; release dos dados | — | 1 dia por artigo |
@@ -226,3 +227,11 @@ Fase 2a: criar `reg10k-V0` e `reg10k-V1` (repositórios vazios, criados pelo res
 A tabela repete, agora com 30 sementes, o achado da v1dt: o `grupo_exemplo` elimina o falso positivo do vão (F3), mas atrasa o acendimento ao passar entre cômodos (F1), e nenhuma das duas estratégias simples atende os dois (exercício E12).
 
 **Cuidado ao comparar a F7 entre versões.** A fidelidade do espelho cai de cerca de 96% (V0) para 74% (V1), mas não por causa do segundo cômodo. Na V1, a F7 tem só o M14, em que o Rex deita na cozinha aos 100 s: o sensor de presença deixa de vê-lo parado, e o gêmeo afirma a cozinha vazia a partir de 165,6 s (erro de percepção). Na V0, a F7 tem só o DT12, sem esse episódio. As famílias têm cenários de conteúdo diferente em cada versão, e por isso só podem ser comparadas entre versões quando os roteiros forem equivalentes. O gerador de cenários por planta (V2) deve produzir, para cada família, os mesmos episódios em todas as plantas. A V0 e a V1 podem ganhar esses cenários equivalentes num ajuste próprio.
+
+## 13. Entrega da Fase 2c: `nucleo-v1.1` e V2 (Casa A)
+
+O plano e os resultados estão em `ambiente-simulacao-v2dt.md` (v02, no repositório da V2 e no projeto). Resumo:
+
+- **Núcleo `nucleo-v1.1`** (commit `6fedf09`): gerador de cenários por planta (famílias F1–F7, cenários `G*`), asserções com janela relativa a um evento (campo `apos`), correção do desperdício por saída, página compacta para mais de 2 cômodos, exercício E13. As 92 assinaturas são iguais às da `nucleo-v1.0`.
+- **V2:** Casa A (a V1 mais quarto e banheiro em suíte; banheiro com 5 min), 24 cenários gerados e 5 próprios, 58 assinaturas, 1.740 execuções de experimentos. A referência atende todos os requisitos em todas as famílias.
+- **Comparabilidade:** os cenários `G*` existem por enquanto só na V2. A V0 e a V1 os recebem nos ajustes v0dtb e v1dtc, que sobem as duas para a `nucleo-v1.1`. Só então as famílias podem ser comparadas entre as três versões.
