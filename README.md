@@ -1,4 +1,4 @@
-# PCS5039 — Ambiente de simulação Reg10k (v1dta)
+# PCS5039 — Ambiente de simulação Reg10k (v1dtb)
 
 Projeto de referência da disciplina **PCS5039 — Engenharia de Software Orientada a IoT** (EPUSP): automação de iluminação residencial em ambiente simulado.
 
@@ -7,6 +7,8 @@ A sala é a do incremento 0: 5 × 4 m com uma porta, dois moradores (uma pessoa 
 A **v0dt** acrescenta o gêmeo digital (DTReg10k) sem mudar a sala: o **DTReg10k-L** no hub, o **DTReg10k-R** na plataforma, um **canal** simulado entre os dois (atraso, perda, duplicação e desconexão) e o **app** do titular (consulta, comando remoto e preferência de apagamento). O número da versão acompanha o porte da automação e o sufixo `dt` indica o gêmeo: v0 → v0dt → v0dta → **v1dt** (2 cômodos) → v1dt.1 → …
 
 A **v1dt** passa a uma residência com **sala e cozinha** ligadas por um vão sem porta (`cenarios/residencia-v1.json`). Cada cômodo tem o seu controlador (a mesma interface da v0), os seus parâmetros e o seu atuador; o SA do vão não diz a direção e vai aos dois controladores. O gêmeo e o espelho representam a casa cômodo a cômodo. Os 32 cenários anteriores continuam no ambiente de um cômodo (`cenarios/sala.json`), com as decisões idênticas às da v0dta.
+
+A **v1dtb** (ajuste "b") atualiza a documentação para a residência. Os diagramas `classes-v1dt` e `componentes-v1dt` são novos. No `classes-v1dt`, `Comodo` é a classe geral, e sala e cozinha são instâncias dela, como na V2. Os casos de uso ganharam passar entre cômodos e espiar pelo vão. `EstadoComodo` e `ConfigComodo` passam a ser sinônimos de `EstadoSala` e `ConfigSala`, e os controladores escritos na v0 continuam funcionando. O roteiro de uso das skills está em `docs/roteiro-skills.md`.
 
 A **v1dta** (ajuste "a" da v1dt) muda só a página: na aba Animação, a casa real ocupa o palco e o **gêmeo digital (DT) fica em miniatura** ao lado; o botão "Gêmeo digital (DT)", ou um clique na miniatura, troca os dois de lugar. O vão entre sala e cozinha passa a ser desenhado como abertura na parede, e a página abre no primeiro cenário da versão mais nova (M01). Decisões, atuações e métricas são as mesmas da v1dt (assinaturas em `tests/dados/assinaturas-v1dt.json`).
 
@@ -17,6 +19,7 @@ A **v0dta** (ajuste "a" da v0dt) acrescenta o **cômodo espelho**: a sala desenh
 | [`docs/guia-convencoes.md`](docs/guia-convencoes.md) | Guia de convenções: versões, identificadores, marcas, estrutura dos documentos, ciclo de incremento e publicação |
 | [`docs/ambiente-simulacao-v1dt.md`](docs/ambiente-simulacao-v1dt.md) | Plano e entrega da v1dt (sala, cozinha e passagem) |
 | [`docs/ambiente-simulacao-v1dta.md`](docs/ambiente-simulacao-v1dta.md) | Ajuste v1dta (gêmeo em miniatura, vão como abertura) |
+| [`docs/roteiro-skills.md`](docs/roteiro-skills.md) | Roteiro de uso das skills (como pedir, paradas, histórico de uso) |
 | [`docs/ambiente-simulacao-v0dta.md`](docs/ambiente-simulacao-v0dta.md) | Plano e entrega da v0dta (cômodo espelho) |
 | [`docs/ambiente-simulacao-v0dt.md`](docs/ambiente-simulacao-v0dt.md) | Plano e entrega da v0dt (gêmeo digital) |
 | [`docs/ambiente-simulacao-v02.md`](docs/ambiente-simulacao-v02.md) | Plano do incremento 0 (sala, dispositivos, controlador) |

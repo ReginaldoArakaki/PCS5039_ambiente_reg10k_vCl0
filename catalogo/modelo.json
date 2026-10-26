@@ -440,12 +440,12 @@
     {
       "id": "casos-de-uso",
       "titulo": "Casos de uso",
-      "descricao": "Atores (morador, cachorro, professor e alunos) e o sistema de iluminação."
+      "descricao": "Atores (morador, cachorro, titular, professor e alunos); na v1dt, passar entre cômodos e espiar pelo vão."
     },
     {
       "id": "classes",
-      "titulo": "Classes",
-      "descricao": "Ocupante só existe na verdade do simulador; Evidencia, Intencao, ResultadoAtuacao e EstadoSala seguem a V2."
+      "titulo": "Classes — v0 (uma sala)",
+      "descricao": "Ocupante só existe na verdade do simulador; Evidencia, Intencao, ResultadoAtuacao e EstadoSala seguem a V2. Na v1dt, ver “Classes — residência”."
     },
     {
       "id": "estados-ocupacao",
@@ -503,6 +503,16 @@
       "descricao": "Sala e cozinha, porta externa e vão interno, um controlador por cômodo."
     },
     {
+      "id": "classes-v1dt",
+      "titulo": "Classes — residência (v1dt)",
+      "descricao": "Cômodo é a classe geral: sala e cozinha são instâncias de Comodo, com os mesmos atributos (como em Comodo na V2). Passagem liga cômodos ou cômodo e exterior; o hub tem uma célula, com o seu controlador, por cômodo."
+    },
+    {
+      "id": "componentes-v1dt",
+      "titulo": "Componentes — v1dt",
+      "descricao": "Roteamento das evidências por cômodo (OR-13), uma célula por cômodo, atuação só no próprio cômodo (OR-14) e o oráculo com vista por cômodo."
+    },
+    {
       "id": "sequencia-M03",
       "titulo": "Sequência — espiar a cozinha (M03)",
       "descricao": "O SA do vão vai aos dois controladores; sem coordenação, a cozinha acende."
@@ -525,7 +535,7 @@
       "inc": 2,
       "versao": "v1dt",
       "dias": "6–7",
-      "acrescenta": "2º cômodo e passagem; o gêmeo espelha os dois cômodos · v1dta: gêmeo em miniatura com botão para ampliar e vão desenhado como abertura"
+      "acrescenta": "2º cômodo e passagem; o gêmeo espelha os dois cômodos · v1dta: gêmeo em miniatura com botão para ampliar e vão desenhado como abertura · v1dtb: diagramas da residência (classes e componentes) e nomes gerais Comodo"
     },
     {
       "inc": 3,

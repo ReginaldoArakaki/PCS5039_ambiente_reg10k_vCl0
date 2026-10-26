@@ -1,0 +1,34 @@
+flowchart LR
+    subgraph SIM["Simulador · residência (sala e cozinha)"]
+        MUN[Mundo: cômodos, passagens e ocupantes] --> DSP[Dispositivos por cômodo e SA por passagem]
+        FAL[Injetor de falhas: dispositivo ou cômodo, hub e rede] --> DSP
+    end
+    subgraph HUB["Hub"]
+        ROT[Roteamento das evidências por cômodo · OR-13]
+        CS{{Célula sala: controlador, executor, configuração}}
+        CC{{Célula cozinha: controlador, executor, configuração}}
+        DTL[(DTReg10k-L: um estado por cômodo)]
+        AGS[Agente de sincronização · fila persistente]
+        ROT --> CS
+        ROT --> CC
+        CS --> DTL
+        CC --> DTL
+        DTL --> AGS
+    end
+    subgraph PLAT["Plataforma simulada"]
+        GW[Gateway · descarta duplicatas]
+        DTR[(DTReg10k-R: RepresentacaoComodo por cômodo)]
+        CMD[Comandos e configuração com cômodo]
+        GW --> DTR
+    end
+    APP([App simulado · titular]) --> CMD
+    DTR --> APP
+    DSP -->|evidências| ROT
+    CS -->|ATU-01 · OR-14| DSP
+    CC -->|ATU-02 · OR-14| DSP
+    AGS -->|canal SOBE| GW
+    CMD -->|canal DESCE| AGS
+    MUN -. VERDADE .-> ORA[Oráculo: vista por cômodo, agregação e OR-01 a OR-14]
+    DTL -.-> ORA
+    DTR -.-> ORA
+    ORA --> WEB[Página: casa real, gêmeo em miniatura e painel por cômodo]

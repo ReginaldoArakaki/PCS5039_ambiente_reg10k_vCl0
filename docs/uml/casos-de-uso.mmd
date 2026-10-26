@@ -1,12 +1,17 @@
 flowchart LR
-    MOR([Morador]) --- UC1((Entrar e sair da sala))
+    MOR([Morador]) --- UC1((Entrar e sair da casa))
     CAO([Cachorro]) --- UC1
     MOR --- UC2((Usar o interruptor))
-    MOR --- UC3((Permanecer na sala))
+    MOR --- UC3((Permanecer num cômodo))
     CAO --- UC3
+    MOR --- UC13((Passar entre cômodos · v1dt))
+    CAO --- UC13
+    MOR --- UC14((Espiar pelo vão · v1dt))
     UC1 -.-> SIS[[Sistema de iluminação]]
     UC2 -.-> SIS
     UC3 -.-> SIS
+    UC13 -.-> SIS
+    UC14 -.-> SIS
     SIS --- UC4((Controlar a iluminação automaticamente))
     SIS --- UC5((Monitorar a saúde dos dispositivos))
     SIS --- UC6((Registrar eventos e decisões))

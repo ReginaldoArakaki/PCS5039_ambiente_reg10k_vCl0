@@ -1,7 +1,7 @@
 # Guia de convenções — projeto Reg10k e ambiente de simulação PCS5039
 
 **Documento:** guia-convencoes.md
-**Versão:** 02 | **Data:** 25/10/2026 (v01 de 25/10/2026)
+**Versão:** 03 | **Data:** 25/10/2026 (v01 e v02 de 25/10/2026)
 **Linha de pesquisa:** Laboratório de Digital Twin de Arquitetura de Sistemas de Software (EPUSP) e GLIP USP
 **Coordenação:** Reginaldo Arakaki (EPUSP)
 **Base:** prática consolidada nas versões v0, v0dt e v0dta do ambiente e nas versões v01 a v04 da V1 e da V2/V3.
@@ -15,6 +15,7 @@
 |---|---|---|
 | 01 | 25/10/2026 | Primeira versão |
 | 02 | 25/10/2026 | Com a v1dt: ambientes (`sala` e `residencia-v1`), prefixos RN-V1 e M, campo `comodo` no registro e nas asserções, chave de intenção por cômodo |
+| 03 | 25/10/2026 | Com a v1dtb: diagrama com sufixo de versão quando a estrutura muda, nomes de classe da V2 com sinônimos no código, ajuste pequeno sem rodada de dúvidas (§6) |
 
 ---
 
@@ -185,6 +186,8 @@ Tabela com ID, pergunta, opções e **proposta**, agrupada por tema. As dúvidas
 
 Duração de referência: incremento novo, 2 dias; ajuste (letra), 1 dia.
 
+Ajuste pequeno (letra) pedido pelo responsável com escopo claro pode pular as etapas 2 e 3: o pedido vale como aprovação, e o plano sai direto em v02 (entregue), com o motivo do ajuste na §1.
+
 ---
 
 ## 7. Cenários, asserções e invariantes
@@ -237,4 +240,5 @@ Duração de referência: incremento novo, 2 dias; ajuste (letra), 1 dia.
 - Tabelas para tudo o que se compara ou se rastreia; prosa para o raciocínio.
 - Cada número diz de onde vem; resultado de simulação traz a ressalva P7.
 - Diagramas em Mermaid; fontes em `docs/uml/*.mmd`, SVG gerado ao lado.
+- Diagrama cuja estrutura muda numa versão ganha o sufixo dela (`classes-v1dt`); o anterior fica, com a versão no título. Nomes de classe seguem a V2 (`Comodo`, `EstadoComodo`); nomes antigos do código ficam como sinônimos enquanto houver controladores de alunos que os usam.
 - Na resposta ao responsável: o que saiu, o que mudou do plano, como publicar e o próximo passo, sem recapitular o processo.

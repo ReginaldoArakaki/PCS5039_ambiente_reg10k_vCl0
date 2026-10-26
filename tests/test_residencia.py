@@ -84,3 +84,9 @@ def test_mudar_de_comodo_sem_passagem_e_erro():
 def test_residencia_e_deterministica():
     assert simular(ambiente_de(R["M13"]), R["M13"], ControladorReferencia, 3).hash() == \
         simular(ambiente_de(R["M13"]), R["M13"], ControladorReferencia, 3).hash()
+
+
+def test_nomes_gerais_do_comodo():
+    """v1dtb: EstadoComodo e ConfigComodo são os mesmos tipos de EstadoSala e ConfigSala."""
+    from sim.modelos import ConfigComodo, ConfigSala, EstadoComodo, EstadoSala
+    assert EstadoComodo is EstadoSala and ConfigComodo is ConfigSala

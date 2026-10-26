@@ -88,6 +88,11 @@ class EstadoSala:
     alertas: tuple = ()
 
 
+# v1dtb: nomes gerais, iguais aos da V2 e do diagrama classes-v1dt. Os nomes antigos
+# continuam valendo, para não quebrar controladores escritos na v0.
+EstadoComodo = EstadoSala
+
+
 @dataclass
 class ConfigSala:
     """Parâmetros de controle (plano §5.2)."""
@@ -103,3 +108,6 @@ class ConfigSala:
     def de_dict(cls, d: dict) -> "ConfigSala":
         campos = {k: v for k, v in d.items() if k in cls.__dataclass_fields__}
         return cls(**campos)
+
+
+ConfigComodo = ConfigSala  # v1dtb: nome geral (ver EstadoComodo)

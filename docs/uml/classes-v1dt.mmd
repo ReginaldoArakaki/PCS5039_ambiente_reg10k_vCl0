@@ -1,0 +1,110 @@
+classDiagram
+    direction LR
+    class Residencia {
+        +id
+        +passo_ms
+        +ids() list~str~
+        +passagem_entre(a, b) Passagem
+        +permitidos(comodo) set~str~
+    }
+    class Comodo {
+        +id
+        +nome
+        +largura_m
+        +profundidade_m
+        +zonas_cegas
+        +controle
+        +contem(p) bool
+    }
+    class Passagem {
+        +id
+        +tipo: TipoPassagem
+        +comodos
+        +sa
+        +outro(comodo) str
+    }
+    class TipoPassagem {
+        <<enumeration>>
+        EXTERNA
+        INTERNA
+    }
+    class Ocupante {
+        <<abstract>>
+        +id
+        +posicao
+        +comodo
+        +destino
+    }
+    class Pessoa
+    class Cachorro {
+        +porte
+    }
+    class Dispositivo {
+        <<abstract>>
+        +id
+        +modo
+        +bateria
+        +online: bool
+    }
+    class SensorPassagem
+    class SensorPresencaPIR {
+        +alcance_m
+        +retencao_ms
+    }
+    class Atuador
+    class Lampada
+    class Interruptor
+    class Hub {
+        +estados() dict
+        +receber(evidencia, comodos)
+    }
+    class Celula {
+        +comodo
+        +cfg: ConfigComodo
+        +executor
+    }
+    class Controlador {
+        <<interface>>
+        +iniciar(config)
+        +ao_evento(evidencia, agora_ms) Intencao[]
+        +ao_tick(agora_ms) Intencao[]
+        +estado() EstadoComodo
+    }
+    class EstadoComodo {
+        +ocupacao
+        +luz
+        +precedencia
+        +idade_evidencia_ms
+    }
+    class RepresentacaoComodo {
+        +comodo
+        +estado
+        +atualidade
+    }
+    class Plataforma
+    class sala["sala : Comodo"]
+    class cozinha["cozinha : Comodo"]
+    Residencia "1" *-- "1..*" Comodo
+    Residencia "1" *-- "1..*" Passagem
+    Passagem "*" -- "1..2" Comodo : liga
+    Passagem --> TipoPassagem
+    Passagem "1" -- "1" SensorPassagem : SA
+    Comodo "1" -- "1" SensorPresencaPIR
+    Comodo "1" -- "1" Atuador
+    Comodo "1" -- "1" Interruptor
+    Atuador "1" -- "1" Lampada
+    Comodo "1" o-- "*" Ocupante : contém (verdade)
+    Ocupante <|-- Pessoa
+    Ocupante <|-- Cachorro
+    Dispositivo <|-- SensorPassagem
+    Dispositivo <|-- SensorPresencaPIR
+    Dispositivo <|-- Atuador
+    Dispositivo <|-- Interruptor
+    Hub "1" *-- "1..*" Celula : uma por cômodo
+    Celula "1" --> "1" Controlador
+    Celula ..> Comodo : controla
+    Controlador ..> EstadoComodo
+    Plataforma "1" *-- "1..*" RepresentacaoComodo
+    RepresentacaoComodo ..> Comodo : representa
+    sala ..> Comodo : instância
+    cozinha ..> Comodo : instância

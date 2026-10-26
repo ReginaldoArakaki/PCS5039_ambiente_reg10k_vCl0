@@ -48,7 +48,7 @@ Ordem, sempre:
 4. **Cenários novos**, gerados por script (roteiro + esperado), com asserções de nível REQUISITO para o que vale para qualquer controlador e CARACTERIZACAO para o comportamento da referência. **Não editar roteiros nem esperados de versões anteriores**: asserções novas sobre cenários antigos vão para os testes.
 5. **Schemas** (schemas/): todo campo novo de roteiro, esperado, evento, métrica e sala.
 6. **Página** (catalogo/template.html, site.py, modelo.json): a página só desenha o que o motor gerou.
-7. **UML** (docs/uml/*.mmd → SVG com mmdc e `docs/uml/config.json`).
+7. **UML** (docs/uml/*.mmd → SVG com mmdc e `docs/uml/config.json`). Além dos diagramas novos, **rever os que já existem** (classes, casos de uso, componentes): se a estrutura mudou, criar o diagrama com o sufixo da versão (`classes-v1dt.mmd`) e deixar o antigo como registro da versão anterior, com título que diga a versão; se só cresceu, atualizar no lugar. Registrar cada diagrama em `catalogo/modelo.json`. Generalização (classe geral, como `Comodo`) segue a V2: subclasse só quando o tipo tem atributos ou regras próprias; senão, instâncias da classe geral.
 8. **Testes:** regressão por assinatura, invariantes com controlador defeituoso ou registro alterado (a OR tem de falhar quando deve), determinismo por semente.
 
 Durante a construção, anotar cada desvio do plano: vira ◆ na entrega. Desvio que muda uma decisão aprovada exige avisar o responsável antes de seguir.
@@ -61,6 +61,7 @@ Durante a construção, anotar cada desvio do plano: vira ◆ na entrega. Desvio
 - [ ] Página aberta no navegador (Playwright) em todas as abas e cenários, sem erro no console, e também dentro de iframe `srcdoc` com sandbox.
 - [ ] Capturas das telas novas examinadas a olho (sobreposição, rótulos cortados, legendas).
 - [ ] Resultados da referência conferidos contra a intuição: número estranho é investigado antes da entrega.
+- [ ] Diagramas coerentes com a versão: nenhum diagrama vigente usa a estrutura antiga (por exemplo, `grep -l "class Sala" docs/uml/*.mmd` depois de a casa ganhar cômodos) e a contagem de invariantes nos componentes é a atual.
 
 ## Etapa 6 — Entrega
 

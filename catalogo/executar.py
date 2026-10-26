@@ -27,7 +27,7 @@ METRICAS_NUMERICAS = (
     # v0dta
     "espelho_fiel_s", "erro_de_percepcao_s", "erro_de_sincronizacao_s", "espelho_nao_afirma_s",
 )
-VERSAO = "v1dta"
+VERSAO = "v1dtb"
 
 
 # --------------------------------------------------------------- carregamento
@@ -53,7 +53,7 @@ def ambiente_de(roteiro: dict) -> dict:
 def carregar_roteiros(ids: Optional[Iterable[str]] = None) -> list[dict]:
     todos = [ler_json(p) for p in sorted((CENARIOS / "roteiros").glob("*.json"))]
     ordem = {"NORMAL": 0, "FALSO_POSITIVO": 1, "FALSO_NEGATIVO": 2, "FALHA": 3, "GEMEO_DIGITAL": 4}
-    versoes = {"v0": 0, "v0dt": 0, "v0dta": 0, "v1dt": 1, "v1dta": 1}
+    versoes = {"v0": 0, "v0dt": 0, "v0dta": 0, "v1dt": 1, "v1dta": 1, "v1dtb": 1}
     todos.sort(key=lambda r: (versoes.get(r.get("versao", "v0"), 9), ordem.get(r["tipo"], 9), r["id"]))
     if ids:
         ids = set(ids)
