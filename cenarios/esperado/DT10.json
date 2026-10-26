@@ -70,6 +70,17 @@
       }
     },
     {
+      "id": "E1",
+      "nivel": "REQUISITO",
+      "dado": "hub desligado",
+      "quando": "t = 110 s",
+      "entao": {
+        "tipo": "espelho",
+        "em_ms": 110000,
+        "classe": "NAO_AFIRMA"
+      }
+    },
+    {
       "id": "INV",
       "nivel": "REQUISITO",
       "dado": "qualquer execução",

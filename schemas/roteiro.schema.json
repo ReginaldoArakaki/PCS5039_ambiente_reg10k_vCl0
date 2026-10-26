@@ -351,7 +351,8 @@
     "versao": {
       "enum": [
         "v0",
-        "v0dt"
+        "v0dt",
+        "v0dta"
       ],
       "description": "Versão em que o cenário entrou (v0dt: gêmeo digital)"
     },
@@ -367,6 +368,16 @@
         }
       },
       "additionalProperties": false
+    },
+    "amostras_ms": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "minItems": 3,
+      "maxItems": 3,
+      "description": "v0dta: instantes das amostras início, meio e fim do cômodo espelho (padrão: 1ª ação + 5 s, metade, fim − 1 s)"
     }
   }
 }

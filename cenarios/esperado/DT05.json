@@ -95,6 +95,28 @@
       }
     },
     {
+      "id": "E1",
+      "nivel": "REQUISITO",
+      "dado": "enlace fora",
+      "quando": "t = 300 s",
+      "entao": {
+        "tipo": "espelho",
+        "em_ms": 300000,
+        "classe": "NAO_AFIRMA"
+      }
+    },
+    {
+      "id": "E2",
+      "nivel": "CARACTERIZACAO",
+      "dado": "sessão restabelecida",
+      "quando": "t = 680 s",
+      "entao": {
+        "tipo": "espelho",
+        "em_ms": 680000,
+        "classe": "FIEL"
+      }
+    },
+    {
       "id": "INV",
       "nivel": "REQUISITO",
       "dado": "qualquer execução",

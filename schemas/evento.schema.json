@@ -228,6 +228,23 @@
           }
         }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "tipo": {
+            "const": "EVIDENCIA_RECEBIDA"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "evidencia",
+          "t_origem_ms",
+          "atraso_ms",
+          "historico"
+        ]
+      }
     }
   ]
 }

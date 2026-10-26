@@ -51,6 +51,17 @@
       }
     },
     {
+      "id": "E1",
+      "nivel": "CARACTERIZACAO",
+      "dado": "Rex sozinho",
+      "quando": "t = 120 s",
+      "entao": {
+        "tipo": "espelho",
+        "em_ms": 120000,
+        "classe": "FIEL"
+      }
+    },
+    {
       "id": "INV",
       "nivel": "REQUISITO",
       "dado": "qualquer execução",

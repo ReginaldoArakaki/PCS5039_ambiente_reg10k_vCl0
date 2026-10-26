@@ -123,8 +123,17 @@ class Plataforma:
         if msg["camada"] == "ESTADO":
             estado = {k: d.get(k) for k in ("ocupacao", "luz", "precedencia", "idade_evidencia_ms", "alertas")}
             self._aplicar_estado(t, n, estado, msg["ref_seq"], "EVENTO", False)
-        elif msg["camada"] == "PERCEPCAO" and msg["evento"] in ("PASSAGEM", "MOVIMENTO", "INTERRUPTOR"):
-            self.ultima_evidencia = max(self.ultima_evidencia or 0, t)
+        elif msg["camada"] == "PERCEPCAO":
+            if msg["evento"] in ("PASSAGEM", "MOVIMENTO", "INTERRUPTOR"):
+                self.ultima_evidencia = max(self.ultima_evidencia or 0, t)
+            if msg["evento"] in ("PASSAGEM", "MOVIMENTO", "FIM_MOVIMENTO", "INTERRUPTOR"):
+                # v0dta: o espelho mostra o sinal quando ele CHEGA à plataforma
+                self.reg.add(PLATAFORMA, "EVIDENCIA_RECEBIDA", t, origem=d.get("origem"), evidencia=msg["evento"],
+                             t_origem_ms=msg["t_origem"], atraso_ms=int(t - msg["t_origem"]),
+                             historico=n < self.n_aplicado)
+        elif msg["camada"] == "ATUACAO" and msg["evento"] == "RESULTADO":
+            self.reg.add(PLATAFORMA, "RESULTADO_RECEBIDO", t, chave=d.get("chave"), acao=d.get("acao"),
+                         nivel=d.get("nivel"), t_origem_ms=msg["t_origem"], historico=n < self.n_aplicado)
 
     def _aplicar_estado(self, t: float, n: int, estado: dict, ref_seq: int, origem: str, reconexao: bool) -> None:
         if n <= self.n_aplicado:

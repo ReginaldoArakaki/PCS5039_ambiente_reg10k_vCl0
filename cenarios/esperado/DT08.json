@@ -54,6 +54,17 @@
       }
     },
     {
+      "id": "E1",
+      "nivel": "CARACTERIZACAO",
+      "dado": "canal realista",
+      "quando": "o cenário termina",
+      "entao": {
+        "tipo": "metrica",
+        "nome": "espelho_fiel_s",
+        "min": 1500
+      }
+    },
+    {
       "id": "INV",
       "nivel": "REQUISITO",
       "dado": "qualquer execução",

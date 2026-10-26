@@ -278,6 +278,26 @@
       "id": "divergencia_alem_prazo_s",
       "nome": "Divergência L × R (s)",
       "def": "Tempo em que o R diz 'atual' com ocupação ou luz diferentes do L, descontados os 5 s de sincronização. Limite: 0."
+    },
+    {
+      "id": "espelho_fiel_s",
+      "nome": "Espelho fiel (s)",
+      "def": "Tempo em que o cômodo espelho (R) está atual e confere com a verdade em ocupação e luz (caracterização)."
+    },
+    {
+      "id": "erro_de_percepcao_s",
+      "nome": "Erro de percepção (s)",
+      "def": "Tempo em que o hub (L) já diverge da verdade: sensores e controlador, inclusive a espera de T_apagamento após a saída."
+    },
+    {
+      "id": "erro_de_sincronizacao_s",
+      "nome": "Erro de sincronização (s)",
+      "def": "Tempo em que o hub confere com a verdade, mas o espelho R ainda não confere com o hub: canal e plataforma."
+    },
+    {
+      "id": "espelho_nao_afirma_s",
+      "nome": "Espelho não afirma (s)",
+      "def": "Tempo com o R desatualizado, sem evidência, com a plataforma fora ou com a ocupação declarada desconhecida (incerteza honesta, RN01)."
     }
   ],
   "invariantes": [
@@ -439,6 +459,11 @@
       "id": "estados-gemeo-remoto",
       "titulo": "Estados — atualidade do DTReg10k-R",
       "descricao": "Sem evidência, atual e desatualizado; só um estado novo do hub restabelece a atualidade."
+    },
+    {
+      "id": "espelho-v0dta",
+      "titulo": "Cômodo espelho — classes de fidelidade (v0dta)",
+      "descricao": "Como cada instante é classificado: fiel, percepção, sincronização ou não afirma."
     }
   ],
   "trilha": [
@@ -452,7 +477,7 @@
       "inc": 1,
       "versao": "v0dt",
       "dias": "4–5",
-      "acrescenta": "Gêmeo digital L/R, canal, plataforma e app simulados — mesma sala, mesmo morador e Rex"
+      "acrescenta": "Gêmeo digital L/R, canal, plataforma e app simulados — mesma sala, mesmo morador e Rex · v0dta: cômodo espelho, amostras e fidelidade"
     },
     {
       "inc": 2,

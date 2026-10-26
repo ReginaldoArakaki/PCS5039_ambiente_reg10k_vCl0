@@ -1,7 +1,7 @@
 # V2 e V3 — Requisitos funcionais e não funcionais da plataforma Reg10k
 
-**Documento:** V2 e V3 requisitos funcionais e não funcionais plataforma reg10k-v03.md
-**Versão:** 03 | **Data:** 24/10/2026 (v01 de 22/10/2026; v02 de 24/10/2026)
+**Documento:** V2 e V3 requisitos funcionais e não funcionais plataforma reg10k-v04.md
+**Versão:** 04 | **Data:** 24/10/2026 (v01 de 22/10/2026; v02 e v03 de 24/10/2026)
 **Referencial:** RM-ODP adaptado [R08]. **V2 Informação** (modelo estático estrutural, invariantes e classificação de dados) e **V3 Computação** (objetos, interfaces e comportamento dinâmico).
 **Base:** V1 — Business Drivers da Plataforma Reg10k, v02 [R13], com 8 direcionadores (BD01–BD08), 4 macroprocessos (MP1–MP4) e a governança MT, 34 regras e 49 requisitos de negócio (RNP).
 **Situação:** modelagem para validação. Os requisitos derivam das RNP da V1. Metas numéricas são propostas, salvo quando herdadas de decisão aprovada. Nenhum valor é medição.
@@ -15,6 +15,7 @@
 | 01 | 22/10/2026 | Primeira versão: 59 RF, 41 RNF, modelos estático e dinâmico, checklist |
 | 02 | 24/10/2026 | Alinhada à V1 v02. D09 decidida (A09, kit sem fiação): RF-KIT-01, RF-COM-04, RNF-USA-01 e RNF-LEG-04 reescritos, sem a marca de dependência; nova INV-16. D13 decidida: I01 e I02 viram A10 e A11. RN34 em RF-OPR-01 (A12). PS05 com 60 s em RF-OPR-01 e INV-09 (A13). Classe Passagem, enumeração TipoPassagem, RF-COM-05 e INV-15 para o SA vinculado à porta (A14). Contagens: 59 RF, 41 RNF, 42 classes, 16 invariantes, 22 enumerações |
 | 03 | 24/10/2026 | Entrega da v0dt do ambiente de simulação [R15]. Nova seção 3.6: requisitos de sincronização, comando remoto e configuração exercitados em 12 cenários; correspondência entre as invariantes OR-07 a OR-12 do oráculo e INV-07, INV-10, INV-14; seis refinamentos (RS-01 a RS-06). Nova pendência PD08 e novo encaminhamento para V4. Requisitos, classes e invariantes sem alteração de contagem |
+| 04 | 24/10/2026 | Entrega da v0dta (cômodo espelho) [R16]: refinamento RS-07 na §3.6.3 e referência R16. Sem alteração de requisitos, classes ou invariantes |
 
 ---
 
@@ -1238,6 +1239,7 @@ A v0dt do ambiente de simulação da disciplina PCS5039 (repositório ReginaldoA
 | RS-04 | O comando remoto precisa de lugar explícito na precedência [R10 §7.2]: abaixo da intervenção manual e acima da rotina de ocupação, por PS03 (15 min) | RF-OPR-03; proposta de regra para a V1 (RN-DT-09 na simulação) | P |
 | RS-05 | Com 1% de perda, a atualidade p95 depende do temporizador de reenvio (3 s na simulação): em 2 de 30 sementes ficou perto de 3,3 s | Encaminhamento para V4: reenvio menor que PS11 menos a latência do canal | P |
 | RS-06 | A divergência L × R é inevitável durante a propagação; o critério verificável é "nenhuma divergência além do prazo de sincronização (PS11)" | Critério de aceite de RNF-DES-01 | N |
+| RS-07 | O espelho visual (v0dta) mostrou que, mesmo com o canal realista, a diferença entre a casa real e o que o titular vê vem quase toda da percepção local (sensores, controlador, T_apagamento), e só décimos de segundo da sincronização | RepresentacaoRemota ganha uma visão derivada, o "cômodo espelho", com a fidelidade em quatro classes (fiel, percepção, sincronização, não afirma); a incerteza declarada (RN01) conta como "não afirma", nunca como erro | N |
 
 ---
 
@@ -1350,6 +1352,7 @@ Critérios baseados na ISO/IEC/IEEE 29148:2018 (qualidade de requisitos individu
 | R11 | Arquitetura nas cinco visões, v02, 18/10/2026 |
 | R13 | V1 — Business Drivers da Plataforma Reg10k, v02, 24/10/2026 |
 | R15 | Plano do ambiente de simulação — v0dt (gêmeo digital integrado), entregue em 24/10/2026; repositório ReginaldoArakaki/PCS5039_ambiente_reg10k_vCl0, tag v0dt |
+| R16 | Plano de ajuste do ambiente de simulação — v0dta (cômodo espelho), entregue em 24/10/2026; tag v0dta |
 | — | ISO/IEC/IEEE 29148:2018 — Requirements engineering |
 | — | ISO/IEC 25010:2023 — Product quality model |
 | — | ITU-T X.901–X.904 / ISO/IEC 10746 — RM-ODP |

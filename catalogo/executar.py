@@ -8,6 +8,7 @@ import statistics
 from pathlib import Path
 from typing import Callable, Iterable, Optional
 
+from avaliacao.espelho import salvar_amostras
 from avaliacao.oraculo import avaliar, roteiro_sem_rede, tem_app, tem_falha_de_rede
 from hub.controlador import Controlador, ControladorReferencia
 from sim.motor import simular
@@ -23,8 +24,10 @@ METRICAS_NUMERICAS = (
     # v0dt
     "atualidade_gemeo_ms_p95", "comando_remoto_ms_p95", "comandos_vencidos_executados",
     "efeitos_duplicados_remotos", "reconciliacao_ms_max", "divergencia_alem_prazo_s",
+    # v0dta
+    "espelho_fiel_s", "erro_de_percepcao_s", "erro_de_sincronizacao_s", "espelho_nao_afirma_s",
 )
-VERSAO = "v0dt"
+VERSAO = "v0dta"
 
 
 # --------------------------------------------------------------- carregamento
@@ -106,6 +109,7 @@ def executar(roteiro: dict, fabrica, semente: int = SEMENTE_REFERENCIA, sala: Op
     if salvar:
         pasta = SAIDA / roteiro["id"] / nome / str(semente)
         reg.salvar(pasta / "eventos.jsonl")
+        salvar_amostras(pasta / "espelho", sala, roteiro, nome, av["espelho"]["amostras"])  # v0dta
         (pasta / "metricas.json").write_text(json.dumps(resumo, ensure_ascii=False, indent=2), encoding="utf-8")
     resumo["_eventos"] = reg.eventos
     return resumo
@@ -168,7 +172,7 @@ def gerar_catalogo(controladores: dict[str, Callable[[], object]], ids=None, n_s
         "cenarios": [
             {"versao": r.get("versao", "v0"),
              **{k: r[k] for k in ("id", "titulo", "tipo", "modo", "duracao_ms", "descricao",
-                                  "comportamento_ideal", "comportamento_referencia", "requisitos", "regras", "rede")
+                                  "comportamento_ideal", "comportamento_referencia", "requisitos", "regras", "rede", "amostras_ms")
                 if k in r},
              "esperado": carregar_esperado(r["id"])}
             for r in roteiros

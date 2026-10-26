@@ -53,6 +53,17 @@
       }
     },
     {
+      "id": "E1",
+      "nivel": "CARACTERIZACAO",
+      "dado": "relógio saltou",
+      "quando": "t = 200 s",
+      "entao": {
+        "tipo": "espelho",
+        "em_ms": 200000,
+        "classe": "FIEL"
+      }
+    },
+    {
       "id": "INV",
       "nivel": "REQUISITO",
       "dado": "qualquer execução",

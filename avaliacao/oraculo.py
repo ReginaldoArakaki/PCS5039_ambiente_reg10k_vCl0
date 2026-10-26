@@ -16,13 +16,19 @@ from typing import Any, Optional
 
 from sim.modelos import (
     ACENDER, APAGADA_MANUAL, APAGAR, ATUACAO, ATUAL, AUTOMATICA, DECISAO, DESCONHECIDA,
-    EFEITO_OBSERVADO, ESTADO, EXECUCAO_RELATADA, DESCONHECIDO, PERCEPCAO, PLATAFORMA, REDE,
-    SISTEMA, SUBSTITUIDA, VAZIA, VERDADE,
+    EFEITO_OBSERVADO, ESTADO, EXECUCAO_RELATADA, DESCONHECIDO, LUZ_ACESA, OCUPADA, PERCEPCAO, PLATAFORMA,
+    REDE, SISTEMA, SUBSTITUIDA, VAZIA, VERDADE,
 )
 
 NIVEIS_VALIDOS = {EFEITO_OBSERVADO, EXECUCAO_RELATADA, DESCONHECIDO, SUBSTITUIDA}
 INVARIANTES = tuple(f"OR-{i:02d}" for i in range(1, 13))
 PRAZO_ATUALIDADE_MS = 5_000   # PS11: divergência L × R tolerada até a sincronização
+# v0dta: classes de fidelidade do espelho (plano v0dta §5)
+FIEL = "FIEL"
+PERCEPCAO_ERRO = "PERCEPCAO"
+SINCRONIZACAO = "SINCRONIZACAO"
+NAO_AFIRMA = "NAO_AFIRMA"
+CLASSES_ESPELHO = (FIEL, PERCEPCAO_ERRO, SINCRONIZACAO, NAO_AFIRMA)
 FALHAS_DE_REDE = {"CANAL_DESCONECTA", "PLATAFORMA_FORA", "CANAL_LATENCIA", "CANAL_DUPLICA", "CANAL_PERDE"}
 TIPOS_DETECCAO = {"PASSAGEM", "MOVIMENTO", "FIM_MOVIMENTO"}
 
@@ -90,6 +96,7 @@ class Analise:
         self.mudancas_locais: list[dict] = []
         self.plataforma: list[dict] = []
         self.rede: list[dict] = []
+        self.hub_ligado = Serie(True)
 
         self.ocupada = Serie(False)       # verdade: há ocupante na sala?
         self.luz = Serie(False)           # verdade: lâmpada emitindo luz?
@@ -143,6 +150,10 @@ class Analise:
                 self.sistema.append(e)
                 if e["tipo"] == "ALERTA":
                     self.alertas.append(e)
+                elif e["tipo"] == "HUB_DESLIGADO":
+                    self.hub_ligado.mudar(t, False)
+                elif e["tipo"] == "HUB_LIGADO":
+                    self.hub_ligado.mudar(t, True)
                 elif e["tipo"] == "CONFIG_APLICADA" and "t_apagamento_ms" in e:
                     self.t_apagamento_serie.mudar(t, e["t_apagamento_ms"])
             elif c == PERCEPCAO:
@@ -199,6 +210,50 @@ class Analise:
             "tempo_luz_acesa_s": round(_cruzamento([self.luz], fim, bool) / 1000, 1),
             "alertas": sorted({a["alerta"] for a in self.alertas if a["ativo"]}),
             **self.metricas_gemeo(),
+            **self.metricas_espelho(),
+        }
+
+    # ------------------------------------------------------ espelho (v0dta)
+    def classe_espelho(self, t: int, visao: str = "R") -> str:
+        """Compara o espelho com a verdade no instante t e classifica a causa da diferença."""
+        real_ocup, real_luz = self.ocupada.em(t), self.luz.em(t)
+        hub = self.hub_ligado.em(t)
+        l_ocup, l_luz = self.local_valor.em(t)
+        l_ok = hub and l_ocup != DESCONHECIDA and (l_ocup == OCUPADA) == real_ocup and (l_luz in LUZ_ACESA) == real_luz
+        if visao == "L":
+            if not hub or l_ocup == DESCONHECIDA:
+                return NAO_AFIRMA  # hub desligado ou incerteza declarada (RN01)
+            return FIEL if l_ok else PERCEPCAO_ERRO
+        r_ocup, r_luz = self.remoto_valor.em(t)
+        if not self.remoto_atual.em(t) or r_ocup in (None, DESCONHECIDA):
+            return NAO_AFIRMA  # desatualizado, sem evidência ou ocupação desconhecida
+        r_ok = r_ocup not in (None, DESCONHECIDA) and (r_ocup == OCUPADA) == real_ocup and (r_luz in LUZ_ACESA) == real_luz
+        if r_ok:
+            return FIEL
+        return PERCEPCAO_ERRO if not l_ok else SINCRONIZACAO
+
+    def segmentos_espelho(self, visao: str = "R") -> list[list]:
+        series = (self.ocupada, self.luz, self.hub_ligado, self.local_valor, self.remoto_atual, self.remoto_valor)
+        pontos = sorted({t for s in series for t in s.ts if t < self.fim} | {0, self.fim})
+        segs: list[list] = []
+        for a, b in zip(pontos, pontos[1:]):
+            c = self.classe_espelho(a, visao)
+            if segs and segs[-1][2] == c:
+                segs[-1][1] = b
+            else:
+                segs.append([a, b, c])
+        return segs
+
+    def metricas_espelho(self) -> dict:
+        tot = {c: 0 for c in CLASSES_ESPELHO}
+        for a, b, c in self.segmentos_espelho("R"):
+            tot[c] += b - a
+        return {
+            "espelho_fiel_s": round(tot[FIEL] / 1000, 1),
+            "erro_de_percepcao_s": round(tot[PERCEPCAO_ERRO] / 1000, 1),
+            "erro_de_sincronizacao_s": round(tot[SINCRONIZACAO] / 1000, 1),
+            "espelho_nao_afirma_s": round(tot[NAO_AFIRMA] / 1000, 1),
+            "espelho_fiel_pct": round(100 * tot[FIEL] / self.fim, 1) if self.fim else None,
         }
 
     # ------------------------------------------------------- métricas v0dt
@@ -457,6 +512,9 @@ class Analise:
             n_min = e.get("min", 1)
             n_max = e.get("max", 10**9)
             return n_min <= len(achados) <= n_max, f"{len(achados)} evento(s) {e['camada']}/{e['evento']}"
+        if tipo == "espelho":
+            c = self.classe_espelho(e["em_ms"], e.get("visao", "R"))
+            return c == e["classe"], f"espelho {e.get('visao', 'R')} em {e['em_ms']} ms: {c}"
         if tipo == "gemeo":
             t = e["em_ms"]
             ultimos = [x for x in self.estados_remotos if x["t_ms"] <= t]
@@ -542,6 +600,9 @@ def avaliar(eventos: list[dict], roteiro: dict, sala: dict, esperado: Optional[d
             par: Optional[list[dict]] = None) -> dict:
     an = Analise(eventos, roteiro, sala, par)
     m = an.metricas()
+    from avaliacao.espelho import amostras  # v0dta
+    espelho = {"segmentos": {"R": an.segmentos_espelho("R"), "L": an.segmentos_espelho("L")},
+               "amostras": amostras(an)}
     inv = an.invariantes()
     resultados = {}
     if esperado:
@@ -561,4 +622,5 @@ def avaliar(eventos: list[dict], roteiro: dict, sala: dict, esperado: Optional[d
         # Caracterização descreve a referência: em outro controlador, "difere" não é falha.
         "caracterizacao": {"total": len(car), "igual_referencia": sum(r["ok"] for r in car)},
         "aprovado": all(r["ok"] for r in resultados.values()) and inv_ok,
+        "espelho": espelho,
     }

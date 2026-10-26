@@ -1,0 +1,12 @@
+flowchart TD
+    T([instante t]) --> A{R atual, plataforma no ar e ocupação conhecida?}
+    A -- não --> NA[NÃO AFIRMA · conexão ou incerteza declarada]
+    A -- sim --> B{R confere com a verdade? ocupação e luz}
+    B -- sim --> F[FIEL]
+    B -- não --> C{L confere com a verdade?}
+    C -- não --> P[PERCEPÇÃO · sensores e controlador]
+    C -- sim --> S[SINCRONIZAÇÃO · canal e plataforma]
+    style F fill:#d1fae5,stroke:#1a7f4b
+    style P fill:#ede9fe,stroke:#7c3aed
+    style S fill:#ffedd5,stroke:#c2410c
+    style NA fill:#e2e8f0,stroke:#64748b

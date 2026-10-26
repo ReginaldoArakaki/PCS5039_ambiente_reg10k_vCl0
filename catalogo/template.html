@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Simulação Reg10k — v0dt</title>
+<title>Simulação Reg10k — v0dta</title>
 <style>
 :root{
   --bg:#f6f7f9; --panel:#ffffff; --ink:#1d2330; --ink2:#566070; --line:#dfe3ea; --accent:#1f4e8c;
@@ -52,7 +52,15 @@ tr.click{cursor:pointer} tr.click:hover td{background:#f3f6fb} tr.sel td{backgro
 .diag figcaption{font-size:12.5px;margin-top:6px}
 .lightbox{position:fixed;inset:0;background:rgba(10,15,25,.75);display:none;align-items:center;justify-content:center;z-index:50;padding:24px}
 .lightbox.on{display:flex} .lightbox img{max-width:96vw;max-height:90vh;background:#fff;border-radius:8px;padding:10px}
-.anim{display:grid;grid-template-columns:minmax(0,600px) minmax(280px,1fr);gap:16px;align-items:start}
+.anim{display:grid;grid-template-columns:minmax(0,2fr) minmax(300px,1fr);gap:16px;align-items:start}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.duo h3{margin:0 0 4px;font-size:13px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;vertical-align:middle}
+.seg button{border:0;background:#fff;padding:2px 9px;font:inherit;font-size:12px;cursor:pointer} .seg button.on{background:var(--accent);color:#fff}
+.amostras{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}
+.amostras figure{margin:0;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff}
+.amostras img{width:100%;height:auto;display:block;cursor:zoom-in}
+.cl-FIEL{background:#1a7f4b}.cl-PERCEPCAO{background:#7c3aed}.cl-SINCRONIZACAO{background:#c2410c}.cl-NAO_AFIRMA{background:#64748b}
 .anim svg{width:100%;height:auto;background:#fff;border:1px solid var(--line);border-radius:10px}
 .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
 .controls input[type=range]{flex:1;min-width:200px}
@@ -85,7 +93,7 @@ tr.click{cursor:pointer} tr.click:hover td{background:#f3f6fb} tr.sel td{backgro
 <body>
 <header>
   <div>
-    <h1>Simulação Reg10k — v0dt <span class="small muted" style="font-weight:500">sala do incremento 0 com gêmeo digital</span></h1>
+    <h1>Simulação Reg10k — v0dta <span class="small muted" style="font-weight:500">sala do incremento 0 com gêmeo digital e cômodo espelho</span></h1>
     <div class="sub" id="sub"></div>
   </div>
   <div style="flex:1"></div>
@@ -121,6 +129,8 @@ const TIPO_NOME = {NORMAL: "Normal", FALSO_POSITIVO: "Falso positivo", FALSO_NEG
 const CAMADAS = ["VERDADE","PERCEPCAO","DECISAO","ATUACAO","ESTADO","SISTEMA","REDE","PLATAFORMA"];
 const verTag = c => `<span class="ver${c.versao === "v0dt" ? " dt" : ""}">${c.versao || "v0"}</span>`;
 const FALHAS_REDE = ["CANAL_DESCONECTA","PLATAFORMA_FORA","CANAL_LATENCIA","CANAL_DUPLICA","CANAL_PERDE"];
+// v0dta: classes de fidelidade do espelho
+const CLASSE = {FIEL: ["#1a7f4b", "espelho fiel"], PERCEPCAO: ["#7c3aed", "erro de percepção"], SINCRONIZACAO: ["#c2410c", "erro de sincronização"], NAO_AFIRMA: ["#64748b", "não afirma"]};
 const NOMES = Object.fromEntries(D.sala.ocupantes.map(o => [o.id, o.nome || o.id]));
 const CTRLS = D.meta.controladores;
 const CEN = Object.fromEntries(D.cenarios.map(c => [c.id, c]));
@@ -138,7 +148,7 @@ function limite(c, id) {
 
 const S = {tab: "cenarios", cen: D.cenarios[0].id, ctrl: CTRLS[0], t: 0, playing: false, speed: 20,
            modelSec: "geral", filtroTipo: "", filtroVer: "", busca: "", cmpA: CTRLS[0], cmpB: CTRLS[1] || CTRLS[0],
-           zoom: 1, camadas: new Set(CAMADAS), hb: false, buscaEv: ""};
+           zoom: 1, camadas: new Set(CAMADAS), hb: false, buscaEv: "", visao: "R", visaoAm: "R"};
 
 function ex(cen = S.cen, ctrl = S.ctrl) { return D.execucoes[`${cen}|${ctrl}`]; }
 function lerHash() {
@@ -173,7 +183,8 @@ function derivar(cen, ctrl) {
     hubOff: [], verdade: [], interruptores: [], spMudo: [], queimada: null,
     // v0dt: o que a plataforma acha (DTReg10k-R), canal e app
     remotos: [], remOcup: new Degraus(null), remLuz: new Degraus(null), remAtual: new Degraus("SEM_EVIDENCIA"), sessao: new Degraus(false),
-    enlaceFora: [], platFora: [], perdas: [], duplicadas: [], app: [], appRes: [], divergencias: [], cmdHub: [], latencia: []};
+    enlaceFora: [], platFora: [], perdas: [], duplicadas: [], app: [], appRes: [], divergencias: [], cmdHub: [], latencia: [],
+    remPass: [], remSp: new Degraus(false), remRes: []};
   let hubDesl = null, spMudoIni = null, enlaceIni = null, platIni = null, latIni = null;
   for (const v of e.eventos) {
     const t = v.t_ms;
@@ -205,6 +216,8 @@ function derivar(cen, ctrl) {
       else if (v.tipo === "APP_RESULTADO" || v.tipo === "APP_CONFIG") r.appRes.push(v);
       else if (v.tipo.startsWith("APP_")) r.app.push(v);
       else if (v.tipo === "DIVERGENCIA") r.divergencias.push(v);
+      else if (v.tipo === "EVIDENCIA_RECEBIDA") { if (v.evidencia === "PASSAGEM") r.remPass.push(t); else if (v.evidencia === "MOVIMENTO") r.remSp.set(t, true); else if (v.evidencia === "FIM_MOVIMENTO") r.remSp.set(t, false); }
+      else if (v.tipo === "RESULTADO_RECEBIDO") r.remRes.push(v);
       else r.app.push(v);
     } else if (v.camada === "REDE") {
       if (v.tipo === "SESSAO_ESTABELECIDA") r.sessao.set(t, true);
@@ -273,6 +286,8 @@ function desc(v) {
     case "LATENCIA_ALTERADA": return v.latencia_extra_ms ? `Canal fica lento: +${v.latencia_extra_ms / 1000} s (${v.sentidos.join(", ")})` : "Latência do canal volta ao normal";
     case "ESTADO_REMOTO": return `DTReg10k-R: ${v.ocupacao ?? "—"}, luz ${v.luz ?? "—"} · ${v.atualidade}${v.conexao === "DESCONECTADO" ? " · hub desconectado" : ""}${v.origem === "RESUMO" ? " (resumo)" : ""}`;
     case "DIVERGENCIA": return `Divergência em ${v.atributo}: R tinha ${v.valor_remoto}, hub tem ${v.valor_local} → ${v.resolucao === "ADOTA_LOCAL" ? "adota o hub (RN27)" : v.resolucao}`;
+    case "EVIDENCIA_RECEBIDA": return `Plataforma recebe ${v.evidencia} de ${v.origem || "—"} (${(v.atraso_ms / 1000).toFixed(1)} s depois${v.historico ? ", histórico" : ""})`;
+    case "RESULTADO_RECEBIDO": return `Plataforma recebe resultado ${v.chave}: ${v.nivel}${v.historico ? " (histórico)" : ""}`;
     case "APP_COMANDO": return `App: titular toca em ${v.acao} (${v.chave})`;
     case "COMANDO_CRIADO": return `Plataforma cria ${v.chave} (${v.acao}), válido até ${fmtT(v.valida_ate_ms)}`;
     case "COMANDO_RECUSADO": return `Plataforma recusa ${v.chave}: ${v.motivo}${v.idade_estado_ms != null ? `, estado com ${Math.round(v.idade_estado_ms / 1000)} s` : ""}`;
@@ -357,6 +372,18 @@ function renderModelo() {
       <table><tr><th>Camada</th><th>Quem gera</th><th>Classe V2</th></tr>${M.camadas.map(c => `<tr><td>${cam(c.id)}</td><td>${esc(c.quem)}</td><td>${esc(c.v2)}</td></tr>`).join("")}</table></div>
       <div class="card"><h2>Trilha incremental</h2><p class="small muted">O número da versão acompanha o porte da automação; o sufixo <b>dt</b> indica o gêmeo digital.</p><table><tr><th>Inc.</th><th>Versão</th><th>Dias</th><th>Acrescenta</th></tr>
       ${M.trilha.map(t => `<tr${t.inc === D.meta.incremento ? ' class="sel"' : ""}><td>${t.inc}</td><td class="mono">${t.versao || ""}</td><td>${t.dias}</td><td>${esc(t.acrescenta)}</td></tr>`).join("")}</table></div>`;
+    h += `<div class="card"><h2>Sala real × cômodo espelho (v0dta)</h2><p class="small muted">O espelho é desenhado só com o que o gêmeo recebeu. As diferenças são os limites do sistema, e a métrica de fidelidade diz de onde vem cada uma.</p>
+      <table><tr><th>Na sala real (verdade)</th><th>No cômodo espelho (gêmeo)</th><th>Por quê</th></tr>
+      <tr><td>Morador e Rex com posição e identidade</td><td>Mancha de presença sem identidade, posição ou contagem</td><td>RN09, RN34</td></tr>
+      <tr><td>Lâmpada acesa ou apagada de fato</td><td>Luz segundo o gêmeo, com o nível de evidência</td><td>RN02</td></tr>
+      <tr><td>O que acontece agora</td><td>O que o gêmeo sabia há <i>n</i> segundos, com a idade</td><td>PS06, PS11</td></tr>
+      <tr><td>Interação física: porta e interruptor</td><td>Interação remota: comando e preferência pelo app</td><td>RN-DT-05, RN-DT-09</td></tr>
+      <tr><td>Sempre disponível</td><td>Velado quando a sessão cai ou o hub desliga</td><td>RN-DT-04</td></tr></table>
+      <h3>Fidelidade do espelho</h3><table><tr><th>Classe</th><th>Quando</th><th>Causa que isola</th></tr>
+      <tr><td><span class="pill cl-FIEL" style="color:#fff">fiel</span></td><td>O espelho está atual e confere com a verdade (ocupação e luz)</td><td>—</td></tr>
+      <tr><td><span class="pill cl-PERCEPCAO" style="color:#fff">percepção</span></td><td>O hub (L) já diverge da verdade</td><td>Sensores e controlador (inclui a espera de T_apagamento após a saída)</td></tr>
+      <tr><td><span class="pill cl-SINCRONIZACAO" style="color:#fff">sincronização</span></td><td>O hub confere com a verdade, mas o R ainda não confere com o hub</td><td>Canal e plataforma</td></tr>
+      <tr><td><span class="pill cl-NAO_AFIRMA" style="color:#fff">não afirma</span></td><td>R desatualizado, sem evidência, plataforma fora, ou ocupação declarada desconhecida</td><td>Conexão ou incerteza declarada (RN01: falta de resposta nunca prova ausência)</td></tr></table></div>`;
   } else if (S.modelSec === "diagramas") {
     h = `<div class="card"><h2>Diagramas UML</h2><p class="muted small">Clique para ampliar. As fontes Mermaid estão em <span class="mono">docs/uml/</span>.</p>
       <div class="diag">${M.diagramas.map(d => `<figure data-src="${d.src}"><img src="${d.src}" alt="${esc(d.titulo)}"><figcaption><b>${esc(d.titulo)}</b><br><span class="muted">${esc(d.descricao)}</span><br><span class="mono">${d.fonte}</span></figcaption></figure>`).join("")}</div></div>`;
@@ -444,6 +471,21 @@ function renderCenarios() {
         return `<td><span class="pill ${cls}">${txt}</span><div class="small muted">${esc(r.detalhe)}</div></td>`; }).join("")}</tr>`).join("")}
     </table></div></div>`;
 
+  // v0dta: amostras do cômodo espelho (os mesmos SVG gravados em saida/<cenário>/<controlador>/42/espelho/)
+  const esp = ex(c.id, S.ctrl).espelho;
+  if (esp) {
+    const m = ex(c.id, S.ctrl).metricas;
+    h += `<div class="card"><div class="controls" style="margin-top:0"><h2 style="margin:0">Amostras do cômodo espelho — ${esc(S.ctrl)}</h2>
+      <span class="seg" id="visaoAm"><button data-v="R" class="${S.visaoAm === "R" ? "on" : ""}">plataforma (R)</button><button data-v="L" class="${S.visaoAm === "L" ? "on" : ""}">hub (L)</button></span>
+      <label class="small">Controlador <select id="amCtrl">${CTRLS.map(k => `<option${k === S.ctrl ? " selected" : ""}>${k}</option>`).join("")}</select></label>
+      <span style="flex:1"></span><span class="small muted">Fidelidade (R): ${["espelho_fiel_s","erro_de_percepcao_s","erro_de_sincronizacao_s","espelho_nao_afirma_s"].map((k, i) => `<span class="pill cl-${["FIEL","PERCEPCAO","SINCRONIZACAO","NAO_AFIRMA"][i]}" style="color:#fff">${["fiel","percepção","sincronização","não afirma"][i]} ${fmtN(m[k])} s</span>`).join(" ")}</span></div>
+      <div class="amostras">${esp.svg[S.visaoAm].map((sv, i) => { const a = esp.amostras[i]; const u = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(sv);
+        return `<figure><img src="${u}" alt="amostra ${a.rotulo}" data-src="${u}"><figcaption class="small" style="display:flex;gap:6px;align-items:center;margin-top:4px">
+          <b>${{inicio: "Início", meio: "Meio", fim: "Fim"}[a.rotulo]}</b> ${fmtT(a.t_ms)} <span class="pill cl-${a[S.visaoAm].classe}" style="color:#fff">${CLASSE[a[S.visaoAm].classe][1]}</span>
+          <span style="flex:1"></span><button class="b" data-svg="${i}">Baixar SVG</button><button class="b" data-ver="${a.t_ms}">Ver na animação</button></figcaption></figure>`; }).join("")}</div>
+      <p class="small muted" style="margin:8px 0 0">Instantes ${c.amostras_ms ? "definidos no roteiro (<span class='mono'>amostras_ms</span>)" : "padrão: 1ª ação + 5 s, metade e fim − 1 s"}. Arquivos: <span class="mono">saida/${c.id}/${esc(S.ctrl)}/42/espelho/{inicio,meio,fim}.svg</span> (visão R).</p></div>`;
+  }
+
   // Comparação de controladores
   if (CTRLS.length > 1) {
     const mets = [["desperdicio_s","Desperdício (s)"],["escuro_com_ocupante_s","Escuro c/ ocupante (s)"],["apagamentos_indevidos","Apag. indevidos"],["atraso_percebido_ms_max","Atraso percebido (ms)"],["acionamentos","Acionamentos"]];
@@ -476,6 +518,13 @@ function renderCenarios() {
     $("#cmpB").onchange = e => { S.cmpB = e.target.value; renderCenarios(); };
     $("#csvCmp").onclick = () => baixar(`comparacao-${S.cmpA}-${S.cmpB}.csv`, csv([["cenario","metrica",S.cmpA,S.cmpB],
       ...D.cenarios.flatMap(x => D.modelo.metricas.map(m => [x.id, m.id, ex(x.id, S.cmpA).metricas[m.id], ex(x.id, S.cmpB).metricas[m.id]]))]));
+  }
+  if (esp) {
+    T.querySelectorAll("#visaoAm button").forEach(b => b.onclick = () => { S.visaoAm = b.dataset.v; renderCenarios(); });
+    $("#amCtrl").onchange = ev => { S.ctrl = ev.target.value; renderCenarios(); gravarHash(); };
+    T.querySelectorAll(".amostras img").forEach(im => im.onclick = () => { $("#lb img").src = im.dataset.src; $("#lb").classList.add("on"); });
+    T.querySelectorAll("[data-svg]").forEach(b => b.onclick = () => { const i = Number(b.dataset.svg); baixar(`${c.id}-${S.ctrl}-${esp.amostras[i].rotulo}-${S.visaoAm}.svg`, esp.svg[S.visaoAm][i], "image/svg+xml"); });
+    T.querySelectorAll("[data-ver]").forEach(b => b.onclick = () => { S.t = Number(b.dataset.ver); S.visao = S.visaoAm; S.playing = false; irPara("animacao"); });
   }
   ligarEditor();
 }
@@ -603,7 +652,9 @@ function montarAnimacao() {
     </g>
   </svg>`;
   const c = CEN[S.cen];
-  $("#tab-animacao").innerHTML = `<div class="anim"><div class="card" style="padding:10px">${svg}
+  $("#tab-animacao").innerHTML = `<div class="anim"><div class="card" style="padding:10px"><div class="duo"><div><h3>Sala real (verdade)</h3>${svg}</div>
+      <div><h3>Cômodo espelho <span class="seg" id="visao"><button data-v="R" class="${S.visao === "R" ? "on" : ""}">plataforma (R)</button><button data-v="L" class="${S.visao === "L" ? "on" : ""}">hub (L)</button></span></h3>${svgEspelho()}
+      <div class="small muted" style="margin-top:4px">Só o que o gêmeo recebeu: presença sem identidade nem posição (RN09), luz com o nível de evidência, sinais quando chegam.</div></div></div>
       <div class="controls"><button class="b pri" id="play">▶</button><button class="b" id="back" title="−1 s (←)">⟨ 1 s</button><button class="b" id="fwd" title="+1 s (→)">1 s ⟩</button>
         <label class="small">Velocidade <select id="vel">${[1, 5, 20, 60, 120].map(v => `<option value="${v}"${v === S.speed ? " selected" : ""}>${v}×</option>`).join("")}</select></label>
         <span class="mono small" id="tTxt"></span></div>
@@ -613,6 +664,7 @@ function montarAnimacao() {
     <div><div class="card"><h2>${c.id} — ${esc(c.titulo)}</h2><div class="views" id="vistas"></div><div class="kv" id="estado"></div></div>
       <div class="card"><h2>Eventos recentes</h2><div class="ticker" id="ticker"></div></div></div></div>`;
   A = {cen: S.cen, ctrl: S.ctrl, d: derivar(S.cen, S.ctrl), pos: D.posicoes[S.cen]};
+  document.querySelectorAll("#visao button").forEach(b => b.onclick = () => { S.visao = b.dataset.v; document.querySelectorAll("#visao button").forEach(x => x.classList.toggle("on", x.dataset.v === S.visao)); quadro(); });
   $("#play").onclick = () => tocar(!S.playing);
   $("#back").onclick = () => passo(-1000); $("#fwd").onclick = () => passo(1000);
   $("#vel").onchange = e => S.speed = Number(e.target.value);
@@ -623,6 +675,72 @@ function montarAnimacao() {
   $("#marks").innerHTML = d.intencoes.map(i => `<text x="${i.t_ms / d.fim * w}" y="11" font-size="11" text-anchor="middle" fill="${i.precedencia === "REMOTA" ? "#0f766e" : i.acao === "ACENDER" ? "#a16207" : "#334155"}">${i.acao === "ACENDER" ? "▲" : "▼"}</text>`).join("") +
     d.falhas.map(f => `<rect x="${f.t_ms / d.fim * w - 3}" y="2" width="6" height="8" fill="var(--bad)"/>`).join("");
   quadro();
+}
+function svgEspelho() {
+  const s = D.sala, W = s.largura_m, H = s.profundidade_m, z = s.zonas_cegas[0], porta = s.porta, sp = s.dispositivos["SP-01"];
+  const largura = X(W) + M0, altura = Y(0) + 150, r = sp.alcance_m * PX, cx = X(sp.x), cy = Y(sp.y);
+  return `<svg viewBox="0 0 ${largura} ${altura}" id="espelho" role="img" aria-label="Cômodo espelho">
+    <defs><clipPath id="room2"><rect x="${X(0)}" y="${Y(H)}" width="${W * PX}" height="${H * PX}"/></clipPath>
+      <pattern id="hatch2" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="#94a3b8" stroke-width="3"/></pattern>
+      <pattern id="velado" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="10" stroke="#e2e8f0" stroke-width="3" opacity=".6"/></pattern></defs>
+    <rect id="e-piso" x="${X(0)}" y="${Y(H)}" width="${W * PX}" height="${H * PX}" fill="var(--dark)"/>
+    <circle id="e-brilho" cx="${X(s.lampada.x)}" cy="${Y(s.lampada.y)}" r="330" fill="url(#glow)" clip-path="url(#room2)" opacity="0"/>
+    <path id="e-cone" d="M${cx},${cy} L${cx - r},${cy} A${r},${r} 0 0 0 ${cx},${cy + r} Z" fill="#0e7490" opacity=".10" clip-path="url(#room2)"/>
+    <rect x="${X(z.x0)}" y="${Y(z.y1)}" width="${(z.x1 - z.x0) * PX}" height="${(z.y1 - z.y0) * PX}" fill="url(#hatch2)" opacity=".55"/>
+    <ellipse id="e-mancha" cx="${X(W / 2)}" cy="${Y(H / 2 - 0.7)}" rx="${1.7 * PX}" ry="${1.15 * PX}" fill="#22a06b" opacity="0"/>
+    <text id="e-manchaTxt" x="${X(W / 2)}" y="${Y(H / 2 - 0.7) + 5}" text-anchor="middle" font-size="15" font-weight="700" fill="#065f46" display="none">presença</text>
+    <text id="e-q" x="${X(W / 2)}" y="${Y(H / 2 - 0.7) + 18}" text-anchor="middle" font-size="54" font-weight="700" fill="#f5a524" display="none">?</text>
+    <g stroke="#334155" stroke-width="6" fill="none" stroke-linecap="square"><path d="M${X(porta.x_inicio)},${Y(0)} L${X(0)},${Y(0)} L${X(0)},${Y(H)} L${X(W)},${Y(H)} L${X(W)},${Y(0)} L${X(porta.x_fim)},${Y(0)}"/></g>
+    <line id="e-sa" x1="${X(porta.x_inicio)}" y1="${Y(0)}" x2="${X(porta.x_fim)}" y2="${Y(0)}" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6 5"/>
+    <g><circle cx="${cx - 12}" cy="${cy + 12}" r="10" fill="#0e7490"/><text x="${cx - 12}" y="${cy + 16}" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">SP</text></g>
+    <circle id="e-lamp" cx="${X(s.lampada.x)}" cy="${Y(s.lampada.y)}" r="13" fill="#475569" stroke="#0f172a" stroke-width="2"/>
+    <text id="e-nivel" x="${X(s.lampada.x)}" y="${Y(s.lampada.y) + 30}" text-anchor="middle" font-size="12" fill="#cbd5e1"></text>
+    <rect id="e-velado" x="${X(0)}" y="${Y(H)}" width="${W * PX}" height="${H * PX}" fill="url(#velado)" display="none"/>
+    <text id="e-selo" x="${X(0)}" y="${Y(H) - 14}" font-size="13" font-weight="700" fill="#334155"></text>
+    <text id="e-idade" x="${X(W)}" y="${Y(H) - 14}" text-anchor="end" font-size="13" fill="#334155" class="mono"></text>
+    <text id="e-dados" x="${X(0)}" y="${Y(0) + 24}" font-size="13" fill="#334155"></text>
+    <text id="e-dados2" x="${X(0)}" y="${Y(0) + 44}" font-size="13" fill="#334155"></text>
+    <rect id="e-classe" x="${X(0)}" y="${Y(0) + 62}" width="${W * PX}" height="30" rx="6" fill="#64748b"/>
+    <text id="e-classeTxt" x="${X(0) + 12}" y="${Y(0) + 82}" font-size="14" font-weight="700" fill="#fff"></text>
+  </svg>`;
+}
+function segEm(segs, t) { for (const sg of segs || []) if (t >= sg[0] && t < sg[1]) return sg[2]; const u = (segs || []).slice(-1)[0]; return u ? u[2] : "NAO_AFIRMA"; }
+function quadroEspelho(d, t) {
+  if (!$("#espelho")) return;
+  const R = S.visao === "R", e = ex();
+  let ocup, luz, afirma, nivel, sa, spOn, selo, idadeTxt = "", linha2 = "";
+  if (R) {
+    const plat = d.platFora.some(([a, b]) => t >= a && t < b);
+    ocup = d.remOcup.at(t); luz = d.remLuz.at(t); afirma = d.remAtual.at(t) === "ATUAL" && !plat;
+    nivel = (d.remRes.filter(v => v.t_ms <= t).pop() || {}).nivel;
+    sa = d.remPass.some(p => t >= p && t < p + 700); spOn = d.remSp.at(t);
+    const reg = d.remotos.filter(v => v.t_ms <= t).pop();
+    if (reg && reg.recepcao_ms != null && !plat) idadeTxt = `idade ${Math.round((t - reg.recepcao_ms) / 1000)} s`;
+    selo = plat ? "PLATAFORMA FORA" : `${d.remAtual.at(t)} · ${d.sessao.at(t) ? "conectado" : "sem sessão"}`;
+    const app = d.appRes.filter(v => v.t_ms <= t).pop();
+    linha2 = app ? `App: ${app.chave || ("config v" + app.versao)} → ${app.nivel || app.estado}` : "";
+  } else {
+    const off = d.hubOff.some(([a, b]) => t >= a && t < b);
+    ocup = off ? null : d.ocup.at(t); luz = off ? null : d.luzEst.at(t); afirma = !off;
+    nivel = (d.resultados.filter(v => v.t_ms <= t).pop() || {}).nivel;
+    sa = d.passagens.some(p => t >= p && t < p + 700); spOn = d.spAlto.at(t);
+    selo = off ? "HUB DESLIGADO" : "DTReg10k-L · sempre atual no hub";
+  }
+  const acesa = luz === "ACESA_AUTO" || luz === "ACESA_MANUAL";
+  $("#e-piso").setAttribute("fill", acesa ? "#fdf6dc" : "var(--dark)"); $("#e-brilho").setAttribute("opacity", acesa ? 1 : 0);
+  $("#e-lamp").setAttribute("fill", acesa ? "#facc15" : "#475569");
+  $("#e-nivel").textContent = nivel ? nivel.toLowerCase().replace("_", " ") : ""; $("#e-nivel").setAttribute("fill", acesa ? "#334155" : "#cbd5e1");
+  $("#e-mancha").setAttribute("opacity", ocup === "OCUPADA" ? 0.38 : 0); $("#e-manchaTxt").setAttribute("display", ocup === "OCUPADA" ? "inline" : "none");
+  $("#e-q").setAttribute("display", ocup === "DESCONHECIDA" ? "inline" : "none");
+  $("#e-sa").setAttribute("stroke", sa ? "#ef4444" : "#94a3b8"); $("#e-sa").setAttribute("stroke-width", sa ? 7 : 3);
+  $("#e-cone").setAttribute("opacity", spOn ? 0.32 : 0.10);
+  $("#e-velado").setAttribute("display", afirma ? "none" : "inline");
+  $("#e-selo").textContent = selo; $("#e-selo").setAttribute("fill", afirma ? "#0f766e" : "#b42318");
+  $("#e-idade").textContent = idadeTxt;
+  $("#e-dados").textContent = `Ocupação: ${ocup ?? "—"} · luz: ${luz ?? "—"}`;
+  $("#e-dados2").textContent = linha2;
+  const c = segEm(e.espelho?.segmentos?.[S.visao], t);
+  $("#e-classe").setAttribute("fill", CLASSE[c][0]); $("#e-classeTxt").textContent = `${CLASSE[c][1]} — comparado com a sala real`;
 }
 function posicao(oid, t) {
   const p = A.pos, arr = p.o[oid]; if (!arr) return null;
@@ -653,6 +771,7 @@ function quadro() {
     g.querySelector(".mov").setAttribute("display", p[2] ? "inline" : "none");
   }
   $("#relogio").textContent = `t = ${fmtT(t)} / ${fmtT(c.duracao_ms)}`;
+  quadroEspelho(d, t);
   $("#tTxt").textContent = `${fmtT(t)} / ${fmtT(c.duracao_ms)}`;
   $("#tSlider").value = t; $("#play").textContent = S.playing ? "❚❚" : "▶";
   // painel de estado
@@ -750,7 +869,8 @@ function renderPainel() {
       <div class="legend small" style="margin-top:6px"><span><i style="background:#22a06b"></i>ocupada</span><span><i style="background:#f5a524"></i>desconhecida</span><span><i style="background:#cbd5e1"></i>vazia / apagada</span>
         <span><i style="background:#facc15"></i>acesa (auto)</span><span><i style="background:#f59e0b"></i>acesa (manual)</span><span><i style="background:#64748b"></i>apagada (manual)</span>
         <span><i style="background:rgba(220,38,38,.25)"></i>desperdício</span><span><i style="background:rgba(124,58,237,.3)"></i>escuro com ocupante</span>
-        <span><i style="background:repeating-linear-gradient(45deg,#475569 0 2px,transparent 2px 5px)"></i>R desatualizado</span><span><i style="background:#99d5cb"></i>sessão ativa</span><span><i style="background:#fecaca"></i>sem sessão</span><span><i style="background:#94a3b8"></i>plataforma fora</span></div>
+        <span><i style="background:repeating-linear-gradient(45deg,#475569 0 2px,transparent 2px 5px)"></i>R desatualizado</span><span><i style="background:#99d5cb"></i>sessão ativa</span><span><i style="background:#fecaca"></i>sem sessão</span><span><i style="background:#94a3b8"></i>plataforma fora</span>
+        ${Object.values(CLASSE).map(([cor, n]) => `<span><i style="background:${cor}"></i>${n}</span>`).join("")}</div>
       <p class="small muted noprint" style="margin:4px 0 0">Clique na linha do tempo para posicionar o cursor (compartilhado com a animação). ← → movem 1 s.</p></div>
     <div class="card"><h2>Métricas</h2><div class="metrics">${met}</div>${dist}
       <h3>Invariantes</h3><div>${inv}</div>
@@ -780,8 +900,8 @@ function desenharLinhaDoTempo() {
   const W = Math.max(700, $("#tl").clientWidth || 1100), L = 182, R = 12, lane = 24, gap = 6;
   const x = t => L + (Math.max(w0, Math.min(w1, t)) - w0) / (w1 - w0) * (W - L - R);
   const lanes = ["Verdade · Morador", "Verdade · Rex", "SA (porta)", "SP (PIR)", "Ocupação · hub (L)", "Decisões", "Luz · hub (L)", "Lâmpada (física)",
-                 "Ocupação · plataforma (R)", "Luz · plataforma (R)", "Canal", "App", "Sistema e falhas"];
-  const LS = 12; // faixa "Sistema e falhas"
+                 "Ocupação · plataforma (R)", "Luz · plataforma (R)", "Canal", "App", "Fidelidade do espelho (R)", "Sistema e falhas"];
+  const LS = 13; // faixa "Sistema e falhas"
   const yl = i => 22 + i * (lane + gap);
   let s = `<svg width="${W}" height="${yl(lanes.length) + 4}" id="tlsvg" style="display:block;cursor:crosshair">`;
   // grade de tempo
@@ -830,6 +950,7 @@ function desenharLinhaDoTempo() {
     const forma = v.tipo === "APP_COMANDO" ? `<path d="M${cx - 6},${y0 + 17} L${cx + 6},${y0 + 17} L${cx},${y0 + 5}Z"` : v.tipo === "APP_PREFERENCIA" ? `<rect x="${cx - 5}" y="${y0 + 6}" width="10" height="10"` : `<circle cx="${cx}" cy="${y0 + 11}" r="4.5"`;
     s += `${forma} fill="#be185d"><title>${fmtT(v.t_ms)} ${esc(desc(v))}</title>${forma.startsWith("<path") ? "</path>" : forma.startsWith("<rect") ? "</rect>" : "</circle>"}`; });
   d.appRes.forEach(v => s += v.t_ms >= w0 && v.t_ms <= w1 ? `<rect x="${x(v.t_ms) - 3}" y="${yl(11) + 17}" width="6" height="6" fill="${COR_NIVEL[v.nivel || v.estado] || "#334155"}"><title>${fmtT(v.t_ms)} ${esc(desc(v))}</title></rect>` : "");
+  (ex().espelho?.segmentos?.R || []).forEach(([a, b, c]) => s += bar(12, a, b, CLASSE[c][0], `${CLASSE[c][1]} ${fmtT(a)}–${fmtT(b)}`, 0.85));
   d.hubOff.forEach(([a, b]) => s += bar(LS, a, b, "#fecaca", `hub desligado ${fmtT(a)}–${fmtT(b)}`));
   d.falhas.forEach(f => s += f.t_ms >= w0 && f.t_ms <= w1 ? `<rect x="${x(f.t_ms) - 4}" y="${yl(LS) + 6}" width="8" height="12" fill="var(--bad)"><title>${fmtT(f.t_ms)} falha ${f.falha}</title></rect>` : "");
   d.sistema.filter(v => v.tipo === "ALERTA" && v.ativo || v.tipo === "RETENTATIVA" || v.tipo === "RELOGIO_SALTO").forEach(v => s += v.t_ms >= w0 && v.t_ms <= w1 ? `<circle cx="${x(v.t_ms)}" cy="${yl(LS) + 12}" r="5" fill="#f59e0b" stroke="#fff"><title>${fmtT(v.t_ms)} ${esc(desc(v))}</title></circle>` : "");

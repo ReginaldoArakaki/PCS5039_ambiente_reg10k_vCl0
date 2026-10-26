@@ -6,6 +6,8 @@ import datetime as dt
 import json
 from pathlib import Path
 
+from avaliacao.espelho import NOMES_ROTULO, svg_amostra
+
 RAIZ = Path(__file__).resolve().parent.parent
 MODELO = Path(__file__).resolve().parent / "modelo.json"
 TEMPLATE = Path(__file__).resolve().parent / "template.html"
@@ -51,6 +53,11 @@ def _diagramas(modelo: dict) -> list[dict]:
     return out
 
 
+def _titulo(e: dict, a: dict) -> str:
+    t = a["t_ms"] / 1000
+    return f"{e['cenario']} — {NOMES_ROTULO[a['rotulo']]} (t = {int(t // 60)}:{t % 60:04.1f}) · {e['controlador']}"
+
+
 def montar_dados(cat: dict) -> dict:
     modelo = json.loads(MODELO.read_text(encoding="utf-8"))
     roteiros = cat["_roteiros"]
@@ -65,6 +72,9 @@ def montar_dados(cat: dict) -> dict:
                                  "metricas", "invariantes", "assercoes", "requisitos", "caracterizacao",
                                  "requisitos_ok", "aprovado")},
             "determinismo_ok": e.get("determinismo_ok"),
+            # v0dta: segmentos de fidelidade, amostras e os mesmos SVG gravados em saida/.../espelho/
+            "espelho": {**e["espelho"], "svg": {v: [svg_amostra(cat["sala"], a, _titulo(e, a), v)
+                                                    for a in e["espelho"]["amostras"]] for v in ("R", "L")}},
             "distribuicao": e.get("distribuicao"),
             "eventos": evs,
         }

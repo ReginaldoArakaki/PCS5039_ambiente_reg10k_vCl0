@@ -44,7 +44,11 @@
         "latencia_reacao_ms_p95",
         "atualidade_gemeo_ms_p95",
         "comandos_vencidos_executados",
-        "efeitos_duplicados_remotos"
+        "efeitos_duplicados_remotos",
+        "espelho_fiel_s",
+        "erro_de_percepcao_s",
+        "erro_de_sincronizacao_s",
+        "espelho_nao_afirma_s"
       ],
       "properties": {
         "desperdicio_s": {
@@ -100,6 +104,22 @@
         "divergencia_alem_prazo_s": {
           "type": "number",
           "minimum": 0
+        },
+        "espelho_fiel_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "erro_de_percepcao_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "erro_de_sincronizacao_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "espelho_nao_afirma_s": {
+          "type": "number",
+          "minimum": 0
         }
       }
     },
@@ -142,11 +162,129 @@
     "versao_cenario": {
       "enum": [
         "v0",
-        "v0dt"
+        "v0dt",
+        "v0dta"
       ]
     },
     "execucao_pareada": {
       "type": "boolean"
+    },
+    "espelho": {
+      "type": "object",
+      "required": [
+        "segmentos",
+        "amostras"
+      ],
+      "properties": {
+        "segmentos": {
+          "type": "object",
+          "properties": {
+            "R": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "enum": [
+                      "FIEL",
+                      "PERCEPCAO",
+                      "SINCRONIZACAO",
+                      "NAO_AFIRMA"
+                    ]
+                  }
+                ],
+                "minItems": 3,
+                "maxItems": 3
+              }
+            },
+            "L": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "enum": [
+                      "FIEL",
+                      "PERCEPCAO",
+                      "SINCRONIZACAO",
+                      "NAO_AFIRMA"
+                    ]
+                  }
+                ],
+                "minItems": 3,
+                "maxItems": 3
+              }
+            }
+          }
+        },
+        "amostras": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "required": [
+              "rotulo",
+              "t_ms",
+              "real",
+              "L",
+              "R"
+            ],
+            "properties": {
+              "rotulo": {
+                "enum": [
+                  "inicio",
+                  "meio",
+                  "fim"
+                ]
+              },
+              "L": {
+                "type": "object",
+                "required": [
+                  "classe"
+                ],
+                "properties": {
+                  "classe": {
+                    "enum": [
+                      "FIEL",
+                      "PERCEPCAO",
+                      "SINCRONIZACAO",
+                      "NAO_AFIRMA"
+                    ]
+                  }
+                }
+              },
+              "R": {
+                "type": "object",
+                "required": [
+                  "classe"
+                ],
+                "properties": {
+                  "classe": {
+                    "enum": [
+                      "FIEL",
+                      "PERCEPCAO",
+                      "SINCRONIZACAO",
+                      "NAO_AFIRMA"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

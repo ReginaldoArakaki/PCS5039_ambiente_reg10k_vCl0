@@ -148,3 +148,32 @@ Quem herda de `ControladorReferencia` já trata as duas.
 | E8: política do app (OR-08 respeitada, requisitos aprovados) | 35% |
 | E9: cenários de rede com asserções válidas | 30% |
 | E10: aprendizado mínimo | bônus de até 15% |
+
+---
+
+# v0dta: cômodo espelho (1 dia)
+
+O **cômodo espelho** é a sala desenhada só com o que o gêmeo recebeu: presença sem identidade nem posição, luz com o nível de evidência, sinais dos sensores quando chegam à plataforma, idade e selo de atualidade. A **fidelidade do espelho** classifica cada instante:
+
+| Classe | Quando | Causa |
+|---|---|---|
+| Fiel | O espelho está atual e confere com a sala real | — |
+| Percepção | O hub já erra | Sensores, controlador, espera de T_apagamento |
+| Sincronização | O hub acerta, a plataforma ainda não | Canal e plataforma |
+| Não afirma | Espelho desatualizado ou ocupação declarada desconhecida | Conexão ou incerteza honesta (RN01) |
+
+As **amostras** (início, meio e fim) ficam na aba Cenários e em `saida/<cenário>/<controlador>/42/espelho/`.
+
+### E11. Explicar o espelho e aumentar a fidelidade
+
+1. Escolha 3 cenários: um falso negativo (FN01, FN03 ou FN05), um de rede (DT05, DT07 ou DT08) e um do app (DT01, DT06 ou DT09). Em cada amostra, explique cada diferença entre a sala real e o espelho e classifique a causa.
+2. Proponha **uma** mudança que aumente o tempo de espelho fiel: no controlador (por exemplo, o T_apagamento adaptativo do E4), no canal (parâmetros em `cenarios/sala.json` → `plataforma`) ou na plataforma. Meça antes e depois com as métricas `espelho_fiel_s`, `erro_de_percepcao_s`, `erro_de_sincronizacao_s` e `espelho_nao_afirma_s`.
+3. Discuta: transformar "não afirma" em "fiel" escondendo a incerteza é uma melhoria? Por que a RN01 proíbe isso?
+
+**Entrega:** as 3 análises com as amostras (SVG) e a medição antes × depois.
+
+| Item | Peso sugerido |
+|---|---|
+| E11.1: análise das amostras | 50% |
+| E11.2: mudança e medição | 35% |
+| E11.3: discussão | 15% |

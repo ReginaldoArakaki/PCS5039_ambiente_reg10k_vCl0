@@ -1,17 +1,20 @@
-# PCS5039 — Ambiente de simulação Reg10k (v0dt)
+# PCS5039 — Ambiente de simulação Reg10k (v0dta)
 
 Projeto de referência da disciplina **PCS5039 — Engenharia de Software Orientada a IoT** (EPUSP): automação de iluminação residencial em ambiente simulado.
 
 A sala é a do incremento 0: 5 × 4 m com uma porta, dois moradores (uma pessoa e o Rex, um cachorro de grande porte, que também é ocupante), um sensor de passagem (SA) no batente, um sensor de presença PIR (SP) com zona cega, um atuador, uma lâmpada com sensor de efeito e um interruptor. O hub roda um **controlador plugável**: a referência ou o de um grupo.
 
-A **v0dt** acrescenta o gêmeo digital (DTReg10k) sem mudar a sala: o **DTReg10k-L** no hub, o **DTReg10k-R** na plataforma, um **canal** simulado entre os dois (atraso, perda, duplicação e desconexão) e o **app** do titular (consulta, comando remoto e preferência de apagamento). O número da versão acompanha o porte da automação e o sufixo `dt` indica o gêmeo: v0 → **v0dt** → v1dt (2 cômodos) → …
+A **v0dt** acrescenta o gêmeo digital (DTReg10k) sem mudar a sala: o **DTReg10k-L** no hub, o **DTReg10k-R** na plataforma, um **canal** simulado entre os dois (atraso, perda, duplicação e desconexão) e o **app** do titular (consulta, comando remoto e preferência de apagamento). O número da versão acompanha o porte da automação e o sufixo `dt` indica o gêmeo: v0 → v0dt → v1dt (2 cômodos) → …
+
+A **v0dta** (ajuste "a" da v0dt) acrescenta o **cômodo espelho**: a sala desenhada só com o que o gêmeo sabe, ao lado da sala real, com **amostras** (início, meio e fim) e a **fidelidade do espelho**, que separa a causa de cada diferença em percepção, sincronização ou "não afirma".
 
 | Documento | Conteúdo |
 |---|---|
+| [`docs/ambiente-simulacao-v0dta.md`](docs/ambiente-simulacao-v0dta.md) | Plano e entrega da v0dta (cômodo espelho) |
 | [`docs/ambiente-simulacao-v0dt.md`](docs/ambiente-simulacao-v0dt.md) | Plano e entrega da v0dt (gêmeo digital) |
 | [`docs/ambiente-simulacao-v02.md`](docs/ambiente-simulacao-v02.md) | Plano do incremento 0 (sala, dispositivos, controlador) |
-| [`docs/roteiro-alunos.md`](docs/roteiro-alunos.md) | Exercícios E1–E6 (v0) e E7–E10 (v0dt) |
-| [`docs/plataforma/`](docs/plataforma/) | V1 Business Drivers v02 e V2/V3 Requisitos v03 da plataforma Reg10k |
+| [`docs/roteiro-alunos.md`](docs/roteiro-alunos.md) | Exercícios E1–E6 (v0), E7–E10 (v0dt) e E11 (v0dta) |
+| [`docs/plataforma/`](docs/plataforma/) | V1 Business Drivers v02 e V2/V3 Requisitos v04 da plataforma Reg10k |
 
 Os documentos da plataforma que este ambiente realiza estão em [`docs/plataforma/`](docs/plataforma/): a V1 Business Drivers (v02) e os requisitos das visões V2 e V3 (v02), no referencial RM-ODP adaptado.
 
@@ -38,9 +41,9 @@ Depois de `python -m catalogo`, abra **`site/index.html`** com duplo clique. A p
 | Aba | O que mostra |
 |---|---|
 | **Modelo** | Diagramas UML, regras RN-I0, parâmetros, dispositivos (modo ideal e realista), rastreabilidade com V1–V3, métricas e invariantes |
-| **Cenários** | Os 32 cenários (filtro por versão: v0 de regressão ou v0dt) com o resultado de cada controlador, asserções, comparação entre controladores e o **editor de roteiro** (inclui ações do app e falhas de rede) |
-| **Animação** | A planta da sala e a faixa hub ↔ plataforma ↔ app, com três pontos de vista lado a lado: o que **acontece**, o que o **hub acha** (L) e o que a **plataforma acha** (R, com idade e selo atual ou desatualizado) |
-| **Painel** | Linha do tempo verdade × SA × SP × hub (L) × decisões × lâmpada × plataforma (R) × canal × app, métricas, asserções, invariantes e o registro de eventos (exporta CSV; imprime em PDF) |
+| **Cenários** | Galeria de **amostras do espelho** (início, meio, fim) por cenário e controlador, com download do SVG; os 32 cenários (filtro por versão: v0 de regressão ou v0dt) com o resultado de cada controlador, asserções, comparação entre controladores e o **editor de roteiro** (inclui ações do app e falhas de rede) |
+| **Animação** | A sala real e o **cômodo espelho** lado a lado (chave plataforma R ou hub L), a faixa hub ↔ plataforma ↔ app e três pontos de vista: o que **acontece**, o que o **hub acha** (L) e o que a **plataforma acha** (R, com idade e selo atual ou desatualizado) |
+| **Painel** | Linha do tempo verdade × SA × SP × hub (L) × decisões × lâmpada × plataforma (R) × canal × app × fidelidade do espelho, métricas, asserções, invariantes e o registro de eventos (exporta CSV; imprime em PDF) |
 
 O endereço guarda a seleção: `site/index.html#painel/FN01/referencia`.
 
@@ -100,7 +103,7 @@ Na v0dt chegam duas evidências novas pelo mesmo `ao_evento`, com origem `PLATAF
 sim/          simulador: mundo, dispositivos, falhas, motor (python -m sim)
 hub/          barramento, registro JSONL, interface Controlador, referência e agente de sincronização (DTReg10k-L)
 plataforma/   canal simulado e plataforma (DTReg10k-R, comandos, configuração, app)
-avaliacao/    oráculo: métricas, invariantes OR-01..12, asserções
+avaliacao/    oráculo: métricas, invariantes OR-01..12, asserções; espelho.py: amostras e SVG do cômodo espelho
 catalogo/     execução do catálogo, validação de schemas, geração da página (python -m catalogo)
 alunos/       controladores dos grupos
 cenarios/     sala.json, roteiros/ e esperado/
@@ -108,7 +111,7 @@ schemas/      JSON Schema de sala, roteiro, esperado, evento, métricas e catál
 docs/         plano, roteiro dos alunos e diagramas UML (docs/uml/*.mmd e *.svg)
 tests/        pytest
 site/         index.html gerado
-saida/        gerado: catalogo.json e saida/<cenário>/<controlador>/<semente>/{eventos.jsonl, metricas.json}
+saida/        gerado: catalogo.json e saida/<cenário>/<controlador>/<semente>/{eventos.jsonl, metricas.json, espelho/}
 ```
 
 ## Diagramas
