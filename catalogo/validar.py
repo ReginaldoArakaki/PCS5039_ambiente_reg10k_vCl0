@@ -36,34 +36,47 @@ def erros(nome: str, doc) -> list[str]:
 
 
 def validar_tudo(com_saida: bool = True) -> list[str]:
-    """Valida sala, roteiros, esperados e (se existirem) as saídas geradas."""
+    """Valida ambientes, roteiros, esperados e (se existirem) as saídas geradas da versão em uso."""
+    from catalogo import executar
     problemas: list[str] = []
     ler = lambda p: json.loads(p.read_text(encoding="utf-8"))
-    cen = RAIZ / "cenarios"
-    problemas += [f"sala.json: {m}" for m in erros("sala", ler(cen / "sala.json"))]
-    for p in sorted(cen.glob("residencia-*.json")):  # v1dt
-        problemas += [f"{p.name}: {m}" for m in erros("residencia", ler(p))]
+    cen = executar.CENARIOS
+    base = executar.RAIZ_VERSAO
+    rel = lambda p: p.relative_to(base) if p.is_relative_to(base) else p
+    # ambientes da versão (no núcleo: sala.json e residencia-*.json); um ambiente com "comodos" é uma residência
+    dirs = [d for d in executar.AMBIENTES if base == RAIZ or d != executar.NUCLEO_CENARIOS]
+    for d in dirs:
+        for p in sorted(d.glob("*.json")):
+            doc = ler(p)
+            problemas += [f"{p.name}: {m}" for m in erros("residencia" if "comodos" in doc else "sala", doc)]
     for p in sorted((cen / "roteiros").glob("*.json")):
         problemas += [f"roteiros/{p.name}: {m}" for m in erros("roteiro", ler(p))]
     for p in sorted((cen / "esperado").glob("*.json")):
         problemas += [f"esperado/{p.name}: {m}" for m in erros("esperado", ler(p))]
-    saida = RAIZ / "saida"
+    saida = executar.SAIDA
     if com_saida and saida.exists():
         v_ev = validador("evento")
         for p in sorted(saida.glob("*/*/*/eventos.jsonl")):
             for i, linha in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
                 for e in v_ev.iter_errors(json.loads(linha)):
-                    problemas.append(f"{p.relative_to(RAIZ)}:{i}: {e.message}")
+                    problemas.append(f"{rel(p)}:{i}: {e.message}")
                     break
         for p in sorted(saida.glob("*/*/*/metricas.json")):
-            problemas += [f"{p.relative_to(RAIZ)}: {m}" for m in erros("metricas", ler(p))]
+            problemas += [f"{rel(p)}: {m}" for m in erros("metricas", ler(p))]
         if (saida / "catalogo.json").exists():
             problemas += [f"catalogo.json: {m}" for m in erros("catalogo", ler(saida / "catalogo.json"))]
     return problemas
 
 
 if __name__ == "__main__":
+    import argparse
     import sys
+    ap = argparse.ArgumentParser(prog="python -m catalogo.validar")
+    ap.add_argument("--raiz", help="pasta de um repositório de versão (padrão: o núcleo)")
+    a = ap.parse_args()
+    if a.raiz:
+        from catalogo.executar import configurar_raiz
+        configurar_raiz(a.raiz)
     pr = validar_tudo()
     for m in pr[:50]:
         print(m)

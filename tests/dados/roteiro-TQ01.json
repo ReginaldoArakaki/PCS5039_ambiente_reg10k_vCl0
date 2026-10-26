@@ -1,0 +1,85 @@
+{
+  "id": "TQ01",
+  "versao": "v2dt",
+  "ambiente": "residencia-teste-4",
+  "titulo": "Percorre os quatro cômodos e sai",
+  "tipo": "NORMAL",
+  "modo": "IDEAL",
+  "duracao_ms": 420000,
+  "descricao": "Teste do núcleo: o morador entra, vai ao quarto, ao banheiro, volta ao quarto e à sala e sai.",
+  "comportamento_ideal": "A luz acompanha o morador cômodo a cômodo.",
+  "comportamento_referencia": "Cada controlador acende ao receber o SA da sua passagem e apaga 60 s depois da última evidência.",
+  "estado_inicial": {
+    "ocupantes_na_sala": [],
+    "luz": "APAGADA"
+  },
+  "acoes": [
+    {
+      "t_ms": 5000,
+      "ocupante": "morador",
+      "acao": "ENTRAR"
+    },
+    {
+      "t_ms": 10000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 20000
+    },
+    {
+      "t_ms": 40000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "quarto"
+    },
+    {
+      "t_ms": 45000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 30000
+    },
+    {
+      "t_ms": 90000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "banheiro"
+    },
+    {
+      "t_ms": 95000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 40000
+    },
+    {
+      "t_ms": 150000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "quarto"
+    },
+    {
+      "t_ms": 160000,
+      "ocupante": "morador",
+      "acao": "MUDAR_COMODO",
+      "para": "sala"
+    },
+    {
+      "t_ms": 170000,
+      "ocupante": "morador",
+      "acao": "ANDAR_ALEATORIO",
+      "duracao_ms": 20000
+    },
+    {
+      "t_ms": 200000,
+      "ocupante": "morador",
+      "acao": "SAIR"
+    }
+  ],
+  "falhas": [],
+  "requisitos": [
+    "RF-OPR-01",
+    "RNF-DES-03"
+  ],
+  "regras": [
+    "RN-V1-01",
+    "RN-V1-02"
+  ]
+}

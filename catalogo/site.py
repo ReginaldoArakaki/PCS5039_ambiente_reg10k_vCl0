@@ -115,6 +115,7 @@ def montar_dados(cat: dict) -> dict:
         "meta": {
             "gerado_em": dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
             "versao": cat["versao"],
+            "identidade": cat.get("identidade") or {"nome": cat["versao"], "titulo": ""},
             "incremento": cat["incremento"],
             "controladores": cat["controladores"],
             "problemas": cat["problemas"],
@@ -128,7 +129,9 @@ def montar_dados(cat: dict) -> dict:
     }
 
 
-def gerar_site(cat: dict, destino: Path = DESTINO) -> Path:
+def gerar_site(cat: dict, destino: Path | None = None) -> Path:
+    from catalogo import executar
+    destino = destino or (executar.SITE if executar.RAIZ_VERSAO != RAIZ else DESTINO)
     dados = montar_dados(cat)
     js = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     html = TEMPLATE.read_text(encoding="utf-8").replace("/*__DADOS__*/null", js)

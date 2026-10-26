@@ -68,16 +68,17 @@ Durante a construção, anotar cada desvio do plano: vira ◆ na entrega. Desvio
 1. **Plano entregue**: o mesmo arquivo em v02: situação "entregue", histórico, ◆ nos itens ajustados, resultados (critérios de pronto e medições da referência com a ressalva "simulação, não medição") e a tabela "Ajustes feitos na construção" com o motivo de cada um.
 2. **V2/V3**: se a simulação trouxe refinamento do modelo, nova versão com RS-nn na §3.6, pendência PD para a V1 quando couber, referência R-nn ao plano; .md e .docx.
 3. **README** e **roteiro dos alunos** (exercício E-n novo, com pesos).
-4. **Commit** com autor Reginaldo Arakaki; **patch** `git format-patch --binary -1`.
-5. **Verificar em cópia limpa**: clonar o repositório público, aplicar todos os patches pendentes em ordem com `git am`, rodar testes e catálogo.
+4. **Commit** com autor `ReginaldoArakaki <reginaldo.arakaki@poli.usp.br>`; publicar no `main` (ou **patch** `git format-patch --binary -1` sem acesso de escrita).
+5. **Verificar antes de publicar**: testes, assinaturas e catálogo no clone que será enviado; com patch, num clone limpo com `git am`.
 6. **Salvar no projeto Claude** o plano entregue e a V2/V3 em .md (se o projeto estiver cheio, avisar e não apagar nada).
 7. **Enviar**: patch, página `simulacao-reg10k-<versão>.html`, documentos.
 
-Resposta final ao responsável, nesta ordem e sem recapitular o processo: o que saiu (uma frase), comandos de publicação (`git am` de cada patch pendente em ordem, `git tag`, `git push origin main --tags`, na pasta `C:\Users\Reginaldo\Documents\GitHub\PCS5039_ambiente_reg10k_vCl0`), o que o aluno passa a ver, o que mudou do plano (◆), o achado mais útil para a aula e o próximo passo combinado.
+Resposta final ao responsável, nesta ordem e sem recapitular o processo: o que saiu (uma frase), comandos de publicação (`git pull` e `git tag <versão> <hash>` + `git push origin <versão>`, ou os `git am` dos patches pendentes, na pasta `C:\Users\Reginaldo\Documents\GitHub\PCS5039_ambiente_reg10k_vCl0`), o que o aluno passa a ver, o que mudou do plano (◆), o achado mais útil para a aula e o próximo passo combinado.
 
 ## Armadilhas conhecidas
 
-- O responsável publica no GitHub; esta sessão não tem acesso de escrita. Nunca dizer que publicou.
+- Publicação: com acesso de escrita, a sessão publica o commit no `main`; as **tags não passam** (403) e ficam com o responsável, com o hash na entrega. Sem acesso, entrega por patch. Nunca dizer que publicou o que não subiu: conferir com `git ls-remote origin`.
+- Desde a nucleo-v1.0, motor, oráculo e página mudam no núcleo; planta, cenários e dados mudam no repositório da versão (guia §2.1). Asserções com janela de tempo absoluta valem para a semente 42; nos experimentos com várias sementes, prefira métricas ou janelas relativas a um evento.
 - Tag criada depois de um `git am` que falhou aponta para o commit anterior: conferir com `git ls-remote --tags origin`.
 - Mermaid: `;` quebra diagramas de sequência; setas "→" em rótulos de flowchart podem não renderizar.
 - Página: `history.replaceState` falha em iframe `srcdoc`; todo download e cópia precisa de `try/catch`.

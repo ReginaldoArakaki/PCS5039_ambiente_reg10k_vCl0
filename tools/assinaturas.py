@@ -7,6 +7,10 @@ cenário e controlador, com a semente 42.
 Uso, dentro da pasta do projeto:
     python tools/assinaturas.py gravar v0dta     # cria tests/dados/assinaturas-v0dta.json
     python tools/assinaturas.py comparar v0dta   # lista o que mudou; sai com código 1 se algo mudou
+
+Num repositório de versão (nucleo-v1.0), com a raiz da versão em --raiz ou em REG10K_RAIZ,
+o arquivo fica em <raiz>/dados/assinaturas-<nome>.json:
+    python nucleo/reg10k.py assinaturas gravar V0
 """
 from __future__ import annotations
 
@@ -19,6 +23,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ))
 
 from avaliacao.oraculo import _assinatura  # noqa: E402
+from catalogo import executar  # noqa: E402
 from catalogo.executar import ambiente_de, carregar_roteiros, descobrir_controladores  # noqa: E402
 from sim.motor import simular  # noqa: E402
 
@@ -34,17 +39,22 @@ def calcular() -> dict[str, str]:
 
 
 def main(argv: list[str]) -> int:
+    if "--raiz" in argv:
+        i = argv.index("--raiz")
+        executar.configurar_raiz(argv[i + 1])
+        argv = argv[:i] + argv[i + 2:]
     if len(argv) != 2 or argv[0] not in ("gravar", "comparar"):
         print(__doc__)
         return 2
     acao, versao = argv
-    arq = RAIZ / "tests" / "dados" / f"assinaturas-{versao}.json"
+    base = executar.RAIZ_VERSAO
+    arq = (RAIZ / "tests" / "dados" if base == RAIZ else base / "dados") / f"assinaturas-{versao}.json"
     atual = calcular()
     if acao == "gravar":
         arq.parent.mkdir(parents=True, exist_ok=True)
         arq.write_text(json.dumps({"versao": versao, "descricao": f"SHA-256 das camadas DECISAO e ATUACAO (semente 42) na versão {versao}",
                                    "assinaturas": atual}, indent=1, sort_keys=True) + "\n", encoding="utf-8")
-        print(f"{arq.relative_to(RAIZ)}: {len(atual)} assinaturas")
+        print(f"{arq.relative_to(base)}: {len(atual)} assinaturas")
         return 0
     base = json.loads(arq.read_text(encoding="utf-8"))["assinaturas"]
     mudou = sorted(k for k in base if k in atual and base[k] != atual[k])

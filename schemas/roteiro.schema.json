@@ -391,13 +391,9 @@
       }
     },
     "versao": {
-      "enum": [
-        "v0",
-        "v0dt",
-        "v0dta",
-        "v1dt"
-      ],
-      "description": "Versão em que o cenário entrou (v0dt: gêmeo digital)"
+      "type": "string",
+      "pattern": "^v[0-9]+(dt)?[a-z]?(\\.[0-9]+)?$|^nucleo-v[0-9]+\\.[0-9]+$",
+      "description": "Versão em que o cenário entrou (v0dt: gêmeo digital) · nucleo-v1.0: v<porte>[dt][letra][.n] (v0, v0dt, v0dta, v1dt, v1dt.1, v2dt…)"
     },
     "rede": {
       "type": "object",

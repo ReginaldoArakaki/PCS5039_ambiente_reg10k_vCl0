@@ -17,7 +17,7 @@ import argparse
 import sys
 import time
 
-from catalogo.executar import carregar_controlador, descobrir_controladores, gerar_catalogo
+from catalogo.executar import carregar_controlador, configurar_raiz, descobrir_controladores, gerar_catalogo
 
 
 def main(argv=None) -> int:
@@ -26,7 +26,11 @@ def main(argv=None) -> int:
     ap.add_argument("--cenarios", nargs="*")
     ap.add_argument("--sementes", type=int, default=30, help="sementes do modo realista (0 desliga)")
     ap.add_argument("--sem-site", action="store_true")
+    ap.add_argument("--raiz", help="pasta de um repositório de versão (padrão: o núcleo ou REG10K_RAIZ)")
     a = ap.parse_args(argv)
+    if a.raiz:
+        configurar_raiz(a.raiz)
+    from catalogo import executar
 
     if a.controladores:
         ctrls = {}
@@ -39,7 +43,7 @@ def main(argv=None) -> int:
     t0 = time.time()
     print(f"Controladores: {', '.join(ctrls)}")
     cat = gerar_catalogo(ctrls, a.cenarios, a.sementes)
-    print(f"Catálogo: saida/catalogo.json ({len(cat['execucoes'])} execuções, {time.time() - t0:.1f} s)")
+    print(f"Catálogo: {executar.SAIDA / 'catalogo.json'} ({len(cat['execucoes'])} execuções, {time.time() - t0:.1f} s)")
     if not a.sem_site:
         from catalogo.site import gerar_site
         caminho = gerar_site(cat)

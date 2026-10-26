@@ -1,7 +1,7 @@
 # Guia de convenções — projeto Reg10k e ambiente de simulação PCS5039
 
 **Documento:** guia-convencoes.md
-**Versão:** 03 | **Data:** 25/10/2026 (v01 e v02 de 25/10/2026)
+**Versão:** 04 | **Data:** 26/10/2026 (v01 a v03 de 25/10/2026)
 **Linha de pesquisa:** Laboratório de Digital Twin de Arquitetura de Sistemas de Software (EPUSP) e GLIP USP
 **Coordenação:** Reginaldo Arakaki (EPUSP)
 **Base:** prática consolidada nas versões v0, v0dt e v0dta do ambiente e nas versões v01 a v04 da V1 e da V2/V3.
@@ -15,6 +15,7 @@
 |---|---|---|
 | 01 | 25/10/2026 | Primeira versão |
 | 02 | 25/10/2026 | Com a v1dt: ambientes (`sala` e `residencia-v1`), prefixos RN-V1 e M, campo `comodo` no registro e nas asserções, chave de intenção por cômodo |
+| 04 | 26/10/2026 | Com a nucleo-v1.0: núcleo e repositórios de versão (§2), publicação direta no `main` e tags pelo responsável (§9), autor dos commits |
 | 03 | 25/10/2026 | Com a v1dtb: diagrama com sufixo de versão quando a estrutura muda, nomes de classe da V2 com sinônimos no código, ajuste pequeno sem rodada de dúvidas (§6) |
 
 ---
@@ -73,6 +74,17 @@ Cada entrega recebe uma **tag git** com o nome da versão. A trilha vigente é: 
 | Documentos da plataforma | `v1-business-drivers-plataforma-reg10k-vNN` e `V2 e V3 requisitos funcionais e não funcionais plataforma reg10k-vNN`, em .md e .docx |
 | No repositório | `docs/plataforma/` guarda só a versão vigente (o histórico fica no git) |
 | Histórico | Todo documento a partir da v02 tem a tabela "Histórico de versões" logo após o cabeçalho |
+
+---
+
+### 2.1 Núcleo e repositórios de versão (desde a nucleo-v1.0)
+
+| Repositório | Guarda | Tag |
+|---|---|---|
+| Núcleo (este) | Motor, hub, plataforma, oráculo, página, schemas, experimentos, skills, guia, V1 e V2/V3; conjunto de regressão | `nucleo-vX.Y` |
+| `reg10k-V0` … `reg10k-V4` | Planta, cenários, alunos, `experimentos/familias.json`, `dados/`, `versao.json`; núcleo em `nucleo/` (submódulo) | Nome da versão (`v1dt.1`, `v2dt`…) |
+
+Mudança de motor, oráculo ou página é feita no núcleo; cada versão sobe a tag do núcleo quando quiser. Dado de artigo só sai de tags congeladas (o manifesto registra os commits).
 
 ---
 
@@ -225,10 +237,11 @@ Ajuste pequeno (letra) pedido pelo responsável com escopo claro pode pular as e
 
 | Passo | Comando ou regra |
 |---|---|
-| Commit | Autor: Reginaldo Arakaki; mensagem com resumo e lista do que entrou |
-| Patch | `git format-patch --binary -1` |
-| Verificação | Clonar o repositório público, aplicar os patches pendentes em ordem com `git am`, rodar testes e catálogo |
-| Instruções ao responsável | Pasta local `C:\Users\Reginaldo\Documents\GitHub\PCS5039_ambiente_reg10k_vCl0`; `git am`, `git tag <versão>`, `git push origin main --tags` |
+| Commit | Autor: `ReginaldoArakaki <reginaldo.arakaki@poli.usp.br>`; mensagem com resumo e lista do que entrou |
+| Publicação | A sessão do Claude tem escrita no repositório e publica o commit no `main` depois da verificação. **Tags não passam** pelo ambiente da sessão (erro 403): o responsável cria a tag com o hash informado na entrega e a envia |
+| Patch (alternativa) | `git format-patch --binary -1`, quando a sessão não tiver acesso de escrita |
+| Verificação | Testes, assinaturas e catálogo no clone publicado antes do envio; com patch, num clone limpo com `git am` |
+| Instruções ao responsável | Pasta local `C:\Users\Reginaldo\Documents\GitHub\PCS5039_ambiente_reg10k_vCl0`; `git pull`, `git tag <versão> <hash>`, `git push origin <versão>` |
 | Projeto no Claude | Planos e documentos em md salvos em `claude/` |
 | Código consolidado | `python tools/consolidar.py --ref <tag>` |
 

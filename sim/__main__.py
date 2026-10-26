@@ -12,7 +12,8 @@ import argparse
 import json
 import sys
 
-from catalogo.executar import SAIDA, carregar_controlador, carregar_roteiros, executar
+from catalogo import executar as executar_mod
+from catalogo.executar import carregar_controlador, carregar_roteiros, configurar_raiz, executar
 
 
 def main(argv=None) -> int:
@@ -21,7 +22,10 @@ def main(argv=None) -> int:
     ap.add_argument("--controlador", default="referencia")
     ap.add_argument("--semente", type=int, default=42)
     ap.add_argument("--json", action="store_true", help="imprime o resumo em JSON")
+    ap.add_argument("--raiz", help="pasta de um repositório de versão (padrão: o núcleo ou REG10K_RAIZ)")
     a = ap.parse_args(argv)
+    if a.raiz:
+        configurar_raiz(a.raiz)
 
     if a.cenario.endswith(".json"):
         with open(a.cenario, encoding="utf-8") as f:
@@ -52,7 +56,7 @@ def main(argv=None) -> int:
             print(f"    {k:4} {v['nivel'][:4].lower()}  {marca} {v['detalhe']}")
         falhas = [k for k, v in res["invariantes"].items() if not v["ok"]]
         print(f"  invariantes: {'todas respeitadas' if not falhas else falhas}")
-        print(f"  eventos: {SAIDA / roteiro['id'] / nome / str(a.semente) / 'eventos.jsonl'}")
+        print(f"  eventos: {executar_mod.SAIDA / roteiro['id'] / nome / str(a.semente) / 'eventos.jsonl'}")
     return 0 if res["requisitos_ok"] else 1
 
 

@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import importlib
 import json
+import os
 import pkgutil
 import statistics
+import sys
 from pathlib import Path
 from typing import Callable, Iterable, Optional
 
@@ -13,9 +15,16 @@ from avaliacao.oraculo import avaliar, roteiro_sem_rede, tem_app, tem_falha_de_r
 from hub.controlador import Controlador, ControladorReferencia
 from sim.motor import simular
 
-RAIZ = Path(__file__).resolve().parent.parent
-CENARIOS = RAIZ / "cenarios"
+RAIZ = Path(__file__).resolve().parent.parent   # raiz do núcleo
+NUCLEO_CENARIOS = RAIZ / "cenarios"
+# nucleo-v1.0: pasta da versão em uso. Por padrão é o próprio núcleo; um repositório de versão
+# (reg10k-V0 … V4) passa a sua raiz com --raiz ou com a variável REG10K_RAIZ.
+RAIZ_VERSAO = RAIZ
+CENARIOS = NUCLEO_CENARIOS
+AMBIENTES = [NUCLEO_CENARIOS]
+ALUNOS = RAIZ / "alunos"
 SAIDA = RAIZ / "saida"
+SITE = RAIZ / "site" / "index.html"
 SEMENTE_REFERENCIA = 42
 METRICAS_NUMERICAS = (
     "desperdicio_s", "escuro_com_ocupante_s", "apagamentos_indevidos", "acionamentos",
@@ -27,7 +36,45 @@ METRICAS_NUMERICAS = (
     # v0dta
     "espelho_fiel_s", "erro_de_percepcao_s", "erro_de_sincronizacao_s", "espelho_nao_afirma_s",
 )
-VERSAO = "v1dtb"
+VERSAO = "nucleo-v1.0"
+
+
+IDENTIDADE_NUCLEO = {"nome": VERSAO, "titulo": "sala e cozinha, com gêmeo digital e espelho",
+                     "descricao": "Núcleo com o conjunto de regressão (v0 a v1dtb)"}
+
+
+def identidade() -> dict:
+    """Nome e título da versão em uso (versao.json na raiz da versão; senão, o núcleo)."""
+    p = RAIZ_VERSAO / "versao.json"
+    ident = ler_json(p) if RAIZ_VERSAO != RAIZ and p.exists() else dict(IDENTIDADE_NUCLEO)
+    return {**ident, "nucleo": VERSAO}
+
+
+def configurar_raiz(raiz) -> Path:
+    """Aponta o executor para a pasta de uma versão.
+
+    Estrutura esperada (as pastas que faltarem caem no núcleo):
+        <raiz>/cenarios/roteiros/*.json, <raiz>/cenarios/esperado/*.json
+        <raiz>/ambiente/*.json  (ou <raiz>/cenarios/*.json)
+        <raiz>/alunos/<grupo>/  (pacotes com `Controlador`)
+        <raiz>/saida/, <raiz>/site/index.html
+    """
+    global RAIZ_VERSAO, CENARIOS, AMBIENTES, ALUNOS, SAIDA, SITE
+    raiz = Path(raiz).resolve()
+    RAIZ_VERSAO = raiz
+    CENARIOS = raiz / "cenarios" if (raiz / "cenarios" / "roteiros").is_dir() else NUCLEO_CENARIOS
+    AMBIENTES = [d for d in (raiz / "ambiente", raiz / "cenarios") if d.is_dir()] + [NUCLEO_CENARIOS]
+    ALUNOS = raiz / "alunos"
+    SAIDA = raiz / "saida"
+    SITE = raiz / "site" / "index.html"
+    _AMBIENTES.clear()
+    if raiz != RAIZ:
+        # os controladores da versão (alunos.<grupo>) vêm da pasta da versão
+        for k in [k for k in sys.modules if k == "alunos" or k.startswith("alunos.")]:
+            del sys.modules[k]
+        if str(raiz) not in sys.path:
+            sys.path.insert(0, str(raiz))
+    return raiz
 
 
 # --------------------------------------------------------------- carregamento
@@ -35,30 +82,43 @@ def ler_json(caminho: Path) -> dict:
     return json.loads(caminho.read_text(encoding="utf-8"))
 
 
-def carregar_sala() -> dict:
-    return ler_json(CENARIOS / "sala.json")
-
-
 _AMBIENTES: dict = {}
+
+
+def caminho_ambiente(nome: str) -> Path:
+    for d in AMBIENTES:
+        if (d / f"{nome}.json").exists():
+            return d / f"{nome}.json"
+    raise FileNotFoundError(f"ambiente {nome}.json não encontrado em {[str(d) for d in AMBIENTES]}")
+
+
+def carregar_sala() -> dict:
+    return ambiente_de({})
 
 
 def ambiente_de(roteiro: dict) -> dict:
     """v1dt: arquivo de ambiente do roteiro (padrão: a sala da v0)."""
     nome = roteiro.get("ambiente", "sala")
     if nome not in _AMBIENTES:
-        _AMBIENTES[nome] = ler_json(CENARIOS / f"{nome}.json")
+        _AMBIENTES[nome] = ler_json(caminho_ambiente(nome))
     return _AMBIENTES[nome]
 
 
 def carregar_roteiros(ids: Optional[Iterable[str]] = None) -> list[dict]:
     todos = [ler_json(p) for p in sorted((CENARIOS / "roteiros").glob("*.json"))]
     ordem = {"NORMAL": 0, "FALSO_POSITIVO": 1, "FALSO_NEGATIVO": 2, "FALHA": 3, "GEMEO_DIGITAL": 4}
-    versoes = {"v0": 0, "v0dt": 0, "v0dta": 0, "v1dt": 1, "v1dta": 1, "v1dtb": 1}
-    todos.sort(key=lambda r: (versoes.get(r.get("versao", "v0"), 9), ordem.get(r["tipo"], 9), r["id"]))
+    todos.sort(key=lambda r: (ordem_versao(r.get("versao", "v0")), ordem.get(r["tipo"], 9), r["id"]))
     if ids:
         ids = set(ids)
         todos = [r for r in todos if r["id"] in ids]
     return todos
+
+
+def ordem_versao(v: str) -> tuple:
+    """v0 < v0dt < v0dta < v1dt < v1dt.1 < v2dt …: porte, ponto e o resto do nome."""
+    import re
+    m = re.match(r"v(\d+)([^\d.]*)(?:\.(\d+))?", v or "v0")
+    return (int(m.group(1)), int(m.group(3) or 0), m.group(2)) if m else (99, 0, v)
 
 
 def carregar_esperado(cid: str) -> Optional[dict]:
@@ -84,7 +144,7 @@ def carregar_controlador(spec: str) -> Callable[[], object]:
 def descobrir_controladores() -> dict[str, Callable[[], object]]:
     """Referência mais todo pacote em alunos/ que exporte `Controlador`."""
     achados: dict[str, Callable[[], object]] = {"referencia": ControladorReferencia}
-    pasta = RAIZ / "alunos"
+    pasta = ALUNOS
     for m in sorted(pkgutil.iter_modules([str(pasta)]), key=lambda m: m.name):
         if not m.ispkg:
             continue
@@ -179,8 +239,10 @@ def gerar_catalogo(controladores: dict[str, Callable[[], object]], ids=None, n_s
             execucoes.append(res)
     catalogo = {
         "versao": VERSAO,
+        "identidade": identidade(),
         "incremento": 2,
-        "sala": carregar_sala(),
+        # nucleo-v1.0: o ambiente "de referência" da página é o do primeiro cenário da versão
+        "sala": ambiente_de(roteiros[0]) if roteiros else carregar_sala(),
         "ambientes": {r.get("ambiente", "sala"): ambiente_de(r) for r in roteiros},
         "cenarios": [
             {"versao": r.get("versao", "v0"),
@@ -195,8 +257,12 @@ def gerar_catalogo(controladores: dict[str, Callable[[], object]], ids=None, n_s
         "execucoes": [{k: v for k, v in e.items() if k != "_eventos"} for e in execucoes],
         "problemas": problemas,
     }
-    SAIDA.mkdir(exist_ok=True)
+    SAIDA.mkdir(parents=True, exist_ok=True)
     (SAIDA / "catalogo.json").write_text(json.dumps(catalogo, ensure_ascii=False, indent=2), encoding="utf-8")
     catalogo["_eventos"] = {(e["cenario"], e["controlador"]): e["_eventos"] for e in execucoes}
     catalogo["_roteiros"] = {r["id"]: r for r in roteiros}
     return catalogo
+
+
+if os.environ.get("REG10K_RAIZ"):
+    configurar_raiz(os.environ["REG10K_RAIZ"])

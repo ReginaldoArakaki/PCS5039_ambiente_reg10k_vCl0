@@ -1,8 +1,10 @@
-# PCS5039 — Ambiente de simulação Reg10k (v1dtb)
+# PCS5039 — Ambiente de simulação Reg10k: núcleo (nucleo-v1.0)
 
 Projeto de referência da disciplina **PCS5039 — Engenharia de Software Orientada a IoT** (EPUSP): automação de iluminação residencial em ambiente simulado.
 
 A sala é a do incremento 0: 5 × 4 m com uma porta, dois moradores (uma pessoa e o Rex, um cachorro de grande porte, que também é ocupante), um sensor de passagem (SA) no batente, um sensor de presença PIR (SP) com zona cega, um atuador, uma lâmpada com sensor de efeito e um interruptor. O hub roda um **controlador plugável**: a referência ou o de um grupo.
+
+Desde a **nucleo-v1.0**, este repositório é o **núcleo**: motor, hub, plataforma, oráculo, página, schemas, skills e documentos. As versões da automação (V0 a V4) ficam em **repositórios de versão** que usam o núcleo como submódulo fixado numa tag e guardam só o que é delas: planta, cenários, controladores dos alunos, experimentos e dados (ver [`docs/plano-versoes-paralelas.md`](docs/plano-versoes-paralelas.md)). Até a migração, o núcleo mantém os 46 cenários de v0 a v1dtb como conjunto de regressão.
 
 A **v0dt** acrescenta o gêmeo digital (DTReg10k) sem mudar a sala: o **DTReg10k-L** no hub, o **DTReg10k-R** na plataforma, um **canal** simulado entre os dois (atraso, perda, duplicação e desconexão) e o **app** do titular (consulta, comando remoto e preferência de apagamento). O número da versão acompanha o porte da automação e o sufixo `dt` indica o gêmeo: v0 → v0dt → v0dta → **v1dt** (2 cômodos) → v1dt.1 → …
 
@@ -19,6 +21,7 @@ A **v0dta** (ajuste "a" da v0dt) acrescenta o **cômodo espelho**: a sala desenh
 | [`docs/guia-convencoes.md`](docs/guia-convencoes.md) | Guia de convenções: versões, identificadores, marcas, estrutura dos documentos, ciclo de incremento e publicação |
 | [`docs/ambiente-simulacao-v1dt.md`](docs/ambiente-simulacao-v1dt.md) | Plano e entrega da v1dt (sala, cozinha e passagem) |
 | [`docs/ambiente-simulacao-v1dta.md`](docs/ambiente-simulacao-v1dta.md) | Ajuste v1dta (gêmeo em miniatura, vão como abertura) |
+| [`docs/plano-versoes-paralelas.md`](docs/plano-versoes-paralelas.md) | Plano das versões paralelas V0–V4 e do núcleo (com a entrega da nucleo-v1.0) |
 | [`docs/roteiro-skills.md`](docs/roteiro-skills.md) | Roteiro de uso das skills (como pedir, paradas, histórico de uso) |
 | [`docs/ambiente-simulacao-v0dta.md`](docs/ambiente-simulacao-v0dta.md) | Plano e entrega da v0dta (cômodo espelho) |
 | [`docs/ambiente-simulacao-v0dt.md`](docs/ambiente-simulacao-v0dt.md) | Plano e entrega da v0dt (gêmeo digital) |
@@ -46,6 +49,28 @@ python -m catalogo.validar                                    # valida todos os 
 ```
 
 Depois de `python -m catalogo`, abra **`site/index.html`** com duplo clique. A página funciona sem servidor e sem internet.
+
+## Repositórios de versão e experimentos (nucleo-v1.0)
+
+Montar a pasta de um repositório de versão a partir do núcleo:
+
+```
+python tools/nova_versao.py ../reg10k-V0 --nome V0 --titulo "uma sala, com gêmeo digital e espelho" --ambientes sala
+```
+
+Dentro do repositório de versão, com o núcleo em `nucleo/` (submódulo):
+
+```
+python nucleo/reg10k.py catalogo                 # catálogo e site/index.html da versão
+python nucleo/reg10k.py sim --cenario N01
+python nucleo/reg10k.py validar
+python nucleo/reg10k.py experimentos --sementes 30 --processos 4
+python nucleo/reg10k.py assinaturas gravar V0
+```
+
+No próprio núcleo, os mesmos comandos valem com `python -m catalogo`, `python -m experimentos` etc.; `--raiz PASTA` aponta para outra versão.
+
+O **protocolo de experimentos** (`experimentos/`) roda as famílias F1 a F7 (uso normal, permanência parada, passagem sem entrar, falha de dispositivo, queda de rede, comando remoto, espelho) com N sementes e grava um CSV com uma linha por execução e um **manifesto** com o commit do núcleo e da versão, as sementes e o hash de cada entrada. Cada versão diz quais cenários entram em cada família em `experimentos/familias.json`. Resultados de simulação, não de medição.
 
 ## A página
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Simulação Reg10k — v1dt</title>
+<title>Simulação Reg10k</title>
 <style>
 :root{
   --bg:#f6f7f9; --panel:#ffffff; --ink:#1d2330; --ink2:#566070; --line:#dfe3ea; --accent:#1f4e8c;
@@ -100,7 +100,7 @@ tr.click{cursor:pointer} tr.click:hover td{background:#f3f6fb} tr.sel td{backgro
 <body>
 <header>
   <div>
-    <h1>Simulação Reg10k — v1dtb <span class="small muted" style="font-weight:500">sala e cozinha, com gêmeo digital e espelho</span></h1>
+    <h1 id="titulo">Simulação Reg10k</h1>
     <div class="sub" id="sub"></div>
   </div>
   <div style="flex:1"></div>
@@ -138,7 +138,9 @@ const verTag = c => `<span class="ver${(c.versao || "").includes("dt") ? " dt" :
 const FALHAS_REDE = ["CANAL_DESCONECTA","PLATAFORMA_FORA","CANAL_LATENCIA","CANAL_DUPLICA","CANAL_PERDE"];
 // v0dta: classes de fidelidade do espelho
 const CLASSE = {FIEL: ["#1a7f4b", "espelho fiel"], PERCEPCAO: ["#7c3aed", "erro de percepção"], SINCRONIZACAO: ["#c2410c", "erro de sincronização"], NAO_AFIRMA: ["#64748b", "não afirma"]};
-const NOMES = Object.fromEntries(D.sala.ocupantes.map(o => [o.id, o.nome || o.id]));
+// nucleo-v1.0: os ocupantes vêm do ambiente do cenário (cada versão pode ter os seus)
+const NOMES = Object.fromEntries(Object.values(D.ambientes).flatMap(a => a.ocupantes || []).map(o => [o.id, o.nome || o.id]));
+const OCUP = (cen = S.cen) => (D.ambientes[CEN[cen].ambiente] || D.sala).ocupantes;
 const CTRLS = D.meta.controladores;
 const CEN = Object.fromEntries(D.cenarios.map(c => [c.id, c]));
 const LIMITES = {latencia_reacao_ms_p95: ["max", 500], atraso_percebido_ms_max: ["max", 1000], desperdicio_por_saida_s_max: ["max", 90], apagamentos_indevidos: ["max", 0]};
@@ -359,8 +361,14 @@ const csv = rows => rows.map(r => r.map(c => { const s = String(c ?? ""); return
 
 // ------------------------------------------------------------------- cabeçalho
 function cabecalho() {
-  const nV1 = D.cenarios.filter(c => c.versao === "v1dt").length;
-  $("#sub").textContent = `Sala e cozinha (v1dt) · morador e cachorro · gêmeo local e remoto · ${nV1} cenários da residência e ${D.cenarios.length - nV1} de regressão (v0 a v0dta) · controladores: ${CTRLS.join(", ")} · gerado em ${D.meta.gerado_em}`;
+  // nucleo-v1.0: título e subtítulo vêm da versão em uso (versao.json) e dos ambientes dos cenários
+  const id = D.meta.identidade;
+  $("#titulo").innerHTML = `Simulação Reg10k — ${esc(id.nome)} <span class="small muted" style="font-weight:500">${esc(id.titulo || "")}</span>`;
+  document.title = `Simulação Reg10k — ${id.nome}`;
+  const porAmb = {};
+  D.cenarios.forEach(c => porAmb[c.ambiente] = (porAmb[c.ambiente] || 0) + 1);
+  const ambs = Object.entries(porAmb).map(([a, n]) => { const p = D.ambientes[a].planta; return `${p.comodos.map(k => k.nome).join(" e ")}: ${n} cenário${n > 1 ? "s" : ""}`; }).join(" · ");
+  $("#sub").textContent = `${ambs} · controladores: ${CTRLS.join(", ")}${id.nome !== id.nucleo ? ` · núcleo ${id.nucleo}` : ""} · gerado em ${D.meta.gerado_em}`;
   const p = D.meta.problemas;
   $("#status").innerHTML = p.length ? `<span class="pill bad" title="${esc(p.join("\n"))}">${p.length} problema(s) no catálogo</span>`
     : `<span class="pill ok">Catálogo sem problemas</span>`;
@@ -665,8 +673,13 @@ function conePath(c) {
 function plantaSVG(p, espelho) {
   // p: prefixo dos ids ("" na casa real, "e-" no espelho)
   // v1dta: as paredes têm um recorte em cada vão interno, para o piso dos dois cômodos aparecer pela abertura
-  const vaos = PLA.passagens.filter(ps => ps.x_inicio == null);
-  const mascara = `<mask id="${p}paredes" maskUnits="userSpaceOnUse" x="0" y="0" width="${X(PLA.largura) + M0}" height="${Y(0) + M0}"><rect x="0" y="0" width="${X(PLA.largura) + M0}" height="${Y(0) + M0}" fill="#fff"/>${vaos.map(ps => `<rect x="${X(ps.x) - 8}" y="${Y(ps.y_fim) + 3}" width="16" height="${(ps.y_fim - ps.y_inicio) * PX - 6}" fill="#000"/>`).join("")}</mask>`;
+  // nucleo-v1.0: toda passagem INTERNA é uma abertura (em parede vertical ou horizontal); a EXTERNA é uma porta
+  const horiz = ps => ps.x_inicio != null;
+  const vaos = PLA.passagens.filter(ps => ps.tipo === "INTERNA");
+  const recorte = ps => horiz(ps)
+    ? `<rect x="${X(ps.x_inicio) + 3}" y="${Y(ps.y) - 8}" width="${(ps.x_fim - ps.x_inicio) * PX - 6}" height="16" fill="#000"/>`
+    : `<rect x="${X(ps.x) - 8}" y="${Y(ps.y_fim) + 3}" width="16" height="${(ps.y_fim - ps.y_inicio) * PX - 6}" fill="#000"/>`;
+  const mascara = `<mask id="${p}paredes" maskUnits="userSpaceOnUse" x="0" y="0" width="${X(PLA.largura) + M0}" height="${Y(0) + M0}"><rect x="0" y="0" width="${X(PLA.largura) + M0}" height="${Y(0) + M0}" fill="#fff"/>${vaos.map(recorte).join("")}</mask>`;
   let h = `<defs>${mascara}${PLA.comodos.map(c => `<clipPath id="${p}clip-${c.id}"><rect x="${X(c.x0)}" y="${Y(c.y0 + c.profundidade)}" width="${c.largura * PX}" height="${c.profundidade * PX}"/></clipPath>`).join("")}</defs>`;
   for (const c of PLA.comodos) {
     const x0 = X(c.x0), y0 = Y(c.y0 + c.profundidade), w = c.largura * PX, hh = c.profundidade * PX;
@@ -680,7 +693,7 @@ function plantaSVG(p, espelho) {
         <text id="${p}manchaTxt-${c.id}" x="${x0 + w / 2}" y="${Y(c.y0 + c.profundidade / 2 - 0.7) + 5}" text-anchor="middle" font-size="15" font-weight="700" fill="#065f46" display="none">presença</text>
         <text id="${p}q-${c.id}" x="${x0 + w / 2}" y="${Y(c.y0 + c.profundidade / 2 - 0.7) + 18}" text-anchor="middle" font-size="54" font-weight="700" fill="#f5a524" display="none">?</text>` : ""}
       <rect x="${x0}" y="${y0}" width="${w}" height="${hh}" fill="none" stroke="#334155" stroke-width="6" mask="url(#${p}paredes)"/>
-      <text class="nomeC" x="${x0 + 10}" y="${y0 + 22}" font-size="14" font-weight="700" fill="#cbd5e1" id="${p}nome-${c.id}">${esc(c.nome)}</text>
+      <text class="nomeC" x="${x0 + (Math.abs(c.sp.x - c.x0) < 0.3 && Math.abs(c.sp.y - (c.y0 + c.profundidade)) < 0.3 ? 32 : 10)}" y="${y0 + 22}" font-size="14" font-weight="700" fill="#cbd5e1" id="${p}nome-${c.id}">${esc(c.nome)}</text>
       <g><circle cx="${X(c.sp.x) + spdx}" cy="${Y(c.sp.y) + spdy}" r="10" fill="#0e7490"/><text x="${X(c.sp.x) + spdx}" y="${Y(c.sp.y) + spdy + 4}" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">SP</text></g>
       <text id="${p}spX-${c.id}" x="${X(c.sp.x) + spdx}" y="${Y(c.sp.y) + spdy * 3.3}" text-anchor="middle" font-size="22" fill="#ef4444" font-weight="700" display="none">✕</text>
       <rect id="${p}int-${c.id}" x="${X(c.interruptor.x) - 7}" y="${Y(c.interruptor.y) - (c.interruptor.y === 0 ? 16 : 6)}" width="14" height="12" rx="2" fill="#e2e8f0" stroke="#334155"/>
@@ -689,17 +702,31 @@ function plantaSVG(p, espelho) {
       ${espelho ? `<rect id="${p}velado-${c.id}" x="${x0}" y="${y0}" width="${w}" height="${hh}" fill="url(#velado)" display="none"/>` : ""}`;
   }
   for (const ps of PLA.passagens) {
-    if (ps.x_inicio != null) {  // porta na parede horizontal
+    const rot = `${ps.id.startsWith("VAO") ? "vão" : "porta"} · ${ps.sa}`;
+    const halo = `font-size="11.5" font-weight="600" fill="#1e293b" stroke="#fff" stroke-width="3.5" paint-order="stroke"`;
+    if (ps.tipo === "INTERNA") {
+      // v1dta: abertura na parede (piso contínuo, batentes), com o feixe do SA no meio
+      if (horiz(ps)) {
+        const xa = X(ps.x_inicio), xb = X(ps.x_fim), ym = Y(ps.y);
+        h += `<rect x="${xa - 3}" y="${ym - 9}" width="6" height="18" fill="#334155"/><rect x="${xb - 3}" y="${ym - 9}" width="6" height="18" fill="#334155"/>
+          <line id="${p}sa-${ps.sa}" x1="${xa + 4}" y1="${ym}" x2="${xb - 4}" y2="${ym}" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6 5"/>
+          ${espelho ? "" : `<text x="${(xa + xb) / 2}" y="${ym + 20}" text-anchor="middle" ${halo}>${rot}</text>`}`;
+      } else {
+        const ya = Y(ps.y_fim), yb = Y(ps.y_inicio), xm = X(ps.x);
+        h += `<rect x="${xm - 9}" y="${ya - 3}" width="18" height="6" fill="#334155"/><rect x="${xm - 9}" y="${yb - 3}" width="18" height="6" fill="#334155"/>
+          <line id="${p}sa-${ps.sa}" x1="${xm}" y1="${ya + 4}" x2="${xm}" y2="${yb - 4}" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6 5"/>
+          ${espelho ? "" : `<text x="${xm + 14}" y="${(ya + yb) / 2 + 4}" text-anchor="start" ${halo}>${rot}</text>`}`;
+      }
+    } else if (horiz(ps)) {  // porta externa na parede horizontal
       h += `<line x1="${X(ps.x_inicio)}" y1="${Y(ps.y)}" x2="${X(ps.x_fim)}" y2="${Y(ps.y)}" stroke="#ffffff" stroke-width="8"/>
         <line id="${p}sa-${ps.sa}" x1="${X(ps.x_inicio)}" y1="${Y(ps.y)}" x2="${X(ps.x_fim)}" y2="${Y(ps.y)}" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6 5"/>
         <rect x="${X(ps.x_inicio) - 7}" y="${Y(ps.y) - 7}" width="10" height="14" fill="#0f172a"/><rect x="${X(ps.x_fim) - 3}" y="${Y(ps.y) - 7}" width="10" height="14" fill="#0f172a"/>
-        ${espelho ? "" : `<text x="${X((ps.x_inicio + ps.x_fim) / 2)}" y="${Y(ps.y) + 20}" text-anchor="middle" font-size="12" fill="#334155">porta · ${ps.sa}</text>`}`;
-    } else {  // vão na parede vertical
-      // v1dta: o vão é uma abertura na parede (piso contínuo, batentes), com o feixe do SA no meio
-      const ya = Y(ps.y_fim), yb = Y(ps.y_inicio), xm = X(ps.x);
-      h += `<rect x="${xm - 9}" y="${ya - 3}" width="18" height="6" fill="#334155"/><rect x="${xm - 9}" y="${yb - 3}" width="18" height="6" fill="#334155"/>
-        <line id="${p}sa-${ps.sa}" x1="${xm}" y1="${ya + 4}" x2="${xm}" y2="${yb - 4}" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6 5"/>
-        ${espelho ? "" : `<text x="${xm + 14}" y="${(ya + yb) / 2 + 4}" text-anchor="start" font-size="11.5" font-weight="600" fill="#1e293b" stroke="#fff" stroke-width="3.5" paint-order="stroke">vão · ${ps.sa}</text>`}`;
+        ${espelho ? "" : `<text x="${X((ps.x_inicio + ps.x_fim) / 2)}" y="${Y(ps.y) + (ps.y === 0 ? 20 : -12)}" text-anchor="middle" font-size="12" fill="#334155">porta · ${ps.sa}</text>`}`;
+    } else {  // porta externa na parede vertical
+      h += `<line x1="${X(ps.x)}" y1="${Y(ps.y_inicio)}" x2="${X(ps.x)}" y2="${Y(ps.y_fim)}" stroke="#ffffff" stroke-width="8"/>
+        <line id="${p}sa-${ps.sa}" x1="${X(ps.x)}" y1="${Y(ps.y_inicio)}" x2="${X(ps.x)}" y2="${Y(ps.y_fim)}" stroke="#94a3b8" stroke-width="3" stroke-dasharray="6 5"/>
+        <rect x="${X(ps.x) - 7}" y="${Y(ps.y_fim) - 7}" width="14" height="10" fill="#0f172a"/><rect x="${X(ps.x) - 7}" y="${Y(ps.y_inicio) - 3}" width="14" height="10" fill="#0f172a"/>
+        ${espelho ? "" : `<text x="${X(ps.x) + (ps.x === 0 ? -10 : 10)}" y="${(Y(ps.y_inicio) + Y(ps.y_fim)) / 2 + 4}" text-anchor="${ps.x === 0 ? "end" : "start"}" font-size="12" fill="#334155">porta · ${ps.sa}</text>`}`;
     }
   }
   return h;
@@ -714,7 +741,7 @@ function montarAnimacao() {
       <pattern id="velado" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="10" stroke="#e2e8f0" stroke-width="3" opacity=".6"/></pattern></defs>`;
   const svg = `<svg viewBox="0 0 ${largura} ${altura}" id="cena" role="img" aria-label="Planta da casa">${defs}${plantaSVG("", false)}
     <text x="${X(0)}" y="${Y(0) + 48}" font-size="12" fill="#64748b">EXTERIOR</text>
-    <g id="ocup">${D.sala.ocupantes.map(o => `<g id="o-${o.id}" display="none"><circle r="${o.tipo === "CACHORRO" ? 12 : 14}" fill="${o.tipo === "CACHORRO" ? "var(--dog)" : "var(--person)"}" stroke="#fff" stroke-width="2.5"/>
+    <g id="ocup">${OCUP().map(o => `<g id="o-${o.id}" display="none"><circle r="${o.tipo === "CACHORRO" ? 12 : 14}" fill="${o.tipo === "CACHORRO" ? "var(--dog)" : "var(--person)"}" stroke="#fff" stroke-width="2.5"/>
       <circle class="mov" r="22" fill="none" stroke="${o.tipo === "CACHORRO" ? "var(--dog)" : "var(--person)"}" stroke-width="2" opacity=".6"/>
       <text y="4" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${o.tipo === "CACHORRO" ? "R" : "M"}</text>
       <text class="lbl" y="-20" text-anchor="middle" font-size="11.5" font-weight="600" stroke="#fff" stroke-width="3" paint-order="stroke" fill="#0f172a">${esc(o.nome || o.id)}</text></g>`).join("")}</g>
@@ -853,7 +880,7 @@ function quadro() {
     const lista = A.dd[ps.comodos[0]].porSA[ps.sa] || [], passou = lista.some(p => t >= p && t < p + 700);
     $(`#sa-${ps.sa}`).setAttribute("stroke", passou ? "#ef4444" : "#94a3b8"); $(`#sa-${ps.sa}`).setAttribute("stroke-width", passou ? 7 : 3);
   }
-  for (const o of D.sala.ocupantes) {
+  for (const o of OCUP()) {
     const g = $(`#o-${o.id}`), p = posicao(o.id, t);
     if (!p) { g.setAttribute("display", "none"); continue; }
     g.setAttribute("display", "inline"); g.setAttribute("transform", `translate(${X(p[0])},${Y(p[1])})`);
@@ -889,7 +916,7 @@ function quadro() {
   }
   $("#vistas").innerHTML = `<div class="view"><h4>O que acontece</h4>${real}</div><div class="view"><h4>O que o hub acha (L)</h4>${hub}</div><div class="view"><h4>O que a plataforma acha (R)</h4>${rem}</div>`;
   const pas = PLA.passagens.map(ps => { const l = (A.dd[ps.comodos[0]].porSA[ps.sa] || []).filter(p => p <= t).pop(); return `${ps.sa}: ${l != null ? `há ${((t - l) / 1000).toFixed(1)} s` : "nenhuma"}`; }).join(" · ");
-  const verdadeTxt = D.sala.ocupantes.map(o => { const p = posicao(o.id, t); const onde = p ? (multi ? `em ${esc(NOMES_C(PLA.comodos.find(k => p[0] >= k.x0 && p[0] <= k.x0 + k.largura)?.id))}` : "na sala") : "fora"; return `${esc(o.nome || o.id)}: ${onde}${p ? (p[2] ? ", em movimento" : ", parado") : ""}`; }).join("<br>");
+  const verdadeTxt = OCUP().map(o => { const p = posicao(o.id, t); const onde = p ? (multi ? `em ${esc(NOMES_C(PLA.comodos.find(k => p[0] >= k.x0 && p[0] <= k.x0 + k.largura)?.id))}` : "na sala") : "fora"; return `${esc(o.nome || o.id)}: ${onde}${p ? (p[2] ? ", em movimento" : ", parado") : ""}`; }).join("<br>");
   const ultApp = d0.app.filter(v => v.t_ms <= t && v.tipo.startsWith("APP_")).pop(), ultRes = d0.appRes.filter(v => v.t_ms <= t).pop();
   $("#estado").innerHTML = `<div><b>Verdade</b></div><div>${verdadeTxt}</div><div>Última passagem</div><div class="small">${pas}</div>${kv}
     <div>Último app</div><div class="small">${ultApp ? `${fmtT(ultApp.t_ms)} ${esc(desc(ultApp))}` : "—"}${ultRes ? `<br>${fmtT(ultRes.t_ms)} ${esc(desc(ultRes))}` : ""}</div>`;
@@ -1012,7 +1039,7 @@ function umaLinhaDoTempo(cid, idx) {
   const bar = (i, a, b, cor, tit, op = 1, h = lane) => b > w0 && a < w1 ? `<rect x="${x(a)}" y="${yl(i) + (lane - h) / 2}" width="${Math.max(1, x(b) - x(a))}" height="${h}" fill="${cor}" opacity="${op}"><title>${esc(tit)}</title></rect>` : "";
   // verdade: presença por ocupante (das posições; na residência, só dentro deste cômodo)
   const plR = planta(), sala = plR.multi ? plR.comodos.find(k => k.id === cid) : null;
-  D.sala.ocupantes.forEach((o, k) => {
+  OCUP().forEach((o, k) => {
     const arr = D.posicoes[S.cen].o[o.id] || [], ts = D.posicoes[S.cen].t; let ini = null, mov = null;
     for (let j = 0; j <= arr.length; j++) {
       const v = arr[j]; const tj = j < ts.length ? ts[j] : d.fim;
