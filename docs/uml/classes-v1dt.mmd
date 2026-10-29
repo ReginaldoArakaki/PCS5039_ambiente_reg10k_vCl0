@@ -34,8 +34,13 @@ classDiagram
         +posicao
         +comodo
         +destino
+        +dormindo
+        +lendo
     }
-    class Pessoa
+    class Pessoa {
+        +perfil: ADULTO, CRIANCA ou IDOSO
+        +visitante: bool
+    }
     class Cachorro {
         +porte
     }

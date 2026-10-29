@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from typing import Optional
 
 from sim.modelos import VERDADE
 
@@ -19,11 +20,19 @@ class Registro:
         self.offset_ms = 0
         self.deriva_ppm = 0.0
         self.relogio_confiavel = True
+        # nucleo-v1.4: hora do dia no início do roteiro (ms desde 00:00); None = sem relógio de parede (DI-09)
+        self.hora_inicio_ms: Optional[int] = None
         # v0dt: o agente de sincronização observa o registro para publicar no DTReg10k-R
         self.ouvintes: list = []
 
     def relogio_hub(self, t_ms: int) -> int:
         return int(round(t_ms * (1 + self.deriva_ppm / 1e6))) + self.offset_ms
+
+    def hora_do_dia_ms(self, t_ms: int) -> Optional[int]:
+        """nucleo-v1.4: hora do dia no relógio do hub (com salto e deriva), ou None sem `hora_inicio`."""
+        if self.hora_inicio_ms is None:
+            return None
+        return (self.hora_inicio_ms + self.relogio_hub(t_ms)) % 86_400_000
 
     def add(self, camada: str, tipo: str, t_ms: float, **dados) -> dict:
         self._seq += 1

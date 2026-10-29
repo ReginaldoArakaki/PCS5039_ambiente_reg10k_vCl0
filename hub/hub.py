@@ -11,6 +11,12 @@
   atuador próprios, RN-V1-02). A evidência de um dispositivo vai às células
   dos cômodos a que ele pertence; o SA de uma passagem interna vai às duas
   (RN-V1-01). Com um cômodo só, tudo é como na v0.
+- nucleo-v1.4: T_apagamento por faixa horária (v3dt.1, DQ3-07). A configuração
+  aceita pelo titular pode trazer `faixas` por cômodo; com o relógio de parede
+  ligado (`hora_inicio` no roteiro), o hub troca o T_apagamento da célula na
+  entrada e na saída de cada faixa (FAIXA_APLICADA) e avisa o controlador com
+  a evidência CONFIGURACAO, como em qualquer mudança de configuração. O
+  contrato do controlador não muda. Sem faixas, nada é registrado.
 """
 from __future__ import annotations
 
@@ -114,6 +120,10 @@ class Celula:
         self.resultados_a_entregar: list[Evidencia] = []
         self.ultimo_estado = None
         self.alertas_ativos: set[str] = set()
+        # nucleo-v1.4: T_apagamento base e faixas horárias aceitas
+        self.t_base = cfg.t_apagamento_ms
+        self.faixas: list[dict] = []
+        self.faixa_vigente: Optional[str] = None
 
     def iniciar(self, boot: int) -> None:
         self.ctrl = self.hub.fabrica()
@@ -217,6 +227,43 @@ class Hub:
         e = self.celulas[cid].ctrl.estado()
         return "PRECEDENCIA_MANUAL" if e.precedencia == MANUAL else "SEM_DECISAO_DO_CONTROLADOR"
 
+    # -------------------------------------------------------- nucleo-v1.4
+    def configuracao_inicial(self, t: int, cfg_inicial: dict) -> None:
+        """Faixas aceitas em dias anteriores (estado persistido do hub)."""
+        faixas = cfg_inicial.get("faixas") or {}
+        if not faixas:
+            return
+        self.reg.add(SISTEMA, "CONFIG_INICIAL", t, versao=cfg_inicial.get("versao", 1), faixas=faixas)
+        self._definir_faixas(faixas)
+        self.aplicar_faixas(t, cfg_inicial.get("versao", 1))
+
+    def _definir_faixas(self, faixas: dict) -> None:
+        for cid, lista in faixas.items():
+            if cid in self.celulas:
+                self.celulas[cid].faixas = [dict(f, de_min=_minutos(f["de"]), ate_min=_minutos(f["ate"])) for f in lista]
+
+    def aplicar_faixas(self, t: int, versao: Optional[int] = None) -> None:
+        """Troca o T_apagamento de cada célula conforme a faixa da hora do dia."""
+        hora = self.reg.hora_do_dia_ms(t)
+        if hora is None:
+            return
+        minuto = hora // 60_000
+        for cid, cel in self.celulas.items():
+            if not cel.faixas and cel.faixa_vigente is None:
+                continue
+            f = next((f for f in cel.faixas if _na_faixa(minuto, f["de_min"], f["ate_min"])), None)
+            alvo = f["t_apagamento_ms"] if f else cel.t_base
+            rotulo = f"{f['de']}-{f['ate']}" if f else None
+            if alvo == cel.cfg.t_apagamento_ms and rotulo == cel.faixa_vigente:
+                continue
+            cel.cfg.t_apagamento_ms = alvo
+            cel.faixa_vigente = rotulo
+            self.reg.add(SISTEMA, "FAIXA_APLICADA", t, comodo=cid, faixa=rotulo, t_apagamento_ms=alvo,
+                         hora=_hhmm(hora), **({"versao": versao} if versao is not None else {}))
+            if self.ligado and cel.ctrl is not None:
+                self.receber(t, "PLATAFORMA", "CONFIGURACAO", {"t_apagamento_ms": alvo, "faixa": rotulo}, t,
+                             comodos=[cid])
+
     def aplicar_config(self, t: int, versao: int, parametros: dict) -> None:
         """RN-DT-07: aplica a versão (o agente já garantiu que é maior que a aplicada).
 
@@ -224,16 +271,25 @@ class Hub:
         """
         alvo = parametros.get("comodo")
         cids = [alvo] if alvo in self.celulas else list(self.celulas)
-        valores = {k: v for k, v in parametros.items() if k != "comodo"}
+        valores = {k: v for k, v in parametros.items() if k not in ("comodo", "faixas", "sugestoes")}
         for cid in cids:
-            cfg = self.celulas[cid].cfg
+            cel = self.celulas[cid]
             for k, v in valores.items():
-                if k in cfg.__dataclass_fields__:
-                    setattr(cfg, k, v)
+                if k in cel.cfg.__dataclass_fields__:
+                    setattr(cel.cfg, k, v)
+            if "t_apagamento_ms" in valores:
+                cel.t_base = valores["t_apagamento_ms"]
         extra = {"comodo": alvo} if alvo else {}
+        # nucleo-v1.4: faixas e sugestões de origem entram no registro só quando existem
+        for k in ("faixas", "sugestoes"):
+            if k in parametros:
+                extra[k] = parametros[k]
         self.reg.add(SISTEMA, "CONFIG_APLICADA", t, versao=versao, **valores, **extra)
-        if self.ligado:
+        if valores and self.ligado:
             self.receber(t, "PLATAFORMA", "CONFIGURACAO", {"versao": versao, **valores}, t, comodos=cids)
+        if "faixas" in parametros:
+            self._definir_faixas(parametros["faixas"])
+            self.aplicar_faixas(t, versao)
 
     # --------------------------------------------------------------- barramento
     def receber(self, t_emissao: float, origem: str, tipo: str, dados: dict, agora: int,
@@ -273,6 +329,8 @@ class Hub:
         if not self.ligado:
             return
         self.presenca.tick(t)
+        if t % 1000 == 0 and self.reg.hora_inicio_ms is not None:
+            self.aplicar_faixas(t)
         for cel in self.celulas.values():
             pendentes, cel.resultados_a_entregar = cel.resultados_a_entregar, []
             for ev in pendentes:
@@ -298,3 +356,18 @@ class Hub:
             for a in sorted(cel.alertas_ativos - atuais):
                 self.reg.add(SISTEMA, "ALERTA", t, alerta=a, ativo=False, comodo=cid)
             cel.alertas_ativos = atuais
+
+
+def _minutos(hhmm: str) -> int:
+    h, m = (int(x) for x in hhmm.split(":")[:2])
+    return (h * 60 + m) % 1440
+
+
+def _na_faixa(minuto: int, de: int, ate: int) -> bool:
+    """Faixa [de, ate) em minutos do dia; atravessa a meia-noite quando de > ate."""
+    return de <= minuto < ate if de <= ate else (minuto >= de or minuto < ate)
+
+
+def _hhmm(ms: int) -> str:
+    s = ms // 1000
+    return f"{s // 3600:02d}:{s // 60 % 60:02d}:{s % 60:02d}"

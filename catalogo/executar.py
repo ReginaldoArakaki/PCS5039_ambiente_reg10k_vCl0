@@ -38,7 +38,7 @@ METRICAS_NUMERICAS = (
     # nucleo-v1.3
     "luz_com_todos_dormindo_s",
 )
-VERSAO = "nucleo-v1.3"
+VERSAO = "nucleo-v1.4"
 
 
 IDENTIDADE_NUCLEO = {"nome": VERSAO, "titulo": "sala e cozinha, com gêmeo digital e espelho",
@@ -108,7 +108,7 @@ def ambiente_de(roteiro: dict) -> dict:
 
 def carregar_roteiros(ids: Optional[Iterable[str]] = None) -> list[dict]:
     todos = [ler_json(p) for p in sorted((CENARIOS / "roteiros").glob("*.json"))]
-    ordem = {"NORMAL": 0, "FALSO_POSITIVO": 1, "FALSO_NEGATIVO": 2, "FALHA": 3, "GEMEO_DIGITAL": 4}
+    ordem = {"NORMAL": 0, "FALSO_POSITIVO": 1, "FALSO_NEGATIVO": 2, "FALHA": 3, "GEMEO_DIGITAL": 4, "APRENDIZADO": 5, "ROTINA": 6}
     todos.sort(key=lambda r: (ordem_versao(r.get("versao", "v0")), ordem.get(r["tipo"], 9), r["id"]))
     if ids:
         ids = set(ids)
@@ -249,7 +249,8 @@ def gerar_catalogo(controladores: dict[str, Callable[[], object]], ids=None, n_s
         "cenarios": [
             {"versao": r.get("versao", "v0"),
              **{k: r[k] for k in ("id", "titulo", "tipo", "modo", "duracao_ms", "descricao",
-                                  "comportamento_ideal", "comportamento_referencia", "requisitos", "regras", "rede", "amostras_ms")
+                                  "comportamento_ideal", "comportamento_referencia", "requisitos", "regras", "rede", "amostras_ms",
+                                  "hora_inicio", "sugestoes", "config_inicial")
                 if k in r},
              "ambiente": r.get("ambiente", "sala"),
              "esperado": carregar_esperado(r["id"])}

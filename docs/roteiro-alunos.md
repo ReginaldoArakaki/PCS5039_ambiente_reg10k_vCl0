@@ -242,3 +242,20 @@ Repositório: `PCS5039_ambiente_reg10k_V1`, ambiente `residencia-v1-familia`. Qu
 | E14.1 e E14.3: análise dos dados (antes e depois) | 40% |
 | E14.2: política e medição | 40% |
 | E14.4: discussão | 20% |
+
+### E15. O gêmeo que aprende e o titular que decide (v3dt.1)
+
+Repositório: `PCS5039_ambiente_reg10k_V3`, ambiente `casa-b-familia`, rotina `experimentos/rotina-familia.json`. Na v3dt.1, o gêmeo remoto aprende um perfil de ocupação por cômodo e hora e **sugere** T_apagamento por faixa horária. Quem decide é o titular, no app (RN-V3-02, RN-DT-07).
+
+1. Rode `python nucleo/reg10k.py aprendizado --sementes 3` e leia o perfil aprendido e as sugestões (`dados/aprendizado-*-sugestoes.json`). Que cômodos e horas o gêmeo destacou, e com que evidência?
+2. Decida, como titular, quais sugestões aceitar. Para isso, troque a política do braço "aceitar" por uma escolha sua, por exemplo aceitar só as faixas longas. Justifique com o perfil.
+3. Meça o efeito nos 7 dias de teste, por cômodo e faixa: escuro com alguém acordado, aceso com todos dormindo, aceso sem ninguém e apagamentos com alguém acordado. Use o braço "recusar" como controle (mesmos dias e sementes). A OR-17 continua respeitada?
+4. Privacidade: o que o perfil revela da rotina da família, mesmo sem identificar ninguém (a que horas a casa dorme, quem lê na sala)? O que você mudaria na retenção (30 dias) ou na granularidade (1 h)?
+
+**Entrega:** a política de aceite, os CSV com o manifesto, a página de análise e a discussão de privacidade.
+
+| Item | Peso sugerido |
+|---|---|
+| E15.1: análise do perfil e das sugestões | 40% |
+| E15.2 e E15.3: decisão e medição | 40% |
+| E15.4: discussão de privacidade | 20% |

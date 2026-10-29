@@ -21,7 +21,9 @@ from sim.modelos import (
 )
 
 NIVEIS_VALIDOS = {EFEITO_OBSERVADO, EXECUCAO_RELATADA, DESCONHECIDO, SUBSTITUIDA}
-INVARIANTES = tuple(f"OR-{i:02d}" for i in range(1, 16))  # nucleo-v1.3: OR-15 (presença incompatível)
+# nucleo-v1.3: OR-15 (presença incompatível); nucleo-v1.4: OR-17 (aprendizado com aceite).
+# A OR-16 fica reservada para o isolamento entre residências (V4).
+INVARIANTES = tuple(f"OR-{i:02d}" for i in range(1, 16)) + ("OR-17",)
 PRAZO_ATUALIDADE_MS = 5_000   # PS11: divergência L × R tolerada até a sincronização
 # v0dta: classes de fidelidade do espelho (plano v0dta §5)
 FIEL = "FIEL"
@@ -161,7 +163,7 @@ class Analise:
                     self.hub_ligado.mudar(t, False)
                 elif e["tipo"] == "HUB_LIGADO":
                     self.hub_ligado.mudar(t, True)
-                elif e["tipo"] == "CONFIG_APLICADA" and "t_apagamento_ms" in e:
+                elif e["tipo"] in ("CONFIG_APLICADA", "FAIXA_APLICADA") and "t_apagamento_ms" in e:
                     self.t_apagamento_serie.mudar(t, e["t_apagamento_ms"])
             elif c == PERCEPCAO:
                 self.percepcao.append(e)
@@ -401,6 +403,9 @@ class Analise:
         saida = {k: {"ok": not v, "violacoes": v[:5]} for k, v in r.items()}
         if self.par is None:
             saida["OR-12"]["aplica"] = False
+        if not self.parcial:
+            ids = [o["id"] for o in self.sala.get("ocupantes", [])]
+            saida.update(aprendizado_com_aceite(self.ev, ids))
         return saida
 
     def _invariantes_gemeo(self, r: dict) -> None:
@@ -630,8 +635,8 @@ def tem_falha_de_rede(roteiro: dict) -> bool:
 
 
 def tem_app(roteiro: dict) -> bool:
-    """Comandos e preferências mudam decisões locais de propósito; consultas, não."""
-    return any(a.get("acao") in ("APP_COMANDO", "APP_PREFERENCIA") for a in roteiro.get("acoes", []))
+    """Comandos, preferências e aceites (nucleo-v1.4) mudam decisões locais de propósito; consultas e recusas, não."""
+    return any(a.get("acao") in ("APP_COMANDO", "APP_PREFERENCIA", "APP_ACEITAR") for a in roteiro.get("acoes", []))
 
 
 def roteiro_sem_rede(roteiro: dict) -> dict:
@@ -677,3 +682,60 @@ def avaliar(eventos: list[dict], roteiro: dict, sala: dict, esperado: Optional[d
         "aprovado": all(r["ok"] for r in resultados.values()) and inv_ok,
         "espelho": espelho,
     }
+
+
+# ------------------------------------------------------------------ nucleo-v1.4
+def aprendizado_com_aceite(eventos: list[dict], ocupantes: list[str]) -> dict:
+    """OR-17 (v3dt.1; RN-DT-07, V1 privacidade, V2/V3 §2.8).
+
+    (a) nenhum parâmetro aprendido é aplicado sem aceite: toda faixa aplicada no
+        hub vem de uma versão cujas sugestões de origem foram ACEITAS antes (neste
+        registro ou em dias anteriores, na versão inicial);
+    (b) sugestão RECUSADA nunca entra numa versão de configuração;
+    (c) nem as sugestões nem as versões guardam dado por ocupante.
+    """
+    v: list[str] = []
+    aceitas: dict[str, int] = {}
+    recusadas: dict[str, int] = {}
+    versoes: dict[int, list] = {}
+    sugestoes = [e for e in eventos if e["camada"] == PLATAFORMA and e["tipo"] == "SUGESTAO"]
+    for e in eventos:
+        if e["camada"] == PLATAFORMA and e["tipo"] == "SUGESTAO":
+            if e["estado"] == "ACEITA":
+                aceitas.setdefault(e["sugestao"], e["t_ms"])
+            elif e["estado"] == "RECUSADA":
+                recusadas.setdefault(e["sugestao"], e["t_ms"])
+        elif e["camada"] == PLATAFORMA and e["tipo"] == "CONFIG_VERSAO" and e.get("estado") in ("PENDENTE", "APLICADA") \
+                and "sugestoes" in e:
+            ids = list(e.get("sugestoes") or [])
+            if e.get("origem") == "DIAS_ANTERIORES":
+                for sid in ids:
+                    aceitas.setdefault(sid, e["t_ms"])
+            versoes[e["versao"]] = ids
+            for sid in ids:
+                if sid in recusadas:
+                    v.append(f"sugestão recusada {sid} entrou na versão v{e['versao']} em t={e['t_ms']} ms")
+                elif sid not in aceitas or aceitas[sid] > e["t_ms"]:
+                    v.append(f"versão v{e['versao']} leva {sid} sem aceite antes (t={e['t_ms']} ms)")
+    aplicadas = [e for e in eventos if e["camada"] == SISTEMA and e["tipo"] in ("CONFIG_APLICADA", "CONFIG_INICIAL")
+                 and e.get("faixas")]
+    for e in aplicadas:
+        if e["versao"] not in versoes:
+            v.append(f"hub aplicou faixas da v{e['versao']} em t={e['t_ms']} ms sem versão vinda de aceite")
+    faixas = [e for e in eventos if e["camada"] == SISTEMA and e["tipo"] == "FAIXA_APLICADA"]
+    if faixas and not aplicadas:
+        v.append(f"faixa aplicada em t={faixas[0]['t_ms']} ms sem configuração aceita")
+    proibidos = set(ocupantes)
+    for e in sugestoes + [e for e in eventos if e["camada"] == PLATAFORMA and e["tipo"] == "CONFIG_VERSAO"]:
+        if _cita_ocupante(e, proibidos):
+            v.append(f"{e['tipo']} em t={e['t_ms']} ms guarda dado por ocupante")
+    aplica = bool(sugestoes or aplicadas or faixas)
+    return {"OR-17": {"ok": not v, "violacoes": v[:5], **({} if aplica else {"aplica": False})}}
+
+
+def _cita_ocupante(x: Any, ids: set) -> bool:
+    if isinstance(x, dict):
+        return any(k in ids or k == "ocupante" or _cita_ocupante(val, ids) for k, val in x.items())
+    if isinstance(x, (list, tuple)):
+        return any(_cita_ocupante(i, ids) for i in x)
+    return isinstance(x, str) and x in ids

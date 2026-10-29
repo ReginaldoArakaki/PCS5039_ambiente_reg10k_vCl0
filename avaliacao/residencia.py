@@ -17,7 +17,7 @@ from collections import Counter
 from typing import Optional
 
 from avaliacao.oraculo import (
-    CLASSES_ESPELHO, FIEL, INVARIANTES, NAO_AFIRMA, PERCEPCAO_ERRO, SINCRONIZACAO, Analise, _assinatura,
+    CLASSES_ESPELHO, FIEL, INVARIANTES, aprendizado_com_aceite, NAO_AFIRMA, PERCEPCAO_ERRO, SINCRONIZACAO, Analise, _assinatura,
 )
 from sim.modelos import ATUACAO, DECISAO, ESTADO, PERCEPCAO, PLATAFORMA, REDE, SISTEMA, VERDADE
 
@@ -213,7 +213,7 @@ def avaliar_residencia(eventos: list[dict], roteiro: dict, res, esperado: Option
     inv_c = {cid: an.invariantes() for cid, an in analises.items()}
     inv: dict = {}
     for k in INVARIANTES:
-        if k in ("OR-01", "OR-12", "OR-13", "OR-14", "OR-15"):
+        if k in ("OR-01", "OR-12", "OR-13", "OR-14", "OR-15", "OR-17"):
             continue
         viol = [f"[{cid}] {x}" for cid in res.ids for x in inv_c[cid][k]["violacoes"]]
         inv[k] = {"ok": all(inv_c[cid][k]["ok"] for cid in res.ids), "violacoes": viol[:5]}
@@ -226,6 +226,7 @@ def avaliar_residencia(eventos: list[dict], roteiro: dict, res, esperado: Option
         inv["OR-12"] = {"ok": a == b, "violacoes": [] if a == b else ["decisões locais diferem da execução sem falha de rede"]}
     inv.update(isolamento_e_atuacao(eventos, res))
     inv.update(presenca_incompativel(eventos))
+    inv.update(aprendizado_com_aceite(eventos, [o["id"] for o in res.ocupantes]))
     inv = {k: inv[k] for k in INVARIANTES}
     inv_ok = all(v["ok"] for v in inv.values())
 

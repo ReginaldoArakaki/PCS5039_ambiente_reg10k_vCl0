@@ -7,6 +7,8 @@ flowchart LR
     MOR --- UC13((Passar entre cômodos · v1dt))
     CAO --- UC13
     MOR --- UC14((Espiar pelo vão · v1dt))
+    MOR --- UC17((Ler ou dormir num cômodo · v1dt.1 e v3dt.1))
+    UC17 -.-> SIS
     UC1 -.-> SIS[[Sistema de iluminação]]
     UC2 -.-> SIS
     UC3 -.-> SIS
@@ -18,9 +20,12 @@ flowchart LR
     TIT([Titular pelo app]) --- UC9((Consultar a casa a distância))
     TIT --- UC10((Comandar a luz a distância))
     TIT --- UC11((Mudar a preferência de apagamento))
+    TIT --- UC15((Aceitar ou recusar sugestões do gêmeo · v3dt.1))
     UC9 -.-> PLT[[Plataforma e gêmeo remoto]]
     UC10 -.-> PLT
     UC11 -.-> PLT
+    UC15 -.-> PLT
+    PLT --- UC16((Aprender o perfil de ocupação por cômodo e hora · v3dt.1))
     PLT --- UC12((Sincronizar com o hub))
     UC12 -.-> SIS
     PROF([Professor e alunos]) --- UC7((Executar e avaliar cenários))

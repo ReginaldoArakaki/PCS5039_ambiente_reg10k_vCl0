@@ -28,6 +28,8 @@ class Ocupante:
         self.perfil = perfil if perfil in PERFIS else "ADULTO"  # nucleo-v1.3
         self.visitante = visitante                               # nucleo-v1.3: ocupante sem papel no app
         self.dormindo = False                                    # nucleo-v1.3: PI-01
+        self.lendo = False                                       # nucleo-v1.4: parado e acordado; reage ao escuro
+        self.reacao_ms: Optional[int] = None                     # nucleo-v1.4: instante do gesto de reação
         self.pos: Optional[tuple[float, float]] = None  # None = exterior
         self.comodo: Optional[str] = None  # v1dt: cômodo atual (None = exterior)
         self.chegou_passagem = False       # v1dt: chegou ao vão e vai cruzar neste passo

@@ -129,6 +129,21 @@
       "id": "RN-V1-07",
       "texto": "Perfis de pessoa (adulto, criança, idoso) e visitante mudam só o movimento; para os sensores e a automação, todo ocupante é igual.",
       "origem": "RN09; RN34"
+    },
+    {
+      "id": "RN-V3-01",
+      "texto": "O gêmeo remoto (DTReg10k-R) aprende só com o que recebe do hub: perfil agregado por cômodo e hora (apagamentos com alguém dentro, reações, imobilidade), sem nada por ocupante, guardado por 30 dias.",
+      "origem": "RN09; V1 privacidade (dado comportamental); V2/V3 §2.8"
+    },
+    {
+      "id": "RN-V3-02",
+      "texto": "O gêmeo só sugere: cada sugestão (T_apagamento por cômodo e faixa horária) traz a evidência e o efeito esperado, e fica pendente até o titular aceitar ou recusar no app.",
+      "origem": "RN28; RN-DT-07"
+    },
+    {
+      "id": "RN-V3-03",
+      "texto": "Só o aceite cria versão de configuração, pendente até o hub confirmar; com o relógio de parede, o hub troca o T_apagamento na entrada e na saída de cada faixa. Recusa é registrada e respeitada.",
+      "origem": "RN-DT-07; RN27"
     }
   ],
   "parametros": [
@@ -203,6 +218,24 @@
       "valor": "30 s",
       "chave": "reconexao_max_ms",
       "fonte": "plataforma"
+    },
+    {
+      "id": "Sugestão: T_apagamento longo",
+      "valor": "300 s",
+      "chave": "T_LONGO_MS",
+      "fonte": "plataforma.aprendizado"
+    },
+    {
+      "id": "Sugestão: T_apagamento curto",
+      "valor": "30 s (mínimo da política)",
+      "chave": "T_CURTO_MS",
+      "fonte": "plataforma.aprendizado"
+    },
+    {
+      "id": "Retenção do perfil aprendido",
+      "valor": "30 dias",
+      "chave": "RETENCAO_DIAS",
+      "fonte": "plataforma.aprendizado"
     }
   ],
   "requisitos": {
@@ -422,6 +455,11 @@
       "id": "OR-15",
       "texto": "Presença incompatível: nenhum evento rotula invasão; todo evento de fronteira tem antes uma suspeita confirmada após a verificação de 5 min; suspeita conciliada nunca é enviada.",
       "base": "RN-V1-06; RN03; RN17; RF-OPR-06"
+    },
+    {
+      "id": "OR-17",
+      "texto": "Aprendizado com aceite: nenhuma faixa aprendida é aplicada sem aceite antes; sugestão recusada nunca entra numa versão; sugestões e versões não guardam dado por ocupante. (A OR-16 fica reservada para a V4.)",
+      "base": "RN-V3-01 a RN-V3-03; RN-DT-07; V1 privacidade"
     }
   ],
   "camadas": [
@@ -470,7 +508,7 @@
     {
       "id": "casos-de-uso",
       "titulo": "Casos de uso",
-      "descricao": "Atores (morador, cachorro, titular, professor e alunos); na v1dt, passar entre cômodos e espiar pelo vão."
+      "descricao": "Atores (morador, cachorro, titular, professor e alunos); na v1dt, passar entre cômodos e espiar pelo vão; na v3dt.1, ler ou dormir, aprender o perfil e decidir as sugestões do gêmeo."
     },
     {
       "id": "classes",
@@ -535,7 +573,7 @@
     {
       "id": "classes-v1dt",
       "titulo": "Classes — residência (v1dt)",
-      "descricao": "Cômodo é a classe geral: sala e cozinha são instâncias de Comodo, com os mesmos atributos (como em Comodo na V2). Passagem liga cômodos ou cômodo e exterior; o hub tem uma célula, com o seu controlador, por cômodo."
+      "descricao": "Cômodo é a classe geral: sala e cozinha são instâncias de Comodo, com os mesmos atributos (como em Comodo na V2). Passagem liga cômodos ou cômodo e exterior; o hub tem uma célula, com o seu controlador, por cômodo. Ocupante tem perfil e visitante (v1dt.1) e os estados dormindo e lendo (v1dt.1 e v3dt.1)."
     },
     {
       "id": "componentes-v1dt",
@@ -546,6 +584,16 @@
       "id": "sequencia-M03",
       "titulo": "Sequência — espiar a cozinha (M03)",
       "descricao": "O SA do vão vai aos dois controladores; sem coordenação, a cozinha acende."
+    },
+    {
+      "id": "classes-v3dt1",
+      "titulo": "Classes — aprendizado do gêmeo (v3dt.1)",
+      "descricao": "O DTReg10k-R guarda só o perfil agregado por cômodo e hora e propõe sugestões; só a sugestão aceita pelo titular entra numa versão de configuração, com faixas horárias que o hub aplica pelo relógio de parede."
+    },
+    {
+      "id": "sequencia-S02",
+      "titulo": "Sequência — sugestão aceita (S02)",
+      "descricao": "Sugestão → aceite no app → versão pendente → hub aplica as faixas → às 20h a célula da sala passa a 300 s; o controlador só recebe o novo T_apagamento."
     }
   ],
   "trilha": [
@@ -583,7 +631,7 @@
       "inc": 5,
       "versao": "v3dt",
       "dias": "12–13",
-      "acrescenta": "Casa B (7 cômodos) e aprendizado completo do gêmeo"
+      "acrescenta": "Casa B (7 cômodos) na v3dt; aprendizado do gêmeo com sugestão e aceite na v3dt.1 (nucleo-v1.4)"
     }
   ]
 }

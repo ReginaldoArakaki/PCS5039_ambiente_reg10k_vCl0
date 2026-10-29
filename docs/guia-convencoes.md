@@ -1,7 +1,7 @@
 # Guia de convenções — projeto Reg10k e ambiente de simulação PCS5039
 
 **Documento:** guia-convencoes.md
-**Versão:** 06 | **Data:** 29/10/2026 (v01 a v03 de 25/10/2026; v04 e v05 de 26/10/2026)
+**Versão:** 07 | **Data:** 29/10/2026 (v01 a v03 de 25/10/2026; v04 e v05 de 26/10/2026; v06 de 29/10/2026)
 **Linha de pesquisa:** Laboratório de Digital Twin de Arquitetura de Sistemas de Software (EPUSP) e GLIP USP
 **Coordenação:** Reginaldo Arakaki (EPUSP)
 **Base:** prática consolidada nas versões v0, v0dt e v0dta do ambiente e nas versões v01 a v04 da V1 e da V2/V3.
@@ -15,6 +15,7 @@
 |---|---|---|
 | 01 | 25/10/2026 | Primeira versão |
 | 02 | 25/10/2026 | Com a v1dt: ambientes (`sala` e `residencia-v1`), prefixos RN-V1 e M, campo `comodo` no registro e nas asserções, chave de intenção por cômodo |
+| 07 | 29/10/2026 | Com a nucleo-v1.4: hora do dia e campos do aprendizado no roteiro (§7), prefixos S e RN-V3, OR-17 (OR-16 reservada para a V4), coordenadas absolutas nas plantas (§7) |
 | 06 | 29/10/2026 | Com a nucleo-v1.3: famílias F8 a F10, invariante OR-15, perfis de ocupante; tag `nucleo-vX.Y` só para mudança de código |
 | 05 | 26/10/2026 | Com a nucleo-v1.1: janela relativa (§7.1), prefixo `G` dos cenários gerados, RN-V2 |
 | 04 | 26/10/2026 | Com a nucleo-v1.0: núcleo e repositórios de versão (§2), publicação direta no `main` e tags pelo responsável (§9), autor dos commits |
@@ -118,14 +119,14 @@ Módulos de RF: ADE, KIT, COM, OPR, SYN, ACO, GOV. Características de RNF (ISO/
 
 | Prefixo | Elemento | Formato |
 |---|---|---|
-| RN-I0, RN-DT, RN-V1 | Regra do incremento | RN-I0-05, RN-DT-09, RN-V1-01 (a regra cita a RN da V1 de origem) |
+| RN-I0, RN-DT, RN-V1, RN-V2, RN-V3 | Regra do incremento | RN-I0-05, RN-DT-09, RN-V1-01, RN-V3-02 (a regra cita a RN da V1 de origem) |
 | DI, DT-, DTA- | Decisão de orientação do plano | DT-02, DTA-03 |
 | DQ, DQA | Decisão a confirmar no plano (com proposta) | DQ-04, DQA-04 |
 | PI | Pendência do incremento | PI-01 |
 | CP | Critério de pronto | CP-DT-05, CP-DTA-01 |
-| OR | Invariante do oráculo | OR-01 a OR-14 (numeração contínua entre versões) |
-| E | Exercício dos alunos | E1–E11 (numeração contínua entre versões) |
-| Cenários | Prefixo + dois dígitos | N, FP, FN, F (v0); DT (gêmeo, v0dt); M (residência com vários cômodos, v1dt); o tipo fica no campo `tipo` |
+| OR | Invariante do oráculo | OR-01 a OR-17 (numeração contínua entre versões; OR-16 reservada para o isolamento entre residências da V4) |
+| E | Exercício dos alunos | E1–E15 (numeração contínua entre versões) |
+| Cenários | Prefixo + dois dígitos | N, FP, FN, F (v0); DT (gêmeo, v0dt); M (residência com vários cômodos, v1dt); P (pessoas, v1dt.1); A (Casa A, v2dt); C (Casa B, v3dt); S (sugestões do gêmeo, v3dt.1); G (gerados por planta); D (dia da rotina, gerado); o tipo fica no campo `tipo` |
 | Asserções | A1, A2… (comportamento); E1… (espelho); INV (invariantes) | dentro de cada `esperado/<ID>.json` |
 
 Um identificador nunca é reaproveitado com outro significado. Item removido some do documento seguinte, com nota no histórico.
@@ -208,8 +209,8 @@ Ajuste pequeno (letra) pedido pelo responsável com escopo claro pode pular as e
 
 | Regra | Detalhe |
 |---|---|
-| Roteiro | `cenarios/roteiros/<ID>.json`: id, versao, titulo, tipo, modo, duracao_ms, descricao, comportamento_ideal, comportamento_referencia, estado_inicial, acoes, falhas, requisitos, regras; opcionais: ambiente, rede, controle, controle_comodos, amostras_ms |
-| Ambiente | `cenarios/sala.json` (um cômodo, formato da v0) ou `cenarios/residencia-*.json` (cômodos e passagens); o roteiro indica com `ambiente` |
+| Roteiro | `cenarios/roteiros/<ID>.json`: id, versao, titulo, tipo, modo, duracao_ms, descricao, comportamento_ideal, comportamento_referencia, estado_inicial, acoes, falhas, requisitos, regras; opcionais: ambiente, rede, controle, controle_comodos, amostras_ms; desde a nucleo-v1.4: hora_inicio (relógio de parede; sem ela não há hora do dia), sugestoes (pendentes) e config_inicial (faixas aceitas antes) |
+| Ambiente | `cenarios/sala.json` (um cômodo, formato da v0) ou `ambiente/<planta>.json` (cômodos e passagens); o roteiro indica com `ambiente`. **Coordenadas são absolutas**: ao deslocar uma planta, desloque também zonas cegas, sensores, lâmpadas, interruptores e passagens |
 | Cômodo nas asserções | `"comodo"` em `entao` escolhe o cômodo; sem ele, métricas valem para a residência e os demais tipos, para o primeiro cômodo |
 | Esperado | `cenarios/esperado/<ID>.json`: asserções dado/quando/então com `nivel` |
 | REQUISITO | Vale para qualquer controlador; falhar reprova |

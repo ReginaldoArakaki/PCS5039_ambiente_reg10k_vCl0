@@ -1,0 +1,19 @@
+sequenceDiagram
+    participant R as DTReg10k-R (modelo)
+    actor T as Titular (app)
+    participant P as Plataforma
+    participant A as Agente (DTReg10k-L)
+    participant H as Hub (célula da sala)
+    participant C as Controlador
+    R->>P: sugestão SUG-sala-20-23 (300 s), com evidência
+    P->>T: SUGESTAO PENDENTE
+    T->>P: APP_ACEITAR SUG-sala-20-23
+    P->>P: SUGESTAO ACEITA e versão v2 PENDENTE (faixas, sugestões de origem)
+    P->>A: CONFIG v2
+    A->>H: aplicar_config(v2) com faixas
+    H->>H: CONFIG_APLICADA v2
+    H->>H: hora do dia 20h00, FAIXA_APLICADA sala 300 s
+    H->>C: CONFIGURACAO t_apagamento_ms = 300000
+    A->>P: RESULTADO_CONFIG v2 APLICADA
+    P->>T: versão v2 aplicada
+    Note over H,C: o contrato do controlador não muda: só o valor do T_apagamento

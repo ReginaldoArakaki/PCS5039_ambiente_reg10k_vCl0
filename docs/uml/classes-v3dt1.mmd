@@ -1,0 +1,78 @@
+classDiagram
+    direction LR
+    class Plataforma {
+        +sugestoes
+        +faixas_aceitas
+        +app_sugestoes(ids, aceitar)
+    }
+    class ModeloOcupacao {
+        +retencao_dias = 30
+        +observar_dia(dia, eventos_plataforma, hora_inicio)
+        +perfil() dict
+        +sugestoes(t_base) Sugestao[]
+    }
+    class PerfilHora {
+        +comodo
+        +hora
+        +apagamentos
+        +reacoes
+        +imoveis
+        +dias
+    }
+    class Sugestao {
+        +id
+        +comodo
+        +de
+        +ate
+        +t_apagamento_ms
+        +evidencia
+        +motivo
+        +efeito
+        +estado: EstadoSugestao
+    }
+    class EstadoSugestao {
+        <<enumeration>>
+        PENDENTE
+        ACEITA
+        RECUSADA
+        REJEITADA
+    }
+    class ConfiguracaoVersionada {
+        +versao
+        +estado
+        +faixas
+        +sugestoes
+    }
+    class FaixaHoraria {
+        +de
+        +ate
+        +t_apagamento_ms
+    }
+    class Hub {
+        +aplicar_config(versao, parametros)
+        +aplicar_faixas(t)
+    }
+    class Celula {
+        +comodo
+        +t_base
+        +faixas
+        +faixa_vigente
+    }
+    class RelogioDeParede {
+        +hora_inicio
+        +hora_do_dia_ms(t)
+    }
+    class Titular
+    Plataforma "1" *-- "1" ModeloOcupacao : DTReg10k-R aprende
+    ModeloOcupacao "1" *-- "*" PerfilHora : só agregado
+    ModeloOcupacao ..> Sugestao : propõe
+    Plataforma "1" o-- "*" Sugestao
+    Sugestao --> EstadoSugestao
+    Titular ..> Sugestao : aceita ou recusa no app
+    Sugestao "1..*" <.. "1" ConfiguracaoVersionada : origem (só ACEITA)
+    ConfiguracaoVersionada "1" *-- "*" FaixaHoraria : por cômodo
+    Plataforma "1" *-- "1..*" ConfiguracaoVersionada
+    Hub ..> ConfiguracaoVersionada : aplica (RN-DT-07)
+    Hub "1" *-- "1..*" Celula
+    Celula "1" o-- "*" FaixaHoraria
+    Hub ..> RelogioDeParede : hora do dia

@@ -29,6 +29,8 @@ ACOES_VALIDAS = {
     "MUDAR_COMODO", "ESPIAR",
     # nucleo-v1.3: ocupante dormindo (PI-01)
     "DORMIR", "ACORDAR",
+    # nucleo-v1.4: ocupante parado e acordado (lendo, vendo TV), que reage quando a luz apaga
+    "LER",
 }
 FALHAS_VALIDAS = {
     "SP_SEM_RESPOSTA", "BATERIA_BAIXA", "SP_FALSO_DISPARO", "SA_ESPURIO",
@@ -37,7 +39,10 @@ FALHAS_VALIDAS = {
     # v0dt: rede e plataforma
     "CANAL_DESCONECTA", "PLATAFORMA_FORA", "CANAL_LATENCIA", "CANAL_DUPLICA", "CANAL_PERDE",
 }
-ACOES_APP = {"APP_COMANDO", "APP_PREFERENCIA", "APP_CONSULTA"}
+ACOES_APP = {"APP_COMANDO", "APP_PREFERENCIA", "APP_CONSULTA",
+             # nucleo-v1.4: aceite ou recusa de sugestões do gêmeo (RN-DT-07, OR-17)
+             "APP_ACEITAR", "APP_RECUSAR"}
+REACAO_ESCURO_MS = (3_000, 10_000)   # nucleo-v1.4: quem lê e fica no escuro acena depois de 3 a 10 s
 ATOR_APP = "app"
 
 
@@ -61,6 +66,7 @@ class Simulacao:
             return random.Random(f"{semente}:{roteiro['id']}:{nome}")
 
         self.rng_mundo = rng("mundo")
+        self.rng_reacao = rng("reacao")      # nucleo-v1.4: só usado por quem lê (LER)
         disp = self.res.dispositivos
         p = lambda nome: dict(disp[nome][chave_modo])
         r = lambda nome: rng(self.res.rng_nome(nome))
@@ -99,6 +105,15 @@ class Simulacao:
         self.agente = AgenteSincronizacao(self.hub, self.reg, self.canal, p_agente, rng("agente"), self.plataforma)
         self.plataforma.agente = self.agente
         self.hub.agente = self.agente
+        # nucleo-v1.4: relógio de parede, configuração aceita antes e sugestões pendentes (desligados por padrão)
+        if roteiro.get("hora_inicio"):
+            partes = [int(x) for x in roteiro["hora_inicio"].split(":")] + [0]
+            self.reg.hora_inicio_ms = ((partes[0] * 60 + partes[1]) * 60 + partes[2]) * 1000
+        self.config_inicial = roteiro.get("config_inicial")
+        if self.config_inicial:
+            self.plataforma.configuracao_inicial(self.config_inicial)
+        if roteiro.get("sugestoes"):
+            self.plataforma.sugestoes_iniciais(roteiro["sugestoes"])
         self.acoes = sorted(roteiro.get("acoes", []), key=lambda a: a["t_ms"])
         self.falhas = sorted(roteiro.get("falhas", []), key=lambda f: f["t_ms"])
         self._ia = 0
@@ -167,6 +182,8 @@ class Simulacao:
         acao = a["acao"]
         v_andar, v_aleatorio = PERFIS[o.perfil]
         vel = float(a.get("vel_m_s", v_andar))
+        if acao != "GESTO":
+            o.lendo, o.reacao_ms = False, None       # nucleo-v1.4: só LER e GESTO mantêm a leitura
         if o.dormindo and acao not in ("DORMIR", "GESTO"):
             # nucleo-v1.3: qualquer outra ação acorda o ocupante
             o.dormindo = False
@@ -221,6 +238,11 @@ class Simulacao:
             # já acordado acima; um gesto ao acordar
             o.modo, o.alvo = "PARADO", None
             o.gesto_ate = t + 2_000
+        elif acao == "LER":
+            # nucleo-v1.4: parado e acordado; se a luz do cômodo apaga, acena (REACAO_ESCURO_MS)
+            if not o.na_sala:
+                raise ValueError(f"{self.roteiro['id']}: {o.id} não está na casa para ler em t={t}")
+            o.modo, o.alvo, o.lendo, o.reacao_ms = "PARADO", None, True, None
         elif acao == "MICROGESTOS":
             o.modo, o.alvo = "MICRO", None
             o.micro_intervalo = (a.get("intervalo_min_ms", 120_000), a.get("intervalo_max_ms", 240_000))
@@ -235,6 +257,16 @@ class Simulacao:
             cid = a.get("comodo") or o.comodo or self.res.ids[0]
             self._verdade(t, "INTERRUPTOR_ACIONADO", ocupante=o.id, comodo=cid)
             self.interruptores[cid].acionar(t)
+
+    def _reagir_ao_escuro(self, t: int, o) -> None:
+        """nucleo-v1.4: quem lê acordado acena quando a luz do seu cômodo apaga (REACAO_ESCURO_MS)."""
+        if self.lampadas[o.comodo].fisica:
+            o.reacao_ms = None
+        elif o.reacao_ms is None:
+            o.reacao_ms = t + self.rng_reacao.randint(*REACAO_ESCURO_MS)
+        elif t >= o.reacao_ms:
+            o.gesto_ate, o.reacao_ms = t + 1_000, None
+            self._verdade(t, "REAGIU_AO_ESCURO", ocupante=o.id, comodo=o.comodo)
 
     def _cruzar(self, t: int, o) -> None:
         """v1dt: o ocupante chegou ao vão e passa para o outro cômodo."""
@@ -254,6 +286,8 @@ class Simulacao:
             if a.get("comodo"):
                 par["comodo"] = a["comodo"]
             self.plataforma.app_preferencia(t, par)
+        elif a["acao"] in ("APP_ACEITAR", "APP_RECUSAR"):
+            self.plataforma.app_sugestoes(t, list(a["sugestoes"]), a["acao"] == "APP_ACEITAR")
         else:
             self.plataforma.app_consulta(t)
 
@@ -340,7 +374,11 @@ class Simulacao:
             o.pos = tuple(item.get("pos", self.res.comodos[o.comodo].centro() if self.res.multi else (2.5, 2.0)))
             o.modo = "PARADO"
         self.reg.add(VERDADE, "INICIO", 0, roteiro=self.roteiro["id"], modo=self.modo, semente=self.semente,
-                     controlador=self.hub.nome_controlador, ambiente=self.res.id, comodos=self.res.ids)
+                     controlador=self.hub.nome_controlador, ambiente=self.res.id, comodos=self.res.ids,
+                     **({"hora_inicio": self.roteiro["hora_inicio"]} if self.roteiro.get("hora_inicio") else {}))
+        if self.config_inicial:
+            self.hub.configuracao_inicial(0, self.config_inicial)
+        self.plataforma.registrar_inicio(0)
         self._verdade(0, "OCUPANTES", **self._ocupantes_verdade())
         for cid in self.res.ids:
             self._verdade(0, "LUZ_FISICA", acesa=False, comodo=cid)
@@ -371,6 +409,10 @@ class Simulacao:
                         j["microgesto"] = True
                     else:
                         j["parado"] = True
+
+            for o in self.ocupantes.values():
+                if o.lendo and o.comodo is not None:
+                    self._reagir_ao_escuro(t, o)
 
             for sa in self.sas.values():
                 sa.passo(t, self.dt)

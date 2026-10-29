@@ -85,3 +85,6 @@ Resposta final ao responsável, nesta ordem e sem recapitular o processo: o que 
 - Um evento novo no registro muda os hashes, mas não pode mudar DECISAO nem ATUACAO: é isso que a assinatura confere.
 - Métrica que não se aplica ao cenário aparece como "não se aplica", nunca como limite violado.
 - "Desconhecido" e "desatualizado" declarados são incerteza honesta, não erro (RN01).
+- Planta deslocada ou copiada: as coordenadas são absolutas. Uma zona cega esquecida no lugar antigo (v3dt) deixou a porta de entrada fora da vista do PIR. A referência passou, porque acende pelo SA; só o controlador que depende do SP revelou. Ao montar planta nova, confira os números de **outro** controlador além da referência.
+- OR-12 compara as decisões locais com e sem falha de rede. Ação do app que muda a configuração de propósito (comando, preferência, aceite de sugestão) entra em `tem_app` e dispensa o par.
+- Experimento de semanas (nucleo-v1.4): cada dia é uma execução, e o modelo passa de um dia para o outro. A rotina do dia sai de (semente, dia), por isso os braços "aceitar" e "recusar" veem os mesmos dias. Compare sempre os braços nos mesmos dias, nunca o antes e o depois de um braço só.

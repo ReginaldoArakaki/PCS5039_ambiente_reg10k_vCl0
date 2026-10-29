@@ -14,6 +14,10 @@ Regras:
 - RN-DT-05 / RN-DT-06: comando remoto com validade de 30 s e chave; com o hub
   desconectado, recusa imediata com motivo, última evidência e idade.
 - RN-DT-07: preferência cria nova versão "pendente" até o hub confirmar.
+- nucleo-v1.4 (v3dt.1): sugestões do gêmeo (T_apagamento por cômodo e faixa
+  horária) ficam PENDENTES até o titular aceitar ou recusar no app. Só o aceite
+  cria versão de configuração, que leva as faixas de todos os cômodos e a lista
+  das sugestões de origem (OR-17). Recusa é registrada e nunca aplicada.
 """
 from __future__ import annotations
 
@@ -73,6 +77,10 @@ class Plataforma:
         self.versoes = {1: {"parametros": {"t_apagamento_ms": config_inicial.t_apagamento_ms},
                             "estado": "APLICADA", "criada_ms": 0}}
         self.versao_aplicada_hub = 1
+        # nucleo-v1.4: sugestões do gêmeo e faixas aceitas (por cômodo)
+        self.sugestoes: dict[str, dict] = {}
+        self.faixas_aceitas: dict[str, list] = {}
+        self._inicio_pendente: list = []
 
     # Compatibilidade com a v0dt (um cômodo)
     @property
@@ -369,6 +377,81 @@ class Plataforma:
         def registrar(tt):
             self.reg.add(PLATAFORMA, "APP_CONFIG", tt, versao=versao, estado=estado, motivo=motivo)
         self.agendar(t + _lat(self.rng, self.p_app["latencia_ms"]), registrar)
+
+    # ============================================== sugestões (nucleo-v1.4)
+    def configuracao_inicial(self, cfg: dict) -> None:
+        """Versão já aplicada em dias anteriores, com as faixas e as sugestões aceitas que a originaram."""
+        v = int(cfg.get("versao", 1))
+        self.faixas_aceitas = {cid: [dict(f) for f in fs] for cid, fs in (cfg.get("faixas") or {}).items()}
+        par = {"t_apagamento_ms": self.versoes[1]["parametros"]["t_apagamento_ms"]}
+        if self.faixas_aceitas:
+            par["faixas"] = self.faixas_aceitas
+        self.versoes = {v: {"parametros": par, "estado": "APLICADA", "criada_ms": 0,
+                            "sugestoes": list(cfg.get("sugestoes_aceitas") or [])}}
+        self.versao_vigente = self.versao_aplicada_hub = v
+        self._inicio_pendente.append(("CONFIG_VERSAO", {"versao": v, "estado": "APLICADA", "origem": "DIAS_ANTERIORES",
+                                                        "parametros": par,
+                                                        "sugestoes": list(cfg.get("sugestoes_aceitas") or [])}))
+
+    def sugestoes_iniciais(self, sugestoes: list) -> None:
+        for sg in sugestoes:
+            self.sugestoes[sg["id"]] = {**sg, "estado": "PENDENTE"}
+            self._inicio_pendente.append(("SUGESTAO", {**{k: v for k, v in sg.items() if k != "id"},
+                                                       "sugestao": sg["id"], "estado": "PENDENTE"}))
+
+    def registrar_inicio(self, t: float) -> None:
+        for tipo, campos in self._inicio_pendente:
+            self.reg.add(PLATAFORMA, tipo, t, **campos)
+        self._inicio_pendente = []
+
+    def app_sugestoes(self, t: float, ids: list, aceitar: bool) -> None:
+        """APP_ACEITAR / APP_RECUSAR: decisão do titular sobre sugestões pendentes."""
+        self.reg.add(PLATAFORMA, "APP_SUGESTOES", t, sugestoes=ids, decisao="ACEITAR" if aceitar else "RECUSAR")
+        if self.fora:
+            self._mostrar_cfg(t, None, "REJEITADA", "PLATAFORMA_INDISPONIVEL")
+            return
+        self.agendar(t + _lat(self.rng, self.p_app["latencia_ms"]), lambda tt: self._decidir(tt, ids, aceitar))
+
+    def _decidir(self, t: float, ids: list, aceitar: bool) -> None:
+        lo, hi = self.p["t_apagamento_limites_ms"]
+        aceitas = []
+        for sid in ids:
+            sg = self.sugestoes.get(sid)
+            if sg is None or sg["estado"] != "PENDENTE":
+                self.reg.add(PLATAFORMA, "SUGESTAO", t, sugestao=sid, estado="SEM_EFEITO",
+                             motivo="DESCONHECIDA" if sg is None else sg["estado"])
+                continue
+            if aceitar and not lo <= sg["t_apagamento_ms"] <= hi:
+                sg["estado"] = "REJEITADA"
+                self.reg.add(PLATAFORMA, "SUGESTAO", t, sugestao=sid, estado="REJEITADA", motivo="FORA_DA_POLITICA",
+                             limites_ms=[lo, hi])
+                continue
+            sg["estado"] = "ACEITA" if aceitar else "RECUSADA"
+            self.reg.add(PLATAFORMA, "SUGESTAO", t, sugestao=sid, estado=sg["estado"], comodo=sg["comodo"])
+            if aceitar:
+                aceitas.append(sg)
+        if not aceitas:
+            return
+        for sg in aceitas:
+            lista = [f for f in self.faixas_aceitas.get(sg["comodo"], []) if (f["de"], f["ate"]) != (sg["de"], sg["ate"])]
+            lista.append({"de": sg["de"], "ate": sg["ate"], "t_apagamento_ms": sg["t_apagamento_ms"]})
+            self.faixas_aceitas[sg["comodo"]] = sorted(lista, key=lambda f: f["de"])
+        self._nova_versao_faixas(t, [sg["id"] for sg in aceitas])
+
+    def _nova_versao_faixas(self, t: float, ids: list) -> None:
+        self.versao_vigente += 1
+        nv = self.versao_vigente
+        for antiga, cfg in self.versoes.items():
+            if cfg["estado"] == "PENDENTE":
+                cfg["estado"] = "SUBSTITUIDA"
+                self.reg.add(PLATAFORMA, "CONFIG_VERSAO", t, versao=antiga, estado="SUBSTITUIDA")
+        par = {"faixas": {cid: [dict(f) for f in fs] for cid, fs in self.faixas_aceitas.items()}, "sugestoes": ids}
+        self.versoes[nv] = {"parametros": par, "estado": "PENDENTE", "criada_ms": t, "sugestoes": ids}
+        self.reg.add(PLATAFORMA, "CONFIG_VERSAO", t, versao=nv, estado="PENDENTE", parametros=par, origem="ACEITE",
+                     sugestoes=ids, aplicada_hub=self.versao_aplicada_hub)
+        self._mostrar_cfg(t, nv, "PENDENTE", None)
+        if self.sessao:
+            self._enviar_config(t, nv)
 
     # ================================================================= app
     def app_consulta(self, t: float) -> None:
