@@ -1,4 +1,4 @@
-# PCS5039 — Ambiente de simulação Reg10k: núcleo (nucleo-v1.1)
+# PCS5039 — Ambiente de simulação Reg10k: núcleo (nucleo-v1.2)
 
 Projeto de referência da disciplina **PCS5039 — Engenharia de Software Orientada a IoT** (EPUSP): automação de iluminação residencial em ambiente simulado.
 
@@ -71,6 +71,8 @@ python nucleo/reg10k.py assinaturas gravar V0
 No próprio núcleo, os mesmos comandos valem com `python -m catalogo`, `python -m experimentos` etc.; `--raiz PASTA` aponta para outra versão.
 
 A **nucleo-v1.1** traz o **gerador de cenários por planta** (`python nucleo/reg10k.py gerador --ambiente <planta> --versao <versão>`): as famílias F1 a F7 com os mesmos episódios em qualquer casa, para comparar versões. Traz também as **asserções com janela relativa a um evento** (campo `apos`, por exemplo "acende até 1 s depois de entrar"), que valem em qualquer semente, e corrige o desperdício por saída: o período agora termina quando alguém volta ao cômodo antes de a luz apagar.
+
+A **nucleo-v1.2** traz o **comparador entre versões** (`python nucleo/reg10k.py comparar <CSV da V0> <CSV da V1> <CSV da V2>`), que resume por família, versão e controlador só os cenários gerados por planta, os únicos equivalentes entre as casas. Corrige também a validação do catálogo nas versões sem a sala da v0.
 
 O **protocolo de experimentos** (`experimentos/`) roda as famílias F1 a F7 (uso normal, permanência parada, passagem sem entrar, falha de dispositivo, queda de rede, comando remoto, espelho) com N sementes e grava um CSV com uma linha por execução e um **manifesto** com o commit do núcleo e da versão, as sementes e o hash de cada entrada. Cada versão diz quais cenários entram em cada família em `experimentos/familias.json`. Resultados de simulação, não de medição.
 

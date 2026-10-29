@@ -9,6 +9,7 @@ Num repositório de versão (reg10k-V0 … reg10k-V4), o núcleo fica na subpast
     python nucleo/reg10k.py validar                  # JSON da versão contra os schemas do núcleo
     python nucleo/reg10k.py experimentos --sementes 30
     python nucleo/reg10k.py gerador --ambiente casa-a --versao v2dt   # cenários G* das famílias F1–F7
+    python nucleo/reg10k.py comparar ../V0/dados/x.csv ../V1/dados/y.csv     # compara versões (cenários G*)
     python nucleo/reg10k.py assinaturas gravar V0    # dados/assinaturas-V0.json
     python nucleo/reg10k.py assinaturas comparar V0
 
@@ -29,6 +30,7 @@ COMANDOS = {
     "validar": ("modulo", "catalogo.validar"),
     "experimentos": ("modulo", "experimentos"),
     "gerador": ("modulo", "experimentos.gerador"),
+    "comparar": ("modulo", "experimentos.comparar"),
     "assinaturas": ("arquivo", str(NUCLEO / "tools" / "assinaturas.py")),
 }
 

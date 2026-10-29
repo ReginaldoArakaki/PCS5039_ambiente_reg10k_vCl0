@@ -58,6 +58,9 @@ def test_validacao_e_catalogo_da_versao(v1):
     assert cat["identidade"]["nome"] == "V1" and cat["identidade"]["nucleo"] == cat["versao"]
     assert list(cat["ambientes"]) == ["residencia-v1"]
     assert (v1 / "site" / "index.html").exists()
+    # nucleo-v1.2: o catálogo de uma versão sem a sala da v0 também passa na validação
+    r = _reg10k(v1, "validar")
+    assert r.returncode == 0, r.stdout
 
 
 def test_experimentos_csv_e_manifesto(v1):
@@ -104,3 +107,18 @@ def test_quatro_comodos_com_passagens_nas_duas_direcoes(tmp_path):
     ocupado = {c: m["metricas"]["tempo_ocupada_s"] for c, m in e["comodos"].items()}
     assert set(ocupado) == {"sala", "cozinha", "quarto", "banheiro"}
     assert ocupado["cozinha"] == 0 and min(ocupado["sala"], ocupado["quarto"], ocupado["banheiro"]) > 30
+
+
+def test_comparar_versoes(tmp_path):
+    """nucleo-v1.2: o comparador junta os CSV e resume só os cenários G* por família e versão."""
+    from experimentos.comparar import comparar, ler
+    linhas = []
+    for nome, sementes in (("a", 2), ("b", 1)):
+        p = tmp_path / f"{nome}.csv"
+        p.write_text("versao,nucleo,n_comodos,familia,cenario,controlador,requisitos_ok,desperdicio_s,acionamentos\n"
+                     + "".join(f"V{nome},n1,{1 if nome == 'a' else 2},F3,G03-X,referencia,True,{10 * (s + 1)},2\n" for s in range(sementes))
+                     + f"V{nome},n1,1,F3,FP01,referencia,False,999,9\n", encoding="utf-8")
+        linhas += ler([p])
+    res = comparar(linhas)
+    assert [(r["versao"], r["n"], r["n_comodos"], r["requisitos_ok_pct"], r["desperdicio_s_media"]) for r in res] == [
+        ("Va", 2, 1, 100.0, 15.0), ("Vb", 1, 2, 100.0, 10.0)]

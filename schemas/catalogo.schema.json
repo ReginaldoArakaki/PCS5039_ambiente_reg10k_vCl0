@@ -21,7 +21,15 @@
       "description": "0 = v0; 1 = v0dt/v0dta; 2 = v1dt"
     },
     "sala": {
-      "$ref": "sala.schema.json"
+      "anyOf": [
+        {
+          "$ref": "sala.schema.json"
+        },
+        {
+          "$ref": "residencia.schema.json"
+        }
+      ],
+      "description": "Ambiente de referência da página: a sala da v0 ou, nas versões sem ela, a residência do primeiro cenário (nucleo-v1.2)"
     },
     "cenarios": {
       "type": "array",

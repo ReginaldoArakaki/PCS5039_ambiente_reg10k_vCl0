@@ -36,7 +36,7 @@ METRICAS_NUMERICAS = (
     # v0dta
     "espelho_fiel_s", "erro_de_percepcao_s", "erro_de_sincronizacao_s", "espelho_nao_afirma_s",
 )
-VERSAO = "nucleo-v1.1"
+VERSAO = "nucleo-v1.2"
 
 
 IDENTIDADE_NUCLEO = {"nome": VERSAO, "titulo": "sala e cozinha, com gêmeo digital e espelho",
