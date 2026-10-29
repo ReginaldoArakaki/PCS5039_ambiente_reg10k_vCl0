@@ -79,6 +79,18 @@
               "PESSOA",
               "CACHORRO"
             ]
+          },
+          "perfil": {
+            "enum": [
+              "ADULTO",
+              "CRIANCA",
+              "IDOSO"
+            ],
+            "description": "nucleo-v1.3: só muda o movimento (velocidades); os sensores não distinguem perfis (RN09)"
+          },
+          "visitante": {
+            "type": "boolean",
+            "description": "nucleo-v1.3: ocupante sem papel no app (RN34)"
           }
         }
       }

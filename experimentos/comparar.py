@@ -9,8 +9,11 @@ Uso:
         --saida comparacao.csv
 
 Saída: tabela no terminal e, com --saida, um CSV com uma linha por
-(família, versão, controlador): n, cômodos, % com requisitos atendidos, média,
-mínimo e máximo de cada métrica da família, e os núcleos que geraram os dados.
+(família, versão, ambiente, controlador): n, cômodos, % com requisitos atendidos,
+média, mínimo e máximo de cada métrica da família, e os núcleos que geraram os
+dados. nucleo-v1.3: as métricas que o oráculo SOMA sobre os cômodos (tempo de
+gêmeo não atual, desperdício etc.) ganham também a média POR CÔMODO, para
+comparar casas de tamanhos diferentes.
 """
 from __future__ import annotations
 
@@ -20,6 +23,7 @@ import statistics
 import sys
 from pathlib import Path
 
+from avaliacao.residencia import SOMA
 from experimentos.familias import FAMILIAS
 from experimentos.rodar import RESSALVA
 
@@ -35,10 +39,10 @@ def ler(arquivos: list[Path], prefixo: str = "G") -> list[dict]:
 def comparar(linhas: list[dict]) -> list[dict]:
     grupos: dict = {}
     for ln in linhas:
-        grupos.setdefault((ln["familia"], ln["versao"], ln["controlador"]), []).append(ln)
+        grupos.setdefault((ln["familia"], ln["versao"], ln.get("ambiente", ""), ln["controlador"]), []).append(ln)
     out = []
-    for (fam, versao, ctrl), lns in sorted(grupos.items()):
-        item = {"familia": fam, "versao": versao, "controlador": ctrl, "n": len(lns),
+    for (fam, versao, amb, ctrl), lns in sorted(grupos.items()):
+        item = {"familia": fam, "versao": versao, "ambiente": amb, "controlador": ctrl, "n": len(lns),
                 "n_comodos": max(int(x["n_comodos"]) for x in lns),
                 "n_cenarios": len({x["cenario"] for x in lns}),
                 "nucleo": ",".join(sorted({x["nucleo"] for x in lns})),
@@ -48,6 +52,9 @@ def comparar(linhas: list[dict]) -> list[dict]:
             item[f"{k}_media"] = round(statistics.fmean(vals), 2) if vals else None
             item[f"{k}_min"] = min(vals) if vals else None
             item[f"{k}_max"] = max(vals) if vals else None
+            if k in SOMA and vals:
+                por = [float(x[k]) / int(x["n_comodos"]) for x in lns if x.get(k) not in (None, "")]
+                item[f"{k}_por_comodo_media"] = round(statistics.fmean(por), 2)
         out.append(item)
     return out
 

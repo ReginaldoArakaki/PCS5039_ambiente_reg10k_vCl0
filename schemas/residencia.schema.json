@@ -158,7 +158,44 @@
       }
     },
     "ocupantes": {
-      "type": "array"
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "tipo"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tipo": {
+            "enum": [
+              "PESSOA",
+              "CACHORRO"
+            ]
+          },
+          "nome": {
+            "type": "string"
+          },
+          "porte": {
+            "type": "string"
+          },
+          "perfil": {
+            "enum": [
+              "ADULTO",
+              "CRIANCA",
+              "IDOSO"
+            ],
+            "description": "nucleo-v1.3: só muda o movimento (velocidades); os sensores não distinguem perfis (RN09)"
+          },
+          "visitante": {
+            "type": "boolean",
+            "description": "nucleo-v1.3: ocupante sem papel no app (RN34)"
+          }
+        }
+      }
     },
     "dispositivos": {
       "type": "object"

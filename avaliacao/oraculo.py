@@ -21,7 +21,7 @@ from sim.modelos import (
 )
 
 NIVEIS_VALIDOS = {EFEITO_OBSERVADO, EXECUCAO_RELATADA, DESCONHECIDO, SUBSTITUIDA}
-INVARIANTES = tuple(f"OR-{i:02d}" for i in range(1, 15))
+INVARIANTES = tuple(f"OR-{i:02d}" for i in range(1, 16))  # nucleo-v1.3: OR-15 (presença incompatível)
 PRAZO_ATUALIDADE_MS = 5_000   # PS11: divergência L × R tolerada até a sincronização
 # v0dta: classes de fidelidade do espelho (plano v0dta §5)
 FIEL = "FIEL"
@@ -101,6 +101,8 @@ class Analise:
         self.hub_ligado = Serie(True)
 
         self.ocupada = Serie(False)       # verdade: há ocupante na sala?
+        self.acordado = Serie(False)      # nucleo-v1.3: há ocupante acordado? (quem dorme quer escuro, PI-01)
+        self.todos_dormindo = Serie(False)  # nucleo-v1.3: há ocupantes e todos dormem?
         self.luz = Serie(False)           # verdade: lâmpada emitindo luz?
         self.luz_estado = Serie("APAGADA")  # inferido: estado da luz no controlador
         self.ocupacao_inf = Serie(DESCONHECIDA)
@@ -119,6 +121,9 @@ class Analise:
             if c == VERDADE:
                 if e["tipo"] == "OCUPANTES":
                     self.ocupada.mudar(t, bool(e["presentes"]))
+                    pres, dorm = set(e["presentes"]), set(e.get("dormindo", ()))
+                    self.acordado.mudar(t, bool(pres - dorm))
+                    self.todos_dormindo.mudar(t, bool(pres) and pres <= dorm)
                 elif e["tipo"] == "LUZ_FISICA":
                     self.luz.mudar(t, bool(e["acesa"]))
                 elif e["tipo"] == "CRUZOU_PORTA":
@@ -165,12 +170,14 @@ class Analise:
     def metricas(self) -> dict:
         fim = self.fim
         desperdicio = _cruzamento([self.luz, self.ocupada], fim, lambda l, o: l and not o)
-        # Escuro com ocupante, exceto quando o morador apagou de propósito
-        escuro = _cruzamento([self.luz, self.ocupada, self.luz_estado], fim,
+        # Escuro com ocupante acordado, exceto quando o morador apagou de propósito
+        # (nucleo-v1.3: quem dorme não conta; sem ninguém dormindo, acordado = ocupada)
+        escuro = _cruzamento([self.luz, self.acordado, self.luz_estado], fim,
                              lambda l, o, s: (not l) and o and s != APAGADA_MANUAL)
+        luz_dormindo = _cruzamento([self.luz, self.todos_dormindo], fim, lambda l, d: l and d)
 
         indevidos = [i for i in self.intencoes
-                     if i["acao"] == APAGAR and i["precedencia"] == AUTOMATICA and self.ocupada.em(i["t_ms"])]
+                     if i["acao"] == APAGAR and i["precedencia"] == AUTOMATICA and self.acordado.em(i["t_ms"])]
 
         latencias = []
         for i in self.intencoes:
@@ -213,6 +220,11 @@ class Analise:
             "ocupacao_desconhecida_s": round(desconhecida / 1000, 1),
             "tempo_ocupada_s": round(_cruzamento([self.ocupada], fim, bool) / 1000, 1),
             "tempo_luz_acesa_s": round(_cruzamento([self.luz], fim, bool) / 1000, 1),
+            "luz_com_todos_dormindo_s": round(luz_dormindo / 1000, 1),
+            # nucleo-v1.3: detector de presença incompatível (RF-OPR-06), na casa toda
+            **{f"suspeitas_{k.lower()}s": sum(1 for e in self.ev if e["camada"] == SISTEMA
+                                                and e["tipo"] == "SUSPEITA_PRESENCA" and e["estado"] == k)
+               for k in ("ABERTA", "CONFIRMADA", "CONCILIADA")},
             "alertas": sorted({a["alerta"] for a in self.alertas if a["ativo"]}),
             **self.metricas_gemeo(),
             **self.metricas_espelho(),
@@ -632,7 +644,7 @@ def roteiro_sem_rede(roteiro: dict) -> dict:
 
 def avaliar(eventos: list[dict], roteiro: dict, sala: dict, esperado: Optional[dict],
             par: Optional[list[dict]] = None) -> dict:
-    from avaliacao.residencia import avaliar_residencia, isolamento_e_atuacao  # v1dt
+    from avaliacao.residencia import avaliar_residencia, isolamento_e_atuacao, presenca_incompativel  # v1dt, v1.3
     from sim.residencia import Residencia
     res = Residencia(sala)
     if res.multi:
@@ -644,6 +656,7 @@ def avaliar(eventos: list[dict], roteiro: dict, sala: dict, esperado: Optional[d
                "amostras": amostras(an)}
     inv = an.invariantes()
     inv.update(isolamento_e_atuacao(eventos, res))
+    inv.update(presenca_incompativel(eventos))
     resultados = {}
     if esperado:
         for a in esperado.get("assercoes", []):

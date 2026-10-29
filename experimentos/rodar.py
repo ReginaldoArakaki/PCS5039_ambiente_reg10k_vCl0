@@ -31,6 +31,7 @@ METRICAS = (
     "comandos_vencidos_executados", "efeitos_duplicados_remotos", "reconciliacao_ms_max", "divergencia_alem_prazo_s",
     "eventos_nao_entregues", "fila_max",
     "espelho_fiel_pct", "espelho_fiel_s", "erro_de_percepcao_s", "erro_de_sincronizacao_s", "espelho_nao_afirma_s",
+    "luz_com_todos_dormindo_s", "suspeitas_abertas", "suspeitas_confirmadas", "suspeitas_conciliadas",
 )
 COLUNAS = ("versao", "nucleo", "ambiente", "n_comodos", "n_moradores", "familia", "cenario", "tipo",
            "controlador", "semente", "modo", "modo_rede", "requisitos_ok", "invariantes_ok", "n_eventos") + METRICAS

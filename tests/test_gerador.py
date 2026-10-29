@@ -22,7 +22,7 @@ PLANTAS = {
     "residencia-v1": RAIZ / "cenarios" / "residencia-v1.json",
     "residencia-teste-4": RAIZ / "tests" / "dados" / "residencia-teste-4.json",
 }
-QUANTOS = {"sala": 6, "residencia-v1": 12, "residencia-teste-4": 24}
+QUANTOS = {"sala": 8, "residencia-v1": 16, "residencia-teste-4": 32}  # nucleo-v1.3: + F8 e F9 por cômodo
 
 
 def _cfg(nome):
@@ -34,7 +34,7 @@ def test_familias_geradas(nome):
     cs = gerar(_cfg(nome), nome, "v2dt")
     assert len(cs) == QUANTOS[nome]
     assert len({r["id"] for r, _ in cs}) == len(cs)
-    assert {r["familia"] for r, _ in cs} == {"F1", "F2", "F4", "F5", "F6", "F7"} | ({"F3"} if nome != "sala" else set())
+    assert {r["familia"] for r, _ in cs} == {"F1", "F2", "F4", "F5", "F6", "F7", "F8", "F9"} | ({"F3"} if nome != "sala" else set())
     for r, e in cs:
         assert not erros("roteiro", r), r["id"]
         assert not erros("esperado", e), r["id"]

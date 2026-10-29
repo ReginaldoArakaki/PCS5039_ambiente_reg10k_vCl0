@@ -122,3 +122,4 @@ def test_comparar_versoes(tmp_path):
     res = comparar(linhas)
     assert [(r["versao"], r["n"], r["n_comodos"], r["requisitos_ok_pct"], r["desperdicio_s_media"]) for r in res] == [
         ("Va", 2, 1, 100.0, 15.0), ("Vb", 1, 2, 100.0, 10.0)]
+    assert [r["desperdicio_s_por_comodo_media"] for r in res] == [15.0, 5.0]  # nucleo-v1.3: normalizado por cômodo

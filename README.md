@@ -1,4 +1,4 @@
-# PCS5039 — Ambiente de simulação Reg10k: núcleo (nucleo-v1.2)
+# PCS5039 — Ambiente de simulação Reg10k: núcleo (nucleo-v1.3)
 
 Projeto de referência da disciplina **PCS5039 — Engenharia de Software Orientada a IoT** (EPUSP): automação de iluminação residencial em ambiente simulado.
 
@@ -26,7 +26,7 @@ A **v0dta** (ajuste "a" da v0dt) acrescenta o **cômodo espelho**: a sala desenh
 | [`docs/ambiente-simulacao-v0dta.md`](docs/ambiente-simulacao-v0dta.md) | Plano e entrega da v0dta (cômodo espelho) |
 | [`docs/ambiente-simulacao-v0dt.md`](docs/ambiente-simulacao-v0dt.md) | Plano e entrega da v0dt (gêmeo digital) |
 | [`docs/ambiente-simulacao-v02.md`](docs/ambiente-simulacao-v02.md) | Plano do incremento 0 (sala, dispositivos, controlador) |
-| [`docs/roteiro-alunos.md`](docs/roteiro-alunos.md) | Exercícios E1–E6 (v0), E7–E10 (v0dt), E11 (v0dta), E12 (v1dt) e E13 (v2dt, Casa A) |
+| [`docs/roteiro-alunos.md`](docs/roteiro-alunos.md) | Exercícios E1–E6 (v0), E7–E10 (v0dt), E11 (v0dta), E12 (v1dt), E13 (v2dt, Casa A) e E14 (v1dt.1, dormir × ler parado) |
 | [`docs/plataforma/`](docs/plataforma/) | V1 Business Drivers v02 e V2/V3 Requisitos v05 da plataforma Reg10k |
 
 Os documentos da plataforma que este ambiente realiza estão em [`docs/plataforma/`](docs/plataforma/): a V1 Business Drivers (v02) e os requisitos das visões V2 e V3 (v02), no referencial RM-ODP adaptado.
@@ -71,6 +71,8 @@ python nucleo/reg10k.py assinaturas gravar V0
 No próprio núcleo, os mesmos comandos valem com `python -m catalogo`, `python -m experimentos` etc.; `--raiz PASTA` aponta para outra versão.
 
 A **nucleo-v1.1** traz o **gerador de cenários por planta** (`python nucleo/reg10k.py gerador --ambiente <planta> --versao <versão>`): as famílias F1 a F7 com os mesmos episódios em qualquer casa, para comparar versões. Traz também as **asserções com janela relativa a um evento** (campo `apos`, por exemplo "acende até 1 s depois de entrar"), que valem em qualquer semente, e corrige o desperdício por saída: o período agora termina quando alguém volta ao cômodo antes de a luz apagar.
+
+A **nucleo-v1.3** (para a v1dt.1) traz **ocupantes diversos** (perfis adulto, criança e idoso, que mudam só o movimento, e o visitante, sem papel no app), o **ocupante dormindo** (ações `DORMIR` e `ACORDAR`; quem dorme quer escuro, então apagar não é indevido, e a métrica `luz_com_todos_dormindo_s` mede o contrário) e o **detector de presença incompatível** do hub (suspeita verificada a cada 5 min, conciliada com passagem tardia, enviada como evento de fronteira "presença não explicada", nunca "invasão"; invariante OR-15). O gerador ganha as famílias F8 (um sai e outro fica) e F9 (dormir), e o comparador normaliza por cômodo as métricas somadas.
 
 A **nucleo-v1.2** traz o **comparador entre versões** (`python nucleo/reg10k.py comparar <CSV da V0> <CSV da V1> <CSV da V2>`), que resume por família, versão e controlador só os cenários gerados por planta, os únicos equivalentes entre as casas. Corrige também a validação do catálogo nas versões sem a sala da v0.
 

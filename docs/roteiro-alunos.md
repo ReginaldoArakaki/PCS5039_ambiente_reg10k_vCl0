@@ -225,3 +225,20 @@ Repositório: `PCS5039_ambiente_reg10k_V2`. A Casa A tem sala, cozinha, quarto e
 | E13.1 e E13.3: análise dos dados (antes e depois) | 40% |
 | E13.2: escolha e justificativa dos parâmetros | 40% |
 | E13.4: discussão | 20% |
+
+### E14. Quem lê parado × quem dorme (v1dt.1)
+
+Repositório: `PCS5039_ambiente_reg10k_V1`, ambiente `residencia-v1-familia`. Quem lê parado quer luz; quem dorme quer escuro (RN-V1-05). Os sensores não distinguem os dois (RN09): para o PIR, os dois estão parados.
+
+1. Rode os experimentos e compare, por cômodo, **escuro com ocupante acordado** (P03, idoso lendo; família F2) e **luz acesa com todos dormindo** (P04, criança dormindo; família F9). Qual é o custo de cada valor de `t_apagamento`?
+2. Proponha uma política no seu controlador e justifique com os dados. Sem hora do dia nem identificação, que evidências você tem? Por exemplo, o interruptor (precedência manual), a passagem recente ou o tempo desde o último movimento.
+3. Meça antes e depois nas famílias F2, F8 e F9, com a ressalva de que são dados de simulação. A OR-15 continua respeitada?
+4. Discussão: que informação a mais resolveria o dilema (hora do dia, sensor de cama, aprendizado do gêmeo)? Isso prepara a V3.
+
+**Entrega:** `alunos/grupoN/` aprovado nas invariantes OR-01 a OR-15, os CSV com os manifestos e uma página de análise.
+
+| Item | Peso sugerido |
+|---|---|
+| E14.1 e E14.3: análise dos dados (antes e depois) | 40% |
+| E14.2: política e medição | 40% |
+| E14.4: discussão | 20% |

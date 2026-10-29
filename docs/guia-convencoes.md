@@ -1,7 +1,7 @@
 # Guia de convenções — projeto Reg10k e ambiente de simulação PCS5039
 
 **Documento:** guia-convencoes.md
-**Versão:** 05 | **Data:** 26/10/2026 (v01 a v03 de 25/10/2026; v04 de 26/10/2026)
+**Versão:** 06 | **Data:** 29/10/2026 (v01 a v03 de 25/10/2026; v04 e v05 de 26/10/2026)
 **Linha de pesquisa:** Laboratório de Digital Twin de Arquitetura de Sistemas de Software (EPUSP) e GLIP USP
 **Coordenação:** Reginaldo Arakaki (EPUSP)
 **Base:** prática consolidada nas versões v0, v0dt e v0dta do ambiente e nas versões v01 a v04 da V1 e da V2/V3.
@@ -15,6 +15,7 @@
 |---|---|---|
 | 01 | 25/10/2026 | Primeira versão |
 | 02 | 25/10/2026 | Com a v1dt: ambientes (`sala` e `residencia-v1`), prefixos RN-V1 e M, campo `comodo` no registro e nas asserções, chave de intenção por cômodo |
+| 06 | 29/10/2026 | Com a nucleo-v1.3: famílias F8 a F10, invariante OR-15, perfis de ocupante; tag `nucleo-vX.Y` só para mudança de código |
 | 05 | 26/10/2026 | Com a nucleo-v1.1: janela relativa (§7.1), prefixo `G` dos cenários gerados, RN-V2 |
 | 04 | 26/10/2026 | Com a nucleo-v1.0: núcleo e repositórios de versão (§2), publicação direta no `main` e tags pelo responsável (§9), autor dos commits |
 | 03 | 25/10/2026 | Com a v1dtb: diagrama com sufixo de versão quando a estrutura muda, nomes de classe da V2 com sinônimos no código, ajuste pequeno sem rodada de dúvidas (§6) |

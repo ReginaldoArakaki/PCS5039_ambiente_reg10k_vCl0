@@ -141,6 +141,13 @@ const CLASSE = {FIEL: ["#1a7f4b", "espelho fiel"], PERCEPCAO: ["#7c3aed", "erro 
 // nucleo-v1.0: os ocupantes vêm do ambiente do cenário (cada versão pode ter os seus)
 const NOMES = Object.fromEntries(Object.values(D.ambientes).flatMap(a => a.ocupantes || []).map(o => [o.id, o.nome || o.id]));
 const OCUP = (cen = S.cen) => (D.ambientes[CEN[cen].ambiente] || D.sala).ocupantes;
+// nucleo-v1.3: uma cor e uma inicial por pessoa; o visitante tem contorno tracejado
+const PALETA = ["#2563eb", "#db2777", "#16a34a", "#7c3aed", "#0891b2", "#ea580c"];
+const COR_O = Object.fromEntries(Object.values(D.ambientes).flatMap(a => a.ocupantes || [])
+  .filter((o, i, arr) => arr.findIndex(x => x.id === o.id) === i)
+  .map((o, i, arr) => [o.id, o.tipo === "CACHORRO" ? "var(--dog)" : PALETA[arr.filter(x => x.tipo !== "CACHORRO").findIndex(x => x.id === o.id) % PALETA.length]]));
+const INICIAL = o => { const n = o.nome || o.id; if (o.tipo === "CACHORRO") return n[0];
+  const outros = OCUP().filter(x => x.id !== o.id && (x.nome || x.id)[0] === n[0]); return outros.length ? n.slice(0, 2) : n[0]; };
 const CTRLS = D.meta.controladores;
 const CEN = Object.fromEntries(D.cenarios.map(c => [c.id, c]));
 const LIMITES = {latencia_reacao_ms_p95: ["max", 500], atraso_percebido_ms_max: ["max", 1000], desperdicio_por_saida_s_max: ["max", 90], apagamentos_indevidos: ["max", 0]};
@@ -367,7 +374,7 @@ function cabecalho() {
   document.title = `Simulação Reg10k — ${id.nome}`;
   const porAmb = {};
   D.cenarios.forEach(c => porAmb[c.ambiente] = (porAmb[c.ambiente] || 0) + 1);
-  const ambs = Object.entries(porAmb).map(([a, n]) => { const p = D.ambientes[a].planta; const nm = p.comodos.map(k => k.nome); return `${nm.length > 1 ? nm.slice(0, -1).join(", ") + " e " + nm.at(-1) : nm[0]}: ${n} cenário${n > 1 ? "s" : ""}`; }).join(" · ");
+  const ambs = Object.entries(porAmb).map(([a, n]) => { const p = D.ambientes[a].planta; const nm = p.comodos.map(k => k.nome), no = (D.ambientes[a].ocupantes || []).length; return `${nm.length > 1 ? nm.slice(0, -1).join(", ") + " e " + nm.at(-1) : nm[0]} (${no} ocupantes): ${n} cenário${n > 1 ? "s" : ""}`; }).join(" · ");
   $("#sub").textContent = `${ambs} · controladores: ${CTRLS.join(", ")}${id.nome !== id.nucleo ? ` · núcleo ${id.nucleo}` : ""} · gerado em ${D.meta.gerado_em}`;
   const p = D.meta.problemas;
   $("#status").innerHTML = p.length ? `<span class="pill bad" title="${esc(p.join("\n"))}">${p.length} problema(s) no catálogo</span>`
@@ -741,9 +748,10 @@ function montarAnimacao() {
       <pattern id="velado" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="10" stroke="#e2e8f0" stroke-width="3" opacity=".6"/></pattern></defs>`;
   const svg = `<svg viewBox="0 0 ${largura} ${altura}" id="cena" role="img" aria-label="Planta da casa">${defs}${plantaSVG("", false)}
     <text x="${X(0)}" y="${Y(0) + 48}" font-size="12" fill="#64748b">EXTERIOR</text>
-    <g id="ocup">${OCUP().map(o => `<g id="o-${o.id}" display="none"><circle r="${o.tipo === "CACHORRO" ? 12 : 14}" fill="${o.tipo === "CACHORRO" ? "var(--dog)" : "var(--person)"}" stroke="#fff" stroke-width="2.5"/>
-      <circle class="mov" r="22" fill="none" stroke="${o.tipo === "CACHORRO" ? "var(--dog)" : "var(--person)"}" stroke-width="2" opacity=".6"/>
-      <text y="4" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${o.tipo === "CACHORRO" ? "R" : "M"}</text>
+    <g id="ocup">${OCUP().map(o => `<g id="o-${o.id}" display="none"><circle r="${o.tipo === "CACHORRO" ? 12 : 14}" fill="${COR_O[o.id]}" stroke="${o.visitante ? "#0f172a" : "#fff"}" stroke-width="2.5"${o.visitante ? ' stroke-dasharray="3 2"' : ""}/>
+      <circle class="mov" r="22" fill="none" stroke="${COR_O[o.id]}" stroke-width="2" opacity=".6"/>
+      <text y="4" text-anchor="middle" font-size="${INICIAL(o).length > 1 ? 9.5 : 11}" font-weight="700" fill="#fff">${esc(INICIAL(o))}</text>
+      <text class="zz" x="13" y="-6" font-size="13" font-weight="700" fill="#6366f1" stroke="#fff" stroke-width="3" paint-order="stroke" display="none">z</text>
       <text class="lbl" y="-20" text-anchor="middle" font-size="11.5" font-weight="600" stroke="#fff" stroke-width="3" paint-order="stroke" fill="#0f172a">${esc(o.nome || o.id)}</text></g>`).join("")}</g>
     <text id="relogio" x="${X(W)}" y="${Y(H) - 14}" text-anchor="end" font-size="13" fill="#334155" class="mono"></text>
     <g id="rede" font-size="12">
@@ -776,7 +784,7 @@ function montarAnimacao() {
         <label class="small">Velocidade <select id="vel">${[1, 5, 20, 60, 120].map(v => `<option value="${v}"${v === S.speed ? " selected" : ""}>${v}×</option>`).join("")}</select></label>
         <span class="mono small" id="tTxt"></span></div>
       <div style="position:relative"><input type="range" id="tSlider" min="0" max="${c.duracao_ms}" step="100" style="width:100%"><svg id="marks" width="100%" height="12" style="display:block"></svg></div>
-      <div class="legend small"><span><i style="background:#0f766e"></i>sessão hub ↔ plataforma</span><span><i style="background:#fecaca"></i>sem sessão</span><span><i style="background:var(--person)"></i>Morador</span><span><i style="background:var(--dog)"></i>Rex (cachorro)</span><span><i style="background:#ffe680"></i>luz acesa</span><span><i style="background:#0e7490;opacity:.4"></i>cobertura do SP</span><span><i style="background:repeating-linear-gradient(45deg,#94a3b8 0 3px,transparent 3px 6px)"></i>zona cega</span></div>
+      <div class="legend small"><span><i style="background:#0f766e"></i>sessão hub ↔ plataforma</span><span><i style="background:#fecaca"></i>sem sessão</span><span><i style="background:var(--person)"></i>pessoas (uma cor por pessoa; visitante com contorno tracejado)</span><span><i style="background:var(--dog)"></i>Rex (cachorro)</span><span><b style="color:#6366f1">z</b> dormindo</span><span><i style="background:#ffe680"></i>luz acesa</span><span><i style="background:#0e7490;opacity:.4"></i>cobertura do SP</span><span><i style="background:repeating-linear-gradient(45deg,#94a3b8 0 3px,transparent 3px 6px)"></i>zona cega</span></div>
       <p class="small muted" style="margin:6px 0 0">Atalhos: espaço = tocar/pausar, ← → = 1 s (com Shift, 10 s). Marcas na régua: ▲ acender, ▼ apagar, ■ falha.</p></div>
     <div><div class="card" style="padding:10px"><h3 style="margin:0 0 6px;font-size:13px" id="miniTit"></h3><div class="mini" id="mini" title="Clique para ampliar"></div></div>
       <div class="card"><h2>${c.id} — ${esc(c.titulo)}</h2><div class="views" id="vistas"></div><div class="kv" id="estado"></div></div>
@@ -885,7 +893,8 @@ function quadro() {
     const g = $(`#o-${o.id}`), p = posicao(o.id, t);
     if (!p) { g.setAttribute("display", "none"); continue; }
     g.setAttribute("display", "inline"); g.setAttribute("transform", `translate(${X(p[0])},${Y(p[1])})`);
-    g.querySelector(".mov").setAttribute("display", p[2] ? "inline" : "none");
+    g.querySelector(".mov").setAttribute("display", p[2] === 1 ? "inline" : "none");
+    g.querySelector(".zz").setAttribute("display", p[2] === 2 ? "inline" : "none");
   }
   $("#relogio").textContent = `t = ${fmtT(t)} / ${fmtT(c.duracao_ms)}`;
   quadroEspelho(t);
@@ -927,7 +936,7 @@ function quadro() {
     : `<div class="view"><h4>O que acontece</h4>${real}</div><div class="view"><h4>O que o hub acha (L)</h4>${hub}</div><div class="view"><h4>O que a plataforma acha (R)</h4>${rem}</div>`;
   const chipsC = compacto ? `<div style="grid-column:1/-1">Detalhe do cômodo: <span class="seg">${PLA.comodos.map(k => `<button data-ca="${k.id}" class="${k.id === S.comodoA ? "on" : ""}">${esc(k.nome)}</button>`).join("")}</span></div>` : "";
   const pas = PLA.passagens.map(ps => { const l = (A.dd[ps.comodos[0]].porSA[ps.sa] || []).filter(p => p <= t).pop(); return `${ps.sa}: ${l != null ? `há ${((t - l) / 1000).toFixed(1)} s` : "nenhuma"}`; }).join(" · ");
-  const verdadeTxt = OCUP().map(o => { const p = posicao(o.id, t); const onde = p ? (multi ? `em ${esc(NOMES_C(PLA.comodos.find(k => p[0] >= k.x0 && p[0] <= k.x0 + k.largura && p[1] >= k.y0 && p[1] <= k.y0 + k.profundidade)?.id))}` : "na sala") : "fora"; return `${esc(o.nome || o.id)}: ${onde}${p ? (p[2] ? ", em movimento" : ", parado") : ""}`; }).join("<br>");
+  const verdadeTxt = OCUP().map(o => { const p = posicao(o.id, t); const onde = p ? (multi ? `em ${esc(NOMES_C(PLA.comodos.find(k => p[0] >= k.x0 && p[0] <= k.x0 + k.largura && p[1] >= k.y0 && p[1] <= k.y0 + k.profundidade)?.id))}` : "na sala") : "fora"; return `${esc(o.nome || o.id)}: ${onde}${p ? (p[2] === 2 ? ", dormindo" : p[2] ? ", em movimento" : ", parado") : ""}`; }).join("<br>");
   const ultApp = d0.app.filter(v => v.t_ms <= t && v.tipo.startsWith("APP_")).pop(), ultRes = d0.appRes.filter(v => v.t_ms <= t).pop();
   $("#estado").innerHTML = `${chipsC}<div><b>Verdade</b></div><div>${verdadeTxt}</div><div>Última passagem</div><div class="small">${pas}</div>${kv}
     <div>Último app</div><div class="small">${ultApp ? `${fmtT(ultApp.t_ms)} ${esc(desc(ultApp))}` : "—"}${ultRes ? `<br>${fmtT(ultRes.t_ms)} ${esc(desc(ultRes))}` : ""}</div>`;
@@ -1054,9 +1063,9 @@ function umaLinhaDoTempo(cid, idx) {
     const arr = D.posicoes[S.cen].o[o.id] || [], ts = D.posicoes[S.cen].t; let ini = null, mov = null;
     for (let j = 0; j <= arr.length; j++) {
       const v = arr[j]; const tj = j < ts.length ? ts[j] : d.fim;
-      const dentro = !!v && (!sala || (v[0] >= sala.x0 && v[0] <= sala.x0 + sala.largura)), mv = dentro ? v[2] : null;
+      const dentro = !!v && (!sala || (v[0] >= sala.x0 && v[0] <= sala.x0 + sala.largura && v[1] >= sala.y0 && v[1] <= sala.y0 + sala.profundidade)), mv = dentro ? v[2] : null;
       if (ini == null && dentro) { ini = tj; mov = mv; }
-      else if (ini != null && (!dentro || mv !== mov)) { s += bar(k, ini, tj, o.tipo === "CACHORRO" ? "var(--dog)" : "var(--person)", `${o.nome}: ${mov ? "em movimento" : "parado"} ${fmtT(ini)}–${fmtT(tj)}`, mov ? 0.9 : 0.4); ini = dentro ? tj : null; mov = mv; }
+      else if (ini != null && (!dentro || mv !== mov)) { s += bar(k, ini, tj, COR_O[o.id], `${o.nome}: ${mov === 2 ? "dormindo" : mov ? "em movimento" : "parado"} ${fmtT(ini)}–${fmtT(tj)}`, mov === 2 ? 0.2 : mov ? 0.9 : 0.4); ini = dentro ? tj : null; mov = mv; }
     }
   });
   d.passagens.forEach(p => s += bar(2, p, p + Math.max(300, (w1 - w0) / 400), "#ef4444", `Passagem ${fmtT(p)}`));

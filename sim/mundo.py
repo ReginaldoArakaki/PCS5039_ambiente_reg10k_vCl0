@@ -14,12 +14,20 @@ PESSOA = "PESSOA"
 CACHORRO = "CACHORRO"
 
 PONTO_ENTRADA = (0.95, 0.4)
+# nucleo-v1.3: perfis de pessoa (só o movimento muda; os sensores não distinguem perfis, RN09).
+# (velocidade de ANDAR, velocidade de ANDAR_ALEATORIO), em m/s
+PERFIS = {"ADULTO": (1.0, 0.8), "CRIANCA": (1.2, 1.0), "IDOSO": (0.6, 0.5)}
+# Dormindo: microgestos raros (a cada 10 a 25 min)
+MICRO_DORMINDO = (600_000, 1_500_000)
 
 
 class Ocupante:
-    def __init__(self, id_: str, tipo: str):
+    def __init__(self, id_: str, tipo: str, perfil: str = "ADULTO", visitante: bool = False):
         self.id = id_
         self.tipo = tipo
+        self.perfil = perfil if perfil in PERFIS else "ADULTO"  # nucleo-v1.3
+        self.visitante = visitante                               # nucleo-v1.3: ocupante sem papel no app
+        self.dormindo = False                                    # nucleo-v1.3: PI-01
         self.pos: Optional[tuple[float, float]] = None  # None = exterior
         self.comodo: Optional[str] = None  # v1dt: cômodo atual (None = exterior)
         self.chegou_passagem = False       # v1dt: chegou ao vão e vai cruzar neste passo

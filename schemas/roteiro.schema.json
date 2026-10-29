@@ -96,7 +96,9 @@
               "APP_PREFERENCIA",
               "APP_CONSULTA",
               "MUDAR_COMODO",
-              "ESPIAR"
+              "ESPIAR",
+              "DORMIR",
+              "ACORDAR"
             ]
           },
           "ate": {

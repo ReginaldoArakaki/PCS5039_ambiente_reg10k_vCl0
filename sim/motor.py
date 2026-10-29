@@ -19,7 +19,7 @@ from plataforma.canal import DESCE, SOBE, Canal
 from plataforma.plataforma import Plataforma
 from sim.dispositivos import Atuador, Interruptor, Lampada, SensorPassagem, SensorPresencaPIR
 from sim.modelos import ATUACAO, REDE, SISTEMA, VERDADE, ConfigSala
-from sim.mundo import Ocupante, mover
+from sim.mundo import MICRO_DORMINDO, PERFIS, Ocupante, mover
 from sim.residencia import Residencia
 
 ACOES_VALIDAS = {
@@ -27,6 +27,8 @@ ACOES_VALIDAS = {
     "GESTO", "PASSAR_PORTA_SEM_ENTRAR", "INTERRUPTOR",
     # v1dt: circulação entre cômodos
     "MUDAR_COMODO", "ESPIAR",
+    # nucleo-v1.3: ocupante dormindo (PI-01)
+    "DORMIR", "ACORDAR",
 }
 FALHAS_VALIDAS = {
     "SP_SEM_RESPOSTA", "BATERIA_BAIXA", "SP_FALSO_DISPARO", "SA_ESPURIO",
@@ -83,7 +85,8 @@ class Simulacao:
 
         cfgs = {cid: ConfigSala.de_dict(self.res.config_comodo(cid, roteiro)) for cid in self.res.ids}
         self.hub = Hub(self.reg, fabrica_controlador, cfgs, {cid: a.comando for cid, a in self.atuadores.items()}, self.res)
-        self.ocupantes = {o["id"]: Ocupante(o["id"], o["tipo"]) for o in self.res.ocupantes}
+        self.ocupantes = {o["id"]: Ocupante(o["id"], o["tipo"], o.get("perfil", "ADULTO"), o.get("visitante", False))
+                          for o in self.res.ocupantes}
 
         # v0dt: canal, plataforma (DTReg10k-R) e agente de sincronização (DTReg10k-L)
         plat = self.res.plataforma
@@ -139,6 +142,9 @@ class Simulacao:
     def _presentes(self) -> tuple:
         return tuple(sorted(o.id for o in self.ocupantes.values() if o.na_sala))
 
+    def _dormindo(self) -> tuple:
+        return tuple(sorted(o.id for o in self.ocupantes.values() if o.na_sala and o.dormindo))
+
     def _por_comodo(self) -> dict:
         return {cid: sorted(o.id for o in self.ocupantes.values() if o.comodo == cid) for cid in self.res.ids}
 
@@ -159,7 +165,12 @@ class Simulacao:
         o = self.ocupantes[a["ocupante"]]
         t = a["t_ms"]
         acao = a["acao"]
-        vel = float(a.get("vel_m_s", 1.0))
+        v_andar, v_aleatorio = PERFIS[o.perfil]
+        vel = float(a.get("vel_m_s", v_andar))
+        if o.dormindo and acao not in ("DORMIR", "GESTO"):
+            # nucleo-v1.3: qualquer outra ação acorda o ocupante
+            o.dormindo = False
+            self._verdade(t, "ACORDOU", ocupante=o.id, comodo=o.comodo)
         ext = self.res.externa
         if acao == "ENTRAR":
             if o.na_sala:
@@ -192,12 +203,24 @@ class Simulacao:
         elif acao == "ANDAR":
             o.modo, o.alvo, o.vel = "ANDAR", tuple(a["ate"]), vel
         elif acao == "ANDAR_ALEATORIO":
-            o.modo, o.vel = "ALEATORIO", float(a.get("vel_m_s", 0.8))
+            o.modo, o.vel = "ALEATORIO", float(a.get("vel_m_s", v_aleatorio))
             o.area = tuple(a["area"]) if a.get("area") else None
             o.fim_ms = t + a["duracao_ms"]
             o.alvo = self.res.comodos[o.comodo].ponto_aleatorio(self.rng_mundo, o.area)
         elif acao == "PARADO":
             o.modo, o.alvo = "PARADO", None
+        elif acao == "DORMIR":
+            # nucleo-v1.3 (PI-01): imóvel, com microgestos raros; o ideal é a luz apagada
+            if not o.na_sala:
+                raise ValueError(f"{self.roteiro['id']}: {o.id} não está na casa para dormir em t={t}")
+            o.modo, o.alvo, o.dormindo = "MICRO", None, True
+            o.micro_intervalo = tuple(a.get("intervalo_ms", MICRO_DORMINDO))
+            o.micro_prox = t + self.rng_mundo.randint(*o.micro_intervalo)
+            self._verdade(t, "ADORMECEU", ocupante=o.id, comodo=o.comodo)
+        elif acao == "ACORDAR":
+            # já acordado acima; um gesto ao acordar
+            o.modo, o.alvo = "PARADO", None
+            o.gesto_ate = t + 2_000
         elif acao == "MICROGESTOS":
             o.modo, o.alvo = "MICRO", None
             o.micro_intervalo = (a.get("intervalo_min_ms", 120_000), a.get("intervalo_max_ms", 240_000))
@@ -321,7 +344,7 @@ class Simulacao:
         self._verdade(0, "OCUPANTES", **self._ocupantes_verdade())
         for cid in self.res.ids:
             self._verdade(0, "LUZ_FISICA", acesa=False, comodo=cid)
-        self._ultimos_presentes = (self._presentes(), self._por_comodo())
+        self._ultimos_presentes = (self._presentes(), self._por_comodo(), self._dormindo())
         vazia = lambda: {cid: {oid: {"movendo": False, "microgesto": False, "parado": False} for oid in self.ocupantes}
                          for cid in self.res.ids}
         janela = vazia()
@@ -368,7 +391,7 @@ class Simulacao:
             self.agente.tick(t)
             self.plataforma.tick(t)
 
-            atual = (self._presentes(), self._por_comodo())
+            atual = (self._presentes(), self._por_comodo(), self._dormindo())
             if atual != self._ultimos_presentes:
                 self._verdade(t, "OCUPANTES", **self._ocupantes_verdade())
                 self._ultimos_presentes = atual
@@ -385,7 +408,9 @@ class Simulacao:
         return self.reg
 
     def _ocupantes_verdade(self) -> dict:
-        return {"presentes": list(self._presentes()), "por_comodo": self._por_comodo()}
+        d = self._dormindo()
+        # nucleo-v1.3: "dormindo" só aparece quando alguém dorme (registros antigos ficam iguais)
+        return {"presentes": list(self._presentes()), "por_comodo": self._por_comodo(), **({"dormindo": list(d)} if d else {})}
 
 
 def simular(sala_cfg: dict, roteiro: dict, fabrica_controlador, semente: int = 42, modo: str | None = None) -> Registro:

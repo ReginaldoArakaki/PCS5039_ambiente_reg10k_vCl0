@@ -24,6 +24,13 @@ FAMILIAS = {
            "mede": ["comando_remoto_ms_p95", "comandos_vencidos_executados", "efeitos_duplicados_remotos"]},
     "F7": {"nome": "Espelho e consulta pelo app",
            "mede": ["espelho_fiel_pct", "erro_de_percepcao_s", "erro_de_sincronizacao_s", "espelho_nao_afirma_s"]},
+    # nucleo-v1.3
+    "F8": {"nome": "Ocupação múltipla: um sai e outro fica",
+           "mede": ["apagamentos_indevidos", "escuro_com_ocupante_s", "desperdicio_s"]},
+    "F9": {"nome": "Ocupante dormindo (PI-01)",
+           "mede": ["luz_com_todos_dormindo_s", "apagamentos_indevidos", "escuro_com_ocupante_s"]},
+    "F10": {"nome": "Presença incompatível (RF-OPR-06)",
+            "mede": ["suspeitas_abertas", "suspeitas_confirmadas", "suspeitas_conciliadas"]},
 }
 
 # Conjunto de regressão do núcleo: V0 (sala) e V1 (sala e cozinha)

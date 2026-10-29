@@ -120,13 +120,41 @@
         "espelho_nao_afirma_s": {
           "type": "number",
           "minimum": 0
+        },
+        "luz_com_todos_dormindo_s": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "nucleo-v1.3: luz acesa com todos os ocupantes do cômodo dormindo (o ideal é zero, PI-01)"
+        },
+        "suspeitas_abertas": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "nucleo-v1.3: suspeitas de presença incompatível do detector do hub (RF-OPR-06), na casa toda"
+        },
+        "suspeitas_confirmadas": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "nucleo-v1.3: suspeitas de presença incompatível do detector do hub (RF-OPR-06), na casa toda"
+        },
+        "suspeitas_conciliadas": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "nucleo-v1.3: suspeitas de presença incompatível do detector do hub (RF-OPR-06), na casa toda"
         }
       }
     },
     "invariantes": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^OR-(0[1-9]|1[0-4])$"
+        "pattern": "^OR-(0[1-9]|1[0-9])$"
       },
       "additionalProperties": {
         "type": "object",

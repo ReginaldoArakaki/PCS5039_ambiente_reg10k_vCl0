@@ -146,6 +146,9 @@ class Hub:
         self.remotas: dict[str, str] = {}      # chave do executor → chave do comando remoto
         self._chave_remota: Optional[str] = None
         self._intencoes_remotas = 0
+        # nucleo-v1.3: detector de presença incompatível (OC-03), fora do controlador
+        from hub.presenca import DetectorPresenca
+        self.presenca = DetectorPresenca(reg, residencia.externa.sa)
         for c in self.celulas.values():
             c.iniciar(self.boot)
 
@@ -244,6 +247,7 @@ class Hub:
             dados.update(passagem=ps.id, comodos=list(ps.comodos))
         reg_ev = self.reg.add(PERCEPCAO, tipo, t_emissao, origem=origem, **{**dados, "comodos": cids})
         ev = Evidencia(reg_ev["id"], reg_ev["t_ms"], origem, tipo, dados)
+        self.presenca.observar(reg_ev["t_ms"], origem, tipo, cids)
         for cid in cids:
             self._entregar(self.celulas[cid], ev, agora)
 
@@ -268,6 +272,7 @@ class Hub:
     def tick(self, t: int) -> None:
         if not self.ligado:
             return
+        self.presenca.tick(t)
         for cel in self.celulas.values():
             pendentes, cel.resultados_a_entregar = cel.resultados_a_entregar, []
             for ev in pendentes:

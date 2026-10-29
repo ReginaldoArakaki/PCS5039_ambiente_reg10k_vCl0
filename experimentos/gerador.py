@@ -36,9 +36,12 @@ RASTRO = {
     "F5": (["RF-SYN-03", "RF-SYN-04", "RNF-CON-01", "CF06"], ["RN-DT-03", "RN-DT-04", "RN-DT-08"]),
     "F6": (["RF-OPR-03", "RF-OPR-04", "RNF-DES-02", "CF04"], ["RN-DT-05", "RN-DT-09", "RN-V1-03"]),
     "F7": (["RN-V1-04", "RN34"], ["RN-V1-04", "RN-I0-01"]),
+    "F8": (["RF-OPR-01", "RN34"], ["RN-I0-03", "RN-I0-01"]),
+    "F9": (["RF-OPR-01", "CF05"], ["RN-I0-03"]),
 }
 TIPO = {"F1": "NORMAL", "F2": "FALSO_NEGATIVO", "F3": "FALSO_POSITIVO", "F4": "FALHA",
-        "F5": "GEMEO_DIGITAL", "F6": "GEMEO_DIGITAL", "F7": "GEMEO_DIGITAL"}
+        "F5": "GEMEO_DIGITAL", "F6": "GEMEO_DIGITAL", "F7": "GEMEO_DIGITAL",
+        "F8": "NORMAL", "F9": "FALSO_NEGATIVO"}
 
 
 class Planta:
@@ -52,6 +55,9 @@ class Planta:
         ocup = cfg["ocupantes"]
         self.pessoa = next(o["id"] for o in ocup if o["tipo"] == "PESSOA")
         self.cao = next((o["id"] for o in ocup if o["tipo"] == "CACHORRO"), None)
+        # nucleo-v1.3: segundo ocupante da F8 (outra pessoa morador, ou o cachorro)
+        self.segundo = next((o["id"] for o in ocup if o["tipo"] == "PESSOA" and o["id"] != self.pessoa
+                             and not o.get("visitante")), self.cao)
         self.viz: dict[str, list[str]] = {cid: [] for cid in self.res.ids}
         for ps in self.res.passagens.values():
             if ps.tipo == "INTERNA":
@@ -292,6 +298,56 @@ def gerar(cfg: dict, nome: str, versao: str) -> list[tuple[dict, dict]]:
                                 "O gêmeo mostra presença enquanto o Rex está lá.",
                                 "Com o Rex parado, o PIR deixa de vê-lo: o espelho passa a afirmar vazio (erro de percepção).",
                                 r, 310_000, asserc))
+
+    if p.segundo:
+        for cid in ids:  # F8 (nucleo-v1.3): os dois vão ao cômodo; um sai da casa e o outro fica
+            r = Roteiro(p)
+            r.entrar(p.pessoa)
+            r.entrar(p.segundo)
+            r.ir(p.pessoa, cid)
+            r.ir(p.segundo, cid)
+            t_juntos = r.t
+            r.acao(p.segundo, "ANDAR_ALEATORIO", duracao_ms=600_000)
+            r.andar(p.pessoa, 20_000)
+            r.sair(p.pessoa)
+            fim = r.t + 180_000
+            asserc = [
+                {"id": "A1", "nivel": "REQUISITO", "dado": "um ocupante continua no cômodo", "quando": "o outro sai da casa",
+                 "entao": {"tipo": "luz_constante", **p.com(cid), "valor": "ACESA", "entre_ms": [t_juntos + 5_000, fim]}},
+                {"id": "A2", "nivel": "REQUISITO", "dado": "ocupante sempre presente", "quando": "o cenário termina",
+                 "entao": {"tipo": "metrica", **p.com(cid), "nome": "apagamentos_indevidos", "igual": 0}},
+            ]
+            out.append(_cenario(p, "F8", cid, versao, f"Um sai e outro fica em {p.nomes[cid].lower()}",
+                                f"Os dois vão até {p.nomes[cid].lower()}; um sai da casa e o outro continua lá, andando.",
+                                "A luz do cômodo fica acesa enquanto alguém está lá.",
+                                "O SA da saída não apaga nada; o SP continua vendo quem ficou.",
+                                r, fim, asserc))
+
+    for cid in ids:  # F9 (nucleo-v1.3, PI-01): adormece no cômodo e acorda 10 min depois
+        r = Roteiro(p)
+        r.entrar(p.pessoa)
+        r.ir(p.pessoa, cid)
+        r.acao(p.pessoa, "ANDAR", ate=list(p.res.comodos[cid].centro()))
+        r.t += 8_000
+        r.acao(p.pessoa, "DORMIR")
+        r.t += 600_000
+        r.acao(p.pessoa, "ACORDAR")
+        r.t += 3_000
+        r.andar(p.pessoa, 30_000)
+        r.sair(p.pessoa)
+        fim = r.t + max(p.t_apagamento(c) for c in ids) + 60_000
+        asserc = [
+            _acende(p, cid, 1),
+            {"id": "A1", "nivel": "REQUISITO", "dado": "ocupante dormindo", "quando": "a luz apaga",
+             "entao": {"tipo": "metrica", **p.com(cid), "nome": "apagamentos_indevidos", "igual": 0}},
+            {"id": "A2", "nivel": "REQUISITO", "dado": "ocupante acorda no escuro", "quando": "ele se mexe",
+             "entao": {"tipo": "luz", **p.com(cid), "valor": "ACESA", "apos": {"evento": "ACORDOU"}, "ate_ms": 2_000}},
+        ]
+        out.append(_cenario(p, "F9", cid, versao, f"Dorme em {p.nomes[cid].lower()} e acorda",
+                            f"O morador vai até {p.nomes[cid].lower()}, dorme 10 min, acorda e sai.",
+                            "A luz apaga com ele dormindo e acende quando ele acorda (PI-01).",
+                            f"Apaga T_apagamento ({p.t_apagamento(cid) // 1000} s) depois de ele adormecer; acende no primeiro movimento.",
+                            r, fim, asserc))
     return out
 
 

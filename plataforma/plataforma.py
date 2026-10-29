@@ -155,6 +155,11 @@ class Plataforma:
                 self.reg.add(PLATAFORMA, "EVIDENCIA_RECEBIDA", t, origem=d.get("origem"), evidencia=msg["evento"],
                              t_origem_ms=msg["t_origem"], atraso_ms=int(t - msg["t_origem"]),
                              historico=any(n < self.r[c].n_aplicado for c in cids if c in self.r), comodos=cids)
+        elif msg["camada"] == "SISTEMA" and msg["evento"] == "SUSPEITA_PRESENCA":
+            # nucleo-v1.3 (RF-OPR-06): evento de fronteira para ocorrências, sem rotular invasão (RN03)
+            self.reg.add(PLATAFORMA, "EVENTO_FRONTEIRA", t, evento="PRESENCA_NAO_EXPLICADA", destino="OCORRENCIAS",
+                         suspeita=d.get("suspeita"), desde_ms=d.get("desde_ms"), t_origem_ms=msg["t_origem"],
+                         comodos=d.get("comodos"), descricao="presença não explicada")
         elif msg["camada"] == "ATUACAO" and msg["evento"] == "RESULTADO":
             cid = d.get("comodo", self.comodos[0])
             self.reg.add(PLATAFORMA, "RESULTADO_RECEBIDO", t, chave=d.get("chave"), acao=d.get("acao"),

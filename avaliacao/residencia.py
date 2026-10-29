@@ -24,10 +24,10 @@ from sim.modelos import ATUACAO, DECISAO, ESTADO, PERCEPCAO, PLATAFORMA, REDE, S
 SOMA = ("desperdicio_s", "escuro_com_ocupante_s", "apagamentos_indevidos", "acionamentos", "ocupacao_desconhecida_s",
         "tempo_ocupada_s", "tempo_luz_acesa_s", "comandos_remotos", "comandos_vencidos_executados",
         "efeitos_duplicados_remotos", "divergencia_alem_prazo_s", "gemeo_nao_atual_s", "espelho_fiel_s",
-        "erro_de_percepcao_s", "erro_de_sincronizacao_s", "espelho_nao_afirma_s")
+        "erro_de_percepcao_s", "erro_de_sincronizacao_s", "espelho_nao_afirma_s", "luz_com_todos_dormindo_s")
 MAXIMO = ("latencia_reacao_ms_p95", "latencia_reacao_ms_max", "atraso_percebido_ms_max", "desperdicio_por_saida_s_max",
           "atualidade_gemeo_ms_p95", "comando_remoto_ms_p95", "reconciliacao_ms_max")
-GLOBAL = ("eventos_nao_entregues", "fila_max")
+GLOBAL = ("eventos_nao_entregues", "fila_max", "suspeitas_abertas", "suspeitas_confirmadas", "suspeitas_conciliadas")
 # Ordem de gravidade para compor a classe da residência a partir dos cômodos
 _GRAVIDADE = {PERCEPCAO_ERRO: 3, SINCRONIZACAO: 2, NAO_AFIRMA: 1, FIEL: 0}
 
@@ -171,6 +171,36 @@ def isolamento_e_atuacao(eventos: list[dict], res) -> dict:
             "OR-14": {"ok": not v14, "violacoes": v14[:5]}}
 
 
+def presenca_incompativel(eventos: list[dict], verifica_ms: int = 300_000) -> dict:
+    """OR-15 (nucleo-v1.3; RN03, RN17, RF-OPR-06).
+
+    (a) nenhum evento rotula invasão; (b) todo evento de fronteira tem antes uma
+    suspeita CONFIRMADA, verificada pelo menos `verifica_ms` depois de aberta;
+    (c) suspeita conciliada nunca é confirmada nem enviada.
+    """
+    v: list[str] = []
+    for e in eventos:
+        textos = [e["tipo"]] + [x for x in e.values() if isinstance(x, str)]
+        if any("INVAS" in x.upper() for x in textos):
+            v.append(f"{e['camada']}/{e['tipo']} em t={e['t_ms']} ms rotula invasão")
+    estados: dict[str, dict[str, dict]] = {}
+    for e in eventos:
+        if e["camada"] == SISTEMA and e["tipo"] == "SUSPEITA_PRESENCA":
+            estados.setdefault(e["suspeita"], {})[e["estado"]] = e
+    for sid, st in estados.items():
+        if "CONCILIADA" in st and ("CONFIRMADA" in st):
+            v.append(f"{sid} foi conciliada e também confirmada")
+        c = st.get("CONFIRMADA")
+        if c and c["t_ms"] - c["desde_ms"] < verifica_ms:
+            v.append(f"{sid} confirmada {c['t_ms'] - c['desde_ms']} ms depois de aberta, antes da verificação ({verifica_ms} ms)")
+    for e in eventos:
+        if e["camada"] == PLATAFORMA and e["tipo"] == "EVENTO_FRONTEIRA":
+            c = estados.get(e.get("suspeita"), {}).get("CONFIRMADA")
+            if c is None or c["t_ms"] > e["t_ms"]:
+                v.append(f"evento de fronteira em t={e['t_ms']} ms sem suspeita confirmada antes")
+    return {"OR-15": {"ok": not v, "violacoes": v[:5], **({} if estados else {"aplica": False})}}
+
+
 # --------------------------------------------------------------------- avaliação
 def avaliar_residencia(eventos: list[dict], roteiro: dict, res, esperado: Optional[dict],
                        par: Optional[list[dict]]) -> dict:
@@ -183,7 +213,7 @@ def avaliar_residencia(eventos: list[dict], roteiro: dict, res, esperado: Option
     inv_c = {cid: an.invariantes() for cid, an in analises.items()}
     inv: dict = {}
     for k in INVARIANTES:
-        if k in ("OR-01", "OR-12", "OR-13", "OR-14"):
+        if k in ("OR-01", "OR-12", "OR-13", "OR-14", "OR-15"):
             continue
         viol = [f"[{cid}] {x}" for cid in res.ids for x in inv_c[cid][k]["violacoes"]]
         inv[k] = {"ok": all(inv_c[cid][k]["ok"] for cid in res.ids), "violacoes": viol[:5]}
@@ -195,6 +225,7 @@ def avaliar_residencia(eventos: list[dict], roteiro: dict, res, esperado: Option
         a, b = _assinatura(eventos), _assinatura(par)
         inv["OR-12"] = {"ok": a == b, "violacoes": [] if a == b else ["decisões locais diferem da execução sem falha de rede"]}
     inv.update(isolamento_e_atuacao(eventos, res))
+    inv.update(presenca_incompativel(eventos))
     inv = {k: inv[k] for k in INVARIANTES}
     inv_ok = all(v["ok"] for v in inv.values())
 

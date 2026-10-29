@@ -32,7 +32,8 @@ PUBLICAR = {
     DECISAO: {"INTENCAO"},
     ATUACAO: {"RESULTADO"},
     ESTADO: {"ESTADO_SALA"},
-    SISTEMA: {"ALERTA", "LACUNA", "HUB_LIGADO", "HUB_DESLIGADO", "CONFIG_APLICADA", "RELOGIO_SALTO"},
+    SISTEMA: {"ALERTA", "LACUNA", "HUB_LIGADO", "HUB_DESLIGADO", "CONFIG_APLICADA", "RELOGIO_SALTO",
+              "SUSPEITA_PRESENCA"},  # nucleo-v1.3: só a suspeita CONFIRMADA sai do hub
 }
 _OMITIR = {"id", "camada", "tipo", "mudanca", "relogio_hub_ms", "relogio_confiavel", "seq", "t_ms"}
 
@@ -67,6 +68,8 @@ class AgenteSincronizacao:
         if not tipos or ev["tipo"] not in tipos:
             return
         if ev["camada"] == ESTADO and not ev.get("mudanca"):
+            return
+        if ev["tipo"] == "SUSPEITA_PRESENCA" and ev.get("estado") != "CONFIRMADA":
             return
         corpo = {k: v for k, v in ev.items() if k not in _OMITIR}
         self._publicar(ev["t_ms"], {"tipo": "EVENTO", "camada": ev["camada"], "evento": ev["tipo"],

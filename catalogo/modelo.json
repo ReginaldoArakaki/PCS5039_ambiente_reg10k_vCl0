@@ -114,6 +114,21 @@
       "id": "RN-V2-02",
       "texto": "Passagem interna em qualquer parede segue a RN-V1-01: o SA vai aos dois cômodos que ela liga.",
       "origem": "RN-V1-01; A14"
+    },
+    {
+      "id": "RN-V1-05",
+      "texto": "Quem dorme quer escuro: com todos os ocupantes do cômodo dormindo, a luz apagada é o ideal e apagar não é indevido. Os sensores não distinguem quem dorme de quem lê parado.",
+      "origem": "PI-01; RN09"
+    },
+    {
+      "id": "RN-V1-06",
+      "texto": "Presença incompatível com a evidência anterior é suspeita, nunca invasão: verificada a cada 5 min, conciliada com passagem tardia e só então enviada como evento de fronteira.",
+      "origem": "RN03; RN17; RF-OPR-06"
+    },
+    {
+      "id": "RN-V1-07",
+      "texto": "Perfis de pessoa (adulto, criança, idoso) e visitante mudam só o movimento; para os sensores e a automação, todo ocupante é igual.",
+      "origem": "RN09; RN34"
     }
   ],
   "parametros": [
@@ -402,6 +417,11 @@
       "id": "OR-14",
       "texto": "Toda intenção de um cômodo vai ao atuador desse cômodo.",
       "base": "RN-V1-02"
+    },
+    {
+      "id": "OR-15",
+      "texto": "Presença incompatível: nenhum evento rotula invasão; todo evento de fronteira tem antes uma suspeita confirmada após a verificação de 5 min; suspeita conciliada nunca é enviada.",
+      "base": "RN-V1-06; RN03; RN17; RF-OPR-06"
     }
   ],
   "camadas": [

@@ -22,11 +22,14 @@ _OMITIR = {"id", "relogio_hub_ms"}
 def _compactar_eventos(eventos: list[dict]) -> tuple[list[dict], dict]:
     """Remove snapshots periódicos e separa as posições (iguais para todos os controladores)."""
     saida, pos = [], {"t": [], "o": {}}
+    dormindo: set = set()  # nucleo-v1.3: o 3º valor da posição vale 2 para quem está dormindo
     for e in eventos:
+        if e["camada"] == "VERDADE" and e["tipo"] in ("ADORMECEU", "ACORDOU"):
+            (dormindo.add if e["tipo"] == "ADORMECEU" else dormindo.discard)(e["ocupante"])
         if e["camada"] == "VERDADE" and e["tipo"] == "POSICOES":
             pos["t"].append(e["t_ms"])
             for oid, v in e["ocupantes"].items():
-                pos["o"].setdefault(oid, []).append(v)
+                pos["o"].setdefault(oid, []).append(v if v is None or oid not in dormindo else [v[0], v[1], 2])
             continue
         if e["camada"] == "ESTADO" and not e.get("mudanca"):
             continue
