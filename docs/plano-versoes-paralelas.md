@@ -1,6 +1,6 @@
 # Plano das versões paralelas V0–V4 e do núcleo Reg10k
 
-**Versão do documento:** v04 | **Data:** 26/10/2026 | **Situação:** aprovado; Fases 1, 2a e 2c entregues
+**Versão do documento:** v05 | **Data:** 29/10/2026 | **Situação:** aprovado; Fases 1, 2a e 2c entregues; V0, V1 e V2 comparáveis
 **Responsável:** Reginaldo Arakaki (EPUSP)
 **Linha de pesquisa:** Laboratório de Digital Twin de Arquitetura de Sistemas de Software (EPUSP) e GLIP USP
 **Base:** repositório `PCS5039_ambiente_reg10k_vCl0` na v1dtb; guia de convenções v03; trilha do plano do ambiente (v02, §2.1)
@@ -11,6 +11,7 @@
 | v02 | 26/10/2026 | Aprovado (as propostas da §9 valem); acesso ao GitHub resolvido; Fase 1 entregue (§11), com ◆ nos ajustes |
 | v03 | 26/10/2026 | Fase 2a entregue (§12): repositórios V0 e V1 publicados, com a primeira rodada de dados |
 | v04 | 26/10/2026 | Fase 2c entregue (§13): `nucleo-v1.1` (gerador por planta, janela relativa) e V2 (Casa A) |
+| v05 | 29/10/2026 | `nucleo-v1.2` (comparador, correção do schema do catálogo); ajustes v0dtb, v1dtc e v2dta; primeira comparação entre as três casas (§14) |
 
 ---
 
@@ -235,3 +236,52 @@ O plano e os resultados estão em `ambiente-simulacao-v2dt.md` (v02, no reposit�
 - **Núcleo `nucleo-v1.1`** (commit `6fedf09`): gerador de cenários por planta (famílias F1–F7, cenários `G*`), asserções com janela relativa a um evento (campo `apos`), correção do desperdício por saída, página compacta para mais de 2 cômodos, exercício E13. As 92 assinaturas são iguais às da `nucleo-v1.0`.
 - **V2:** Casa A (a V1 mais quarto e banheiro em suíte; banheiro com 5 min), 24 cenários gerados e 5 próprios, 58 assinaturas, 1.740 execuções de experimentos. A referência atende todos os requisitos em todas as famílias.
 - **Comparabilidade:** os cenários `G*` existem por enquanto só na V2. A V0 e a V1 os recebem nos ajustes v0dtb e v1dtc, que sobem as duas para a `nucleo-v1.1`. Só então as famílias podem ser comparadas entre as três versões.
+
+## 14. Primeira comparação entre V0, V1 e V2 (29/10/2026)
+
+### 14.1 Como os dados foram gerados
+
+| Item | Valor |
+|---|---|
+| Núcleo | `nucleo-v1.2` (commit `c7e8b05`), o mesmo nas três versões |
+| Versões | V0 `v0dtb` (sala), V1 `v1dtc` (sala e cozinha), V2 `v2dta` (Casa A, 4 cômodos) |
+| Cenários comparados | Só os gerados por planta (`G*`): os mesmos episódios em cada casa. V0: 6; V1: 12; V2: 24 |
+| Sementes e controladores | 30 sementes; referência e `grupo_exemplo` |
+| Arquivos | `dados/experimentos-V*-20261029.csv` de cada versão, com manifesto; resumo gerado por `reg10k.py comparar` |
+
+Resultados de simulação, não de medição (P7).
+
+### 14.2 Resultados
+
+**Requisitos atendidos (% das execuções)**
+
+| Família | V0 ref. | V0 grupo | V1 ref. | V1 grupo | V2 ref. | V2 grupo |
+|---|---|---|---|---|---|---|
+| F1 Uso normal | 100 | 100 | 100 | 65,0 | 100 | 43,3 |
+| F2 Parado | 100 | 100 | 100 | 50,0 | 100 | 25,0 |
+| F3 Espiar sem entrar | — | — | 100 | 100 | 100 | 66,7 |
+| F4 a F7 | 100 | 100 | 100 | 100 | 100 | 100 |
+
+**Medidas selecionadas (média)**
+
+| Medida | V0 | V1 | V2 |
+|---|---|---|---|
+| F1 atraso percebido máx., referência (ms) | 400 | 400 | 400 |
+| F1 atraso percebido máx., grupo_exemplo (ms) | 800 | 1.023 | 1.163 |
+| F3 desperdício, referência (s) | — | 121 | 205 |
+| F3 desperdício, grupo_exemplo (s) | — | 61 | 105 |
+| F7 espelho fiel, referência (%) | 98,3 | 80,0 | 66,1 |
+| F7 erro de percepção, referência (s) | 0,2 | 81,0 | 97,5 |
+
+### 14.3 Leitura
+
+1. **A estratégia da referência não perde requisitos com o porte da casa.** Ela atende 100% em todas as famílias, e o atraso para acender fica em 400 ms nas três casas, porque o SA da passagem dispara o acendimento em qualquer cômodo.
+2. **A estratégia do `grupo_exemplo` piora na proporção das entradas por passagem interna.** Ela espera o PIR confirmar antes de acender e só cumpre o limite de 1 s quando a pessoa entra pela porta da rua. Na F2, em que há um cenário por cômodo e só um deles é o de entrada, a taxa é exatamente 1/1, 1/2 e 1/4 (100%, 50%, 25%). Na F1, cada percurso com passagem interna ainda passa em parte das sementes, quando o PIR confirma em menos de 1 s: cerca de 30% com uma passagem (cozinha, quarto) e 10% com duas (banheiro). Por isso a taxa cai menos que na F2 (65% e 43%).
+3. **O ganho do `grupo_exemplo` também cresce:** no "espiar sem entrar" (F3), o desperdício é cerca de metade do da referência nas duas casas. É o compromisso do exercício E12, agora medido em três portes.
+4. **A fidelidade do espelho cai com o porte (98% → 80% → 66%), mas não porque o gêmeo piore.** Na F7, o Rex deita sozinho num cômodo, e o PIR não vê animal parado. Na V0, o morador está no mesmo cômodo e o gêmeo continua certo. Na V1 e na V2, o Rex fica sozinho em 1 de 2 e em 3 de 4 cômodos, e o gêmeo afirma "vazio" (erro de percepção). Os cômodos que ninguém visita aumentam o tempo de "não afirma". O resultado mede a proporção de episódios difíceis em cada casa, e é assim que deve ser relatado.
+
+### 14.4 Cuidados para os artigos
+
+- **Métricas somadas por cômodo** (por exemplo, `gemeo_nao_atual_s` na F5: 601, 1.202 e 2.404 s) crescem com o número de cômodos por construção. Para comparar casas, é preciso dividir pelo número de cômodos: o valor por cômodo é constante, cerca de 601 s. O comparador ainda não normaliza; isso fica como melhoria.
+- **A taxa de requisitos depende das asserções geradas.** Os cenários `G*` exigem acender em até 1 s em cada entrada. Mudar esse limite muda as taxas do `grupo_exemplo`, mas não a ordem entre as estratégias.
+- **Dados reprodutíveis:** cada CSV tem manifesto com os commits do núcleo e da versão e o hash de cada entrada.
