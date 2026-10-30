@@ -1,6 +1,6 @@
 # Plano das versões paralelas V0–V4 e do núcleo Reg10k
 
-**Versão do documento:** v06 | **Data:** 29/10/2026 | **Situação:** aprovado; Fases 1, 2a, 2b e 2c entregues; V0, V1 e V2 comparáveis
+**Versão do documento:** v07 | **Data:** 29/10/2026 | **Situação:** aprovado; Fases 1, 2a, 2b, 2c e 3 entregues; V0 a V3 comparáveis no mesmo núcleo
 **Responsável:** Reginaldo Arakaki (EPUSP)
 **Linha de pesquisa:** Laboratório de Digital Twin de Arquitetura de Sistemas de Software (EPUSP) e GLIP USP
 **Base:** repositório `PCS5039_ambiente_reg10k_vCl0` na v1dtb; guia de convenções v03; trilha do plano do ambiente (v02, §2.1)
@@ -13,6 +13,7 @@
 | v04 | 26/10/2026 | Fase 2c entregue (§13): `nucleo-v1.1` (gerador por planta, janela relativa) e V2 (Casa A) |
 | v05 | 29/10/2026 | `nucleo-v1.2` (comparador, correção do schema do catálogo); ajustes v0dtb, v1dtc e v2dta; primeira comparação entre as três casas (§14) |
 | v06 | 29/10/2026 | Fase 2b entregue (§15): `nucleo-v1.3` e v1dt.1 (família, visitante, ocupante dormindo, presença incompatível); o isolamento entre residências da V4 passa a ser a OR-16 |
+| v07 | 29/10/2026 | Fase 3 entregue (§16 e §17): V3 com a v3dt (Casa B) e a v3dt.1 (aprendizado do gêmeo, `nucleo-v1.4`, OR-17); V0 e V2 sobem para o `nucleo-v1.3` (v0dtc, v2dtb) e a comparação V0–V3 sai no mesmo núcleo |
 
 ---
 
@@ -61,10 +62,10 @@ versao.json      nome, título e tag do núcleo
 
 | Versão | Casa | Origem | Situação | Conceito novo |
 |---|---|---|---|---|
-| V0 | 1 cômodo (sala), 1 morador e o Rex | v0, v0dt, v0dta | Pronta; falta migrar | Ciclo completo; percepção ≠ verdade; gêmeo e espelho |
-| V1 | 2 cômodos e o vão | v1dt (a, b); v1dt.1: mais pessoas e visitante | Pronta; v1dt.1 a fazer | Passagem interna; um controlador por cômodo; ocupação múltipla |
-| V2 | Casa A, 4 cômodos | v2dt | A fazer | Escala; parâmetros por cômodo; passagens nas duas direções |
-| V3 | Casa B, 7 cômodos | v3dt | A fazer | Modelo comportamental do gêmeo; sugestões com aceite |
+| V0 | 1 cômodo (sala), 1 morador e o Rex | v0, v0dt, v0dta (b, c) | Pronta (v0dtc, `nucleo-v1.3`) | Ciclo completo; percepção ≠ verdade; gêmeo e espelho |
+| V1 | 2 cômodos e o vão | v1dt (a, b, c); v1dt.1: mais pessoas e visitante | Pronta (v1dt.1, `nucleo-v1.3`) | Passagem interna; um controlador por cômodo; ocupação múltipla |
+| V2 | Casa A, 4 cômodos | v2dt (a, b) | Pronta (v2dtb, `nucleo-v1.3`) | Escala; parâmetros por cômodo; passagens nas duas direções |
+| V3 | Casa B, 7 cômodos | v3dt; v3dt.1: aprendizado do gêmeo | Pronta (v3dt, `nucleo-v1.3`; v3dt.1, `nucleo-v1.4`) | Modelo comportamental do gêmeo; sugestões com aceite |
 | V4 | Plataforma com N residências | nova | A fazer | Várias residências no gêmeo remoto; isolamento entre residências; carga e atualidade por residência |
 
 **Uma variável por vez (P1), entre as versões e dentro delas.**
@@ -130,7 +131,7 @@ A abertura de cada mudança segue a skill `incremento-simulacao`. Mudança no n�
 | 2b | V1: v1dt.1, com N5 no núcleo | Sim | ✔ 29/10 (§15) |
 | 2c | V2: Casa A, com o resto de N3 | Sim | ✔ 26/10 (§13) |
 | 2d | V4.0: N6 no núcleo, com R1, R2 e R3 | Sim; depende de 2b para R3 | 2–3 dias |
-| 3 | V3: Casa B e N7 | Depois de 2c | 3 dias |
+| 3 | V3: Casa B (v3dt) e aprendizado do gêmeo (v3dt.1, N7) | Depois de 2c | ✔ 29/10 (§16) |
 | 4 | Rodada de experimentos com tags congeladas; release dos dados | — | 1 dia por artigo |
 
 "Em paralelo" quer dizer que as versões ficam disponíveis ao mesmo tempo e não dependem umas das outras. A construção continua passando por uma revisão de cada vez. As estimativas valem para o meu ritmo de construção; cada versão nova tem a sua parada de aprovação.
@@ -294,3 +295,27 @@ O plano e os resultados estão em `ambiente-simulacao-v1dt.1.md` (v02, no reposi
 - **Núcleo `nucleo-v1.3`** (commit `7077d3c`): perfis de pessoa e visitante (N5); ocupante dormindo (PI-01, resolvida: quem dorme quer escuro); detector de presença incompatível no hub (RF-OPR-06), com a invariante **OR-15**; famílias F8 (um sai e outro fica) e F9 (dormir) no gerador, F10 (presença incompatível) no protocolo; comparador por ambiente e normalizado por cômodo. As 92 assinaturas não mudam, e nenhum cenário antigo abre suspeita.
 - **V1 `v1dt.1`:** ambiente `residencia-v1-familia`, cenários P01–P08, G08 e G09, 76 assinaturas e uma rodada de 2.280 execuções. A referência atende os requisitos de F8, F9 e F10 em todas as sementes.
 - **Para a V4.0:** a casa diversa (R3) já tem os seus ocupantes (§4.1, DQ-PV-02) no ambiente `residencia-v1-familia`. A V0 e a V2 continuam na `nucleo-v1.2` e recebem F8 e F9 quando subirem de núcleo.
+
+## 16. Entrega da Fase 3: V3 (v3dt e v3dt.1) e `nucleo-v1.4`
+
+O plano e os resultados estão em `ambiente-simulacao-v3dt.md` (v03, no repositório da V3 e no projeto). Resumo:
+
+- **V3 v3dt** (tag `v3dt`): Casa B com 7 cômodos (a Casa A mais quarto 2, quarto 3 e área de serviço), 56 cenários gerados (F1–F9) e 4 próprios (C01–C04), no `nucleo-v1.3`. A referência atende todos os requisitos em 30 sementes. Na construção, a zona cega da sala não foi deslocada com a planta e ficou na frente da porta: a referência passou assim mesmo, e só o `grupo_exemplo` revelou o erro. A correção e a lição estão no guia (§7) e na skill.
+- **V0 v0dtc e V2 v2dtb:** sobem para o `nucleo-v1.3`, ganham F8 e F9 e mantêm todas as assinaturas anteriores (V0: 76; V2: 58).
+- **Núcleo `nucleo-v1.4`** (commit `e7f8123`, N7): relógio de parede; faixas de T_apagamento no hub; sugestões com aceite na plataforma; perfil agregado no DTReg10k-R; ação `LER`; **OR-17**; rotina diária e protocolo de semanas (`reg10k.py aprendizado`). As 92 assinaturas do núcleo não mudam.
+- **V3 v3dt.1:** família na Casa B, cenários S01–S05 e o protocolo de 14 + 7 dias com 10 sementes, nos braços aceitar × recusar. Com o aceite, o escuro com alguém acordado cai 78%, e a luz acesa sem ninguém sobe 64%. O quarto do casal mostra o conflito entre ler e dormir na mesma hora.
+- **Para a V4.0:** a casa diversa (R3) pode usar `casa-b-familia`; a OR-16 continua reservada para o isolamento entre residências.
+
+## 17. Comparação V0–V3 no mesmo núcleo (29/10/2026)
+
+Detalhes no §12 do plano da V3 e na planilha `comparacao-V0-V3.xlsx`. Todas as versões no `nucleo-v1.3` (7077d3c), 30 sementes, só cenários G*:
+
+| Família | Controlador | V0 (1) | V1 (2) | V2 (4) | V3 (7) |
+|---|---|---|---|---|---|
+| F1 entrada e saída | referência | 100 | 100 | 100 | 100 |
+| | grupo_exemplo | 100 | 65 | 43 | 29 |
+| F2 parado | grupo_exemplo | 100 | 50 | 25 | 29 |
+| F3 passagem interna | grupo_exemplo | — | 100 | 67 | 50 |
+| F9 dormindo | grupo_exemplo | 100 | 50 | 25 | 29 |
+
+A referência mantém 100% em todas as famílias e portes; o controlador que só acende pelo PIR perde requisitos à medida que cresce a fração de cômodos alcançados por passagem interna. As métricas somadas comparam-se por cômodo, e o comparador já normaliza. Falta uma normalização por cômodo **ocupado**, porque a divisão por 7 faz o desperdício por cômodo da Casa B parecer menor.
